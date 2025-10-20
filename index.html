@@ -251,15 +251,25 @@
         }
 
         // Función para obtener y procesar los datos de ventas desde Google Apps Script
+// Función para obtener y procesar los datos de ventas desde Google Apps Script
         async function fetchVentasOakberry() {
           const url = 'https://script.google.com/macros/s/AKfycbwmynrtl02KkeZt1HnKqN58w2FZVFtBaGXaOIVl7d3UusdzUuqjMQbMpOJCkZZzXlbc/exec';
           const day = document.getElementById("inputDay").value;
-          const month = document.getElementById("inputMonth").value;
+          const monthSelect = document.getElementById("inputMonth");
+          const monthIndex = monthSelect.selectedIndex + 1; // Enero = 1, Febrero = 2, etc.
           const year = document.getElementById("inputYear").value;
 
+          console.log('Fetching datos para:', { day, month: monthIndex, year });
+
           try {
-            const res = await fetch(`${url}?day=${day}&month=${month}&year=${year}`);
+            const res = await fetch(`${url}?day=${day}&month=${monthIndex}&year=${year}`, {
+              method: 'GET',
+              redirect: 'follow'
+            });
+            
+            console.log('Response status:', res.status);
             const data = await res.json();
+            console.log('Datos recibidos:', data);
 
             let total = 0;
             let olo = 0;
@@ -275,36 +285,45 @@
                   olo += venta;
                   break;
                 case "ubereats":
+                case "uber eats":
                   uber += venta;
                   break;
                 case "pedidosya":
+                case "pedidos ya":
                   pedidos += venta;
                   break;
               }
             });
 
+            console.log('Totales calculados:', { total, olo, uber, pedidos });
+
+            // Actualizar el contador principal
             const numberCounter = document.querySelector('.number-counter');
             if (numberCounter) {
-              numberCounter.textContent = `₡${total.toLocaleString()}`;
+              numberCounter.textContent = `₡${total.toLocaleString('es-CR')}`;
             }
 
+            // Actualizar gráfico de canales
             const totalCanales = olo + uber + pedidos;
-            const dataArray = [
-              ((olo / totalCanales) * 100).toFixed(1),
-              ((uber / totalCanales) * 100).toFixed(1),
-              ((pedidos / totalCanales) * 100).toFixed(1)
-            ];
-            updateCanalesChart(dataArray);
+            if (totalCanales > 0) {
+              const dataArray = [
+                ((olo / totalCanales) * 100).toFixed(1),
+                ((uber / totalCanales) * 100).toFixed(1),
+                ((pedidos / totalCanales) * 100).toFixed(1)
+              ];
+              updateCanalesChart(dataArray);
+              
+              // Actualizar porcentajes en las tarjetas
+              const percentCards = document.querySelectorAll('.grid-cols-1.sm\\:grid-cols-3.gap-4 .text-3xl');
+              if (percentCards.length >= 3) {
+                percentCards[0].textContent = dataArray[0] + '%';
+                percentCards[1].textContent = dataArray[1] + '%';
+                percentCards[2].textContent = dataArray[2] + '%';
+              }
+            }
           } catch (error) {
             console.error("Error cargando datos:", error);
-          }
-        }
-
-        // Función para actualizar el gráfico de canales
-        function updateCanalesChart(dataArray) {
-          if (window.chartCanalesInstance) {
-            window.chartCanalesInstance.data.datasets[0].data = dataArray;
-            window.chartCanalesInstance.update();
+            alert('Error al cargar los datos. Verifica la consola para más detalles.');
           }
         }
 
