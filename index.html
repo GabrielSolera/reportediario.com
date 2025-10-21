@@ -136,7 +136,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                 <div class="transform transition-all hover:scale-105">
                     <label class="block text-sm font-bold text-gray-600 mb-3 uppercase tracking-wide">Día</label>
-                    <input type="number" min="1" max="31" value="1" id="inputDay" class="w-full px-4 sm:px-6 py-3 sm:py-4 text-base sm:text-lg border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all font-semibold">
+                    <input type="number" min="1" max="31" value="2" id="inputDay" class="w-full px-4 sm:px-6 py-3 sm:py-4 text-base sm:text-lg border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all font-semibold">
                 </div>
                 <div class="transform transition-all hover:scale-105">
                     <label class="block text-sm font-bold text-gray-600 mb-3 uppercase tracking-wide">Mes</label>
@@ -293,11 +293,20 @@
                 const labels = [];
                 const ventasData = [];
 
+                // Crear la fecha base correctamente (mes en JavaScript es 0-indexed)
+                const fechaBase = new Date(year, monthIndex - 1, day);
+                console.log('📆 Fecha base:', fechaBase.toLocaleDateString('es-CR'));
+
                 for (let i = 6; i >= 0; i--) {
-                    const fecha = new Date(year, monthIndex - 1, day - i);
+                    // Calcular fecha restando días
+                    const fecha = new Date(fechaBase);
+                    fecha.setDate(fechaBase.getDate() - i);
+                    
                     const diaCalc = fecha.getDate();
-                    const mesCalc = fecha.getMonth() + 1;
+                    const mesCalc = fecha.getMonth() + 1; // +1 porque JavaScript usa 0-11
                     const yearCalc = fecha.getFullYear();
+
+                    console.log(`📅 Día ${7-i}: ${diaCalc}/${mesCalc}/${yearCalc}`);
 
                     const res = await fetch(`${APPS_SCRIPT_URL}?day=${diaCalc}&month=${mesCalc}&year=${yearCalc}`);
                     const data = await res.json();
@@ -306,7 +315,17 @@
                     labels.push(`${diasSemana[fecha.getDay()]} ${diaCalc}/${mesCalc}`);
 
                     if (data && data.length > 0 && !data.error) {
-                        ventasData.push(data[0].ventasNetas || 0);
+                        // Buscar la fila Total o sumar todas las tiendas
+                        let ventasDia = 0;
+                        const totalRow = data.find(row => row.tienda === "Total");
+                        if (totalRow) {
+                            ventasDia = totalRow.ventasNetas || 0;
+                        } else {
+                            data.forEach(row => {
+                                ventasDia += parseFloat(row.ventasNetas) || 0;
+                            });
+                        }
+                        ventasData.push(ventasDia);
                     } else {
                         ventasData.push(0);
                     }
@@ -331,7 +350,14 @@
             const monthIndex = monthSelect.selectedIndex + 1;
             const year = document.getElementById("inputYear").value;
 
-            console.log('🔍 Fetching datos para:', { day, month: monthIndex, year });
+            console.log('🔍 Datos del selector:', {
+                dayRAW: day,
+                dayNumber: Number(day),
+                monthIndex: monthIndex,
+                monthName: monthSelect.options[monthSelect.selectedIndex].text,
+                year: year
+            });
+            console.log('🌐 URL que se enviará:', `${APPS_SCRIPT_URL}?day=${day}&month=${monthIndex}&year=${year}`);
 
             try {
                 const res = await fetch(`${APPS_SCRIPT_URL}?day=${day}&month=${monthIndex}&year=${year}`, {
