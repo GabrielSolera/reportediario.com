@@ -209,10 +209,10 @@
                 </div>
             </div>
             
-            <!-- Hidden inputs -->
-            <input type="hidden" id="inputDay" value="3">
-            <input type="hidden" id="inputMonth" value="10">
-            <input type="hidden" id="inputYear" value="2025">
+            <!-- Hidden inputs (se actualizan con fecha de AYER en JavaScript) -->
+            <input type="hidden" id="inputDay" value="">
+            <input type="hidden" id="inputMonth" value="">
+            <input type="hidden" id="inputYear" value="">
         </div>
 
         <!-- Indicador de Tienda Seleccionada -->
@@ -718,10 +718,13 @@
             return fechaEquivalente;
         }
         
+        // Inicializar con fecha de AYER (día anterior)
+        const hoy = new Date();
+        hoy.setDate(hoy.getDate() - 1); // Restar 1 día
         let calendarioState = {
-            mesActual: 9,
-            añoActual: 2025,
-            diaSeleccionado: 3
+            mesActual: hoy.getMonth(),
+            añoActual: hoy.getFullYear(),
+            diaSeleccionado: hoy.getDate()
         };
         
         const nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -806,6 +809,13 @@
         // }
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Inicializar campos de fecha con DÍA DE AYER
+            const hoy = new Date();
+            hoy.setDate(hoy.getDate() - 1); // Restar 1 día para obtener ayer
+            document.getElementById('inputDay').value = hoy.getDate();
+            document.getElementById('inputMonth').value = hoy.getMonth() + 1;
+            document.getElementById('inputYear').value = hoy.getFullYear();
+            
             // Generar calendario
             generarCalendario();
             
