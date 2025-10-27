@@ -103,11 +103,42 @@
                     📅
                 </button>
                 
-                <!-- Tienda -->
-                <select id="inputTienda" class="px-2 py-1 text-xs rounded border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:outline-none">
-                    <option value="todas">📊 Todas</option>
-                    <option value="guachipelin">Guachipelín</option>
-                </select>
+                <!-- Multi-selector de Tiendas -->
+                <div class="relative">
+                    <button id="toggleTiendas" class="px-3 py-1 bg-white border border-gray-300 rounded text-xs font-semibold hover:border-purple-400 transition-colors flex items-center gap-2">
+                        <span id="tiendasLabel">📊 Todas las tiendas</span>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    
+                    <!-- Dropdown de tiendas -->
+                    <div id="tiendasDropdown" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-[200px]">
+                        <div class="p-2">
+                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox" value="todas" data-nombre="Todas" checked>
+                                <span class="text-xs font-semibold">📊 Todas las tiendas</span>
+                            </label>
+                            <div class="border-t border-gray-200 my-1"></div>
+                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="guachipelin" data-nombre="Guachipelín">
+                                <span class="text-xs">🏪 Guachipelín</span>
+                            </label>
+                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="escazu" data-nombre="Avenida Escazú">
+                                <span class="text-xs">🏪 Avenida Escazú</span>
+                            </label>
+                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="citymall" data-nombre="City Mall">
+                                <span class="text-xs">🏪 City Mall</span>
+                            </label>
+                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="santaana" data-nombre="Santa Ana TC">
+                                <span class="text-xs">🏪 Santa Ana TC</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Modo -->
                 <select id="inputModoVista" class="px-2 py-1 text-xs rounded border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:outline-none">
@@ -182,6 +213,27 @@
             <input type="hidden" id="inputDay" value="3">
             <input type="hidden" id="inputMonth" value="10">
             <input type="hidden" id="inputYear" value="2025">
+        </div>
+
+        <!-- Indicador de Tienda Seleccionada -->
+        <div class="bg-gradient-to-r from-purple-100 to-indigo-100 border-l-4 border-purple-600 p-3 rounded-lg mb-4 shadow-md">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-purple-600 text-white p-2 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-semibold uppercase">Visualizando</p>
+                        <p class="text-lg font-black text-gray-800" id="indicadorTienda">Todas las Tiendas</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 font-semibold">Total Tiendas Activas</p>
+                    <p class="text-2xl font-black text-purple-600" id="totalTiendasActivas">4</p>
+                </div>
+            </div>
         </div>
 
         <!-- KPIs Principales - 6 tarjetas -->
@@ -379,22 +431,30 @@
 
         async function fetchVentasOakberry() {
             const day = document.getElementById("inputDay").value;
-            const month = document.getElementById("inputMonth").value; // Cambiado: usar .value directamente
+            const month = document.getElementById("inputMonth").value;
             const year = document.getElementById("inputYear").value;
-            const tienda = document.getElementById("inputTienda").value;
             const modoVista = document.getElementById("inputModoVista").value;
+            
+            // Obtener tiendas seleccionadas
+            const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
 
             console.log('🔍 ========== INICIO FETCH ==========');
-            console.log('📅 Parámetros:', { day, month, year, tienda, modoVista });
+            console.log('📅 Parámetros:', { day, month, year, tiendas: tiendasSeleccionadas, modoVista });
             console.log('🔗 URL Base:', APPS_SCRIPT_URL);
             
-            const fullUrl = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoVista=${modoVista}`;
+            const fullUrl = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tiendasSeleccionadas}&modoVista=${modoVista}`;
             console.log('🌐 URL Completa:', fullUrl);
 
+            // Mostrar loading
+            mostrarLoadingModal();
+            
             try {
+                const tiempoInicio = Date.now();
                 console.log('📡 Haciendo fetch...');
                 const res = await fetch(fullUrl);
                 
+                const tiempoTranscurrido = ((Date.now() - tiempoInicio) / 1000).toFixed(2);
+                console.log(`⏱️ Tiempo de respuesta: ${tiempoTranscurrido}s`);
                 console.log('📦 Response status:', res.status);
                 console.log('📦 Response OK:', res.ok);
                 console.log('📦 Content-Type:', res.headers.get('content-type'));
@@ -408,6 +468,7 @@
                     console.log('✅ JSON parseado correctamente');
                     console.log('📊 Data:', data);
                 } catch (parseError) {
+                    ocultarLoadingModal();
                     console.error('❌ Error parseando JSON:', parseError);
                     console.error('📄 Respuesta completa:', textResponse);
                     alert('Error: La respuesta no es JSON válido. Revisa la consola (F12)');
@@ -415,16 +476,49 @@
                 }
 
                 if (!data || data.length === 0 || data.error) {
+                    ocultarLoadingModal();
                     console.error('❌ Error en los datos:', data);
                     alert('Error al cargar datos. Revisa la consola (F12)');
                     return;
                 }
 
-                const totalRow = data.find(row => row.tienda === "Oakberry Guachipelin" || row.tienda === "Total") || data[0];
+                // Determinar qué registro usar para los KPIs principales
+                // Si hay múltiples tiendas (modo "todas"), usar el consolidado "TODAS"
+                // Si es una sola tienda, usar esa tienda
+                let totalRow;
+                if (data.length > 1) {
+                    // Modo multi-tienda: buscar el consolidado "TODAS"
+                    totalRow = data.find(row => row.tienda === "TODAS") || data[0];
+                } else {
+                    // Modo tienda individual
+                    totalRow = data[0];
+                }
                 
                 console.log('✅ Datos encontrados:', totalRow);
                 console.log('💰 Ventas Netas:', totalRow.ventasNetas);
                 console.log('📊 Transacciones:', totalRow.transacciones);
+                
+                // Actualizar indicador de tienda
+                const checkboxes = document.querySelectorAll('.tienda-checkbox:checked');
+                const todasCheckbox = document.querySelector('.tienda-checkbox[value="todas"]');
+                
+                let textoIndicador = '';
+                let numTiendasActivas = 0;
+                
+                if (todasCheckbox && todasCheckbox.checked) {
+                    textoIndicador = 'Todas las Tiendas 🏪';
+                    numTiendasActivas = 4;
+                } else if (checkboxes.length === 1) {
+                    textoIndicador = checkboxes[0].dataset.nombre + ' 🏪';
+                    numTiendasActivas = 1;
+                } else {
+                    textoIndicador = `${checkboxes.length} Tiendas Seleccionadas 🏪`;
+                    numTiendasActivas = checkboxes.length;
+                }
+                
+                document.getElementById('indicadorTienda').textContent = textoIndicador;
+                document.getElementById('totalTiendasActivas').textContent = numTiendasActivas;
+                
                 
                 // Actualizar KPIs principales
                 document.getElementById('kpiVentasDia').textContent = `₡${Math.round(totalRow.ventasNetas).toLocaleString('es-CR')}`;
@@ -490,6 +584,7 @@
                 });
 
             } catch (error) {
+                ocultarLoadingModal();
                 console.error('❌ ========== ERROR CATCH ==========');
                 console.error('Tipo de error:', error.name);
                 console.error('Mensaje:', error.message);
@@ -499,9 +594,102 @@
                 alert('❌ Error de conexión.\n\n' +
                       'Detalles: ' + error.message + '\n\n' +
                       'Abre la consola (F12) para más información.');
+            } finally {
+                ocultarLoadingModal();
             }
             
             console.log('🏁 ========== FIN FETCH ==========');
+        }
+
+        // ============================================
+        // MULTI-SELECTOR DE TIENDAS
+        // ============================================
+        function obtenerTiendasSeleccionadas() {
+            const checkboxes = document.querySelectorAll('.tienda-checkbox:checked');
+            const tiendas = Array.from(checkboxes).map(cb => cb.value);
+            
+            // Si "todas" está seleccionada, retornar "todas"
+            if (tiendas.includes('todas')) {
+                return 'todas';
+            }
+            
+            // Si no hay ninguna seleccionada, retornar "todas" por defecto
+            if (tiendas.length === 0) {
+                return 'todas';
+            }
+            
+            // Retornar las tiendas seleccionadas separadas por coma
+            return tiendas.join(',');
+        }
+        
+        function actualizarLabelTiendas() {
+            const checkboxes = document.querySelectorAll('.tienda-checkbox:checked');
+            const label = document.getElementById('tiendasLabel');
+            
+            if (checkboxes.length === 0) {
+                label.textContent = '📊 Selecciona tiendas';
+                return;
+            }
+            
+            const todasCheckbox = document.querySelector('.tienda-checkbox[value="todas"]');
+            
+            if (todasCheckbox && todasCheckbox.checked) {
+                label.textContent = '📊 Todas las tiendas';
+                return;
+            }
+            
+            if (checkboxes.length === 1) {
+                label.textContent = '🏪 ' + checkboxes[0].dataset.nombre;
+            } else {
+                label.textContent = `🏪 ${checkboxes.length} tiendas seleccionadas`;
+            }
+        }
+        
+        function mostrarLoadingModal() {
+            // Crear modal de loading si no existe
+            let modal = document.getElementById('loadingModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'loadingModal';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-md">
+                        <div class="text-center">
+                            <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600 mb-4"></div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Consultando ventas...</h3>
+                            <p class="text-sm text-gray-600 mb-4">Esto puede tardar unos segundos</p>
+                            <div class="flex items-center justify-center gap-2">
+                                <div class="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                                <div class="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                                <div class="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-4" id="loadingTimer">0s</p>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Iniciar contador
+                window.loadingStartTime = Date.now();
+                window.loadingInterval = setInterval(() => {
+                    const elapsed = ((Date.now() - window.loadingStartTime) / 1000).toFixed(1);
+                    const timerEl = document.getElementById('loadingTimer');
+                    if (timerEl) {
+                        timerEl.textContent = `${elapsed}s`;
+                    }
+                }, 100);
+            }
+            modal.classList.remove('hidden');
+        }
+        
+        function ocultarLoadingModal() {
+            const modal = document.getElementById('loadingModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            if (window.loadingInterval) {
+                clearInterval(window.loadingInterval);
+            }
         }
 
         // ============================================
@@ -628,6 +816,50 @@
                 this.textContent = cal.classList.contains('hidden') ? '📅' : '❌';
             });
             
+            // Toggle dropdown tiendas
+            document.getElementById('toggleTiendas').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = document.getElementById('tiendasDropdown');
+                dropdown.classList.toggle('hidden');
+            });
+            
+            // Cerrar dropdown al hacer click fuera
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('tiendasDropdown');
+                const toggle = document.getElementById('toggleTiendas');
+                if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+            
+            // Manejar selección de tiendas
+            document.querySelectorAll('.tienda-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const todasCheckbox = document.querySelector('.tienda-checkbox[value="todas"]');
+                    const individualesCheckboxes = document.querySelectorAll('.tienda-individual');
+                    
+                    if (this.value === 'todas') {
+                        // Si se selecciona "Todas", desmarcar las individuales
+                        if (this.checked) {
+                            individualesCheckboxes.forEach(cb => cb.checked = false);
+                        }
+                    } else {
+                        // Si se selecciona una individual, desmarcar "Todas"
+                        if (this.checked && todasCheckbox) {
+                            todasCheckbox.checked = false;
+                        }
+                        
+                        // Si se desmarcan todas las individuales, marcar "Todas" automáticamente
+                        const algunaMarcada = Array.from(individualesCheckboxes).some(cb => cb.checked);
+                        if (!algunaMarcada && todasCheckbox) {
+                            todasCheckbox.checked = true;
+                        }
+                    }
+                    
+                    actualizarLabelTiendas();
+                });
+            });
+            
             // Navegación
             document.getElementById('prevMonth').addEventListener('click', () => cambiarMes(-1));
             document.getElementById('nextMonth').addEventListener('click', () => cambiarMes(1));
@@ -649,9 +881,6 @@
                 setTimeout(() => {
                     this.classList.remove('scale-95');
                 }, 200);
-                
-                // Mostrar loading
-                mostrarLoading();
                 
                 // Cargar datos
                 fetchVentasOakberry();
