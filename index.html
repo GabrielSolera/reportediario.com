@@ -12,6 +12,120 @@
         .hover-lift:hover { transform: translateY(-4px); }
         @keyframes slideBottom { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-bottom { animation: slideBottom 0.5s ease-out forwards; }
+        
+        /* MODO DARK - Detecta automáticamente la preferencia del sistema */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(to bottom right, #1e1b4b, #312e81) !important;
+            }
+            
+            /* Tarjetas blancas -> oscuras */
+            .bg-white {
+                background-color: #1f2937 !important;
+                color: #f3f4f6 !important;
+            }
+            
+            /* Textos oscuros -> claros */
+            .text-gray-800 {
+                color: #f3f4f6 !important;
+            }
+            
+            .text-gray-600 {
+                color: #d1d5db !important;
+            }
+            
+            .text-gray-700 {
+                color: #e5e7eb !important;
+            }
+            
+            .text-gray-400 {
+                color: #9ca3af !important;
+            }
+            
+            /* Bordes */
+            .border-gray-200 {
+                border-color: #374151 !important;
+            }
+            
+            .border-gray-300 {
+                border-color: #4b5563 !important;
+            }
+            
+            /* Hover states */
+            .hover\:bg-purple-50:hover {
+                background-color: #374151 !important;
+            }
+            
+            .hover\:bg-gray-50:hover {
+                background-color: #374151 !important;
+            }
+            
+            /* Dropdown */
+            #tiendasDropdown {
+                background-color: #1f2937 !important;
+                border-color: #4b5563 !important;
+            }
+            
+            /* Calendario */
+            #calendarioContainer .bg-white {
+                background-color: #1f2937 !important;
+            }
+            
+            #calendarioContainer .border-purple-100 {
+                border-color: #4c1d95 !important;
+            }
+            
+            .text-gray-700:not(.hover\:text-purple-600) {
+                color: #e5e7eb !important;
+            }
+            
+            /* Días del calendario */
+            .bg-purple-100 {
+                background-color: #4c1d95 !important;
+                color: #e9d5ff !important;
+            }
+            
+            /* Tabla */
+            table {
+                color: #f3f4f6 !important;
+            }
+            
+            thead {
+                background: linear-gradient(to right, #6b21a8, #7c3aed) !important;
+            }
+            
+            tbody tr {
+                border-color: #374151 !important;
+            }
+            
+            tbody tr:hover {
+                background-color: #374151 !important;
+            }
+            
+            /* Modal */
+            #modalAnalisis .bg-white {
+                background-color: #1f2937 !important;
+            }
+            
+            /* Desglose de descuentos en modal */
+            .bg-gray-50 {
+                background-color: #374151 !important;
+            }
+            
+            #modalAnalisis .bg-white.p-2 {
+                background-color: #1f2937 !important;
+            }
+            
+            /* Gráficos - fondo oscuro */
+            canvas {
+                background-color: transparent !important;
+            }
+            
+            /* Inputs */
+            input[type="checkbox"] {
+                filter: brightness(1.2);
+            }
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen">
@@ -290,7 +404,7 @@
                     <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                         <span class="text-2xl">💰</span> Descuentos Aplicados
                     </h3>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
                         <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
                             <p class="text-sm text-gray-600 mb-1">Descuentos del Día</p>
                             <p class="text-2xl font-black text-blue-700" id="analisisDescuentosDia">₡0</p>
@@ -298,6 +412,84 @@
                         <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
                             <p class="text-sm text-gray-600 mb-1">Descuentos Acum.</p>
                             <p class="text-2xl font-black text-blue-700" id="analisisDescuentosAcum">₡0</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Desglose por Canal -->
+                    <div class="bg-gray-50 p-4 rounded-xl mb-3">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3">📱 Por Canal de Venta</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">🟢 Uber Eats</span>
+                                <span class="text-sm font-bold text-green-600" id="descUberDia">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">🟢 Uber (Acum)</span>
+                                <span class="text-sm font-bold text-green-600" id="descUberAcum">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">🔴 Pedidos Ya</span>
+                                <span class="text-sm font-bold text-red-600" id="descPeyaDia">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">🔴 Pedidos (Acum)</span>
+                                <span class="text-sm font-bold text-red-600" id="descPeyaAcum">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">🟠 Didi Food</span>
+                                <span class="text-sm font-bold text-orange-600" id="descDidiDia">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">🟠 Didi (Acum)</span>
+                                <span class="text-sm font-bold text-orange-600" id="descDidiAcum">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">⚫ Otros</span>
+                                <span class="text-sm font-bold text-gray-600" id="descOtrosCanalDia">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">⚫ Otros (Acum)</span>
+                                <span class="text-sm font-bold text-gray-600" id="descOtrosCanalAcum">₡0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Desglose por Método de Pago -->
+                    <div class="bg-gray-50 p-4 rounded-xl">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3">💳 Por Método de Pago</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">💳 Tarjeta</span>
+                                <span class="text-sm font-bold text-purple-600" id="descTarjetaDia">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">💳 Tarjeta (Acum)</span>
+                                <span class="text-sm font-bold text-purple-600" id="descTarjetaAcum">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">💵 Efectivo</span>
+                                <span class="text-sm font-bold text-green-600" id="descEfectivoDia">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">💵 Efectivo (Acum)</span>
+                                <span class="text-sm font-bold text-green-600" id="descEfectivoAcum">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">📱 Sinpe</span>
+                                <span class="text-sm font-bold text-blue-600" id="descSinpeDia">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">📱 Sinpe (Acum)</span>
+                                <span class="text-sm font-bold text-blue-600" id="descSinpeAcum">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">💰 Otros</span>
+                                <span class="text-sm font-bold text-gray-600" id="descOtrosPagoDia">₡0</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg">
+                                <span class="text-xs text-gray-600">💰 Otros (Acum)</span>
+                                <span class="text-sm font-bold text-gray-600" id="descOtrosPagoAcum">₡0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -422,8 +614,35 @@
         function mostrarAnalisis(data) {
             const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
             
+            // Descuentos totales
             document.getElementById('analisisDescuentosDia').textContent = `₡${Math.round(totalRow.descuentosDia || 0).toLocaleString('es-CR')}`;
             document.getElementById('analisisDescuentosAcum').textContent = `₡${Math.round(totalRow.descuentosAcum || 0).toLocaleString('es-CR')}`;
+            
+            // Descuentos por canal - DÍA
+            document.getElementById('descUberDia').textContent = `₡${Math.round(totalRow.descUberDia || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descPeyaDia').textContent = `₡${Math.round(totalRow.descPeyaDia || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descDidiDia').textContent = `₡${Math.round(totalRow.descDidiDia || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descOtrosCanalDia').textContent = `₡${Math.round(totalRow.descOtrosCanalDia || 0).toLocaleString('es-CR')}`;
+            
+            // Descuentos por canal - ACUMULADO
+            document.getElementById('descUberAcum').textContent = `₡${Math.round(totalRow.descUberAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descPeyaAcum').textContent = `₡${Math.round(totalRow.descPeyaAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descDidiAcum').textContent = `₡${Math.round(totalRow.descDidiAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descOtrosCanalAcum').textContent = `₡${Math.round(totalRow.descOtrosCanalAcum || 0).toLocaleString('es-CR')}`;
+            
+            // Descuentos por método de pago - DÍA
+            document.getElementById('descTarjetaDia').textContent = `₡${Math.round(totalRow.descTarjetaDia || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descEfectivoDia').textContent = `₡${Math.round(totalRow.descEfectivoDia || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descSinpeDia').textContent = `₡${Math.round(totalRow.descSinpeDia || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descOtrosPagoDia').textContent = `₡${Math.round(totalRow.descOtrosPagoDia || 0).toLocaleString('es-CR')}`;
+            
+            // Descuentos por método de pago - ACUMULADO
+            document.getElementById('descTarjetaAcum').textContent = `₡${Math.round(totalRow.descTarjetaAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descEfectivoAcum').textContent = `₡${Math.round(totalRow.descEfectivoAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descSinpeAcum').textContent = `₡${Math.round(totalRow.descSinpeAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('descOtrosPagoAcum').textContent = `₡${Math.round(totalRow.descOtrosPagoAcum || 0).toLocaleString('es-CR')}`;
+            
+            // Anulaciones
             document.getElementById('analisisAnulacionesDia').textContent = totalRow.anulacionesDia || 0;
             document.getElementById('analisisAnulacionesAcum').textContent = totalRow.anulacionesAcum || 0;
         }
@@ -617,10 +836,21 @@
         }
 
         function inicializarGraficos() {
+            // Detectar si está en modo dark
+            const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const textColor = isDarkMode ? '#f3f4f6' : '#1f2937';
+            const gridColor = isDarkMode ? '#374151' : '#e5e7eb';
+            
             // Desactivar datalabels por defecto
             Chart.defaults.set('plugins.datalabels', {
                 display: false
             });
+            
+            // Configuración global para modo dark
+            if (isDarkMode) {
+                Chart.defaults.color = textColor;
+                Chart.defaults.borderColor = gridColor;
+            }
             
             // Gráfico Día de Semana
             const ctxDia = document.getElementById('chartDiaSemana').getContext('2d');
@@ -638,11 +868,30 @@
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: { 
-                        legend: { display: false },
+                        legend: { 
+                            display: false
+                        },
                         datalabels: { display: false }
                     },
                     scales: {
-                        y: { beginAtZero: true, ticks: { callback: value => '₡' + (value/1000).toFixed(0) + 'k' } }
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { 
+                                callback: value => '₡' + (value/1000).toFixed(0) + 'k',
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        }
                     }
                 }
             });
@@ -664,7 +913,11 @@
                     plugins: {
                         legend: { 
                             position: 'bottom', 
-                            labels: { boxWidth: 12, font: { size: 10 } } 
+                            labels: { 
+                                boxWidth: 12, 
+                                font: { size: 10 },
+                                color: textColor
+                            } 
                         },
                         tooltip: {
                             callbacks: {
@@ -713,14 +966,40 @@
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: { 
-                        legend: { display: false },
+                        legend: { 
+                            display: false
+                        },
                         datalabels: { display: false }
                     },
                     scales: {
-                        y: { beginAtZero: true, ticks: { callback: value => '₡' + (value/1000).toFixed(0) + 'k' } }
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { 
+                                callback: value => '₡' + (value/1000).toFixed(0) + 'k',
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        }
                     }
                 }
             });
+            
+            // Listener para cambios en el tema del sistema
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                    location.reload(); // Recargar para aplicar los nuevos estilos
+                });
+            }
         }
 
         function actualizarGraficos(data) {
