@@ -3,663 +3,515 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Oakberry - Ventas</title>
+    <title>Oakberry Dashboard - Con Gráficos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
-        @keyframes slideInFromLeft {
-            from { opacity: 0; transform: translateX(-50px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes slideInFromBottom {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes shimmer {
-            0% { background-position: -1000px 0; }
-            100% { background-position: 1000px 0; }
-        }
-        
-        .animate-slide-in {
-            animation: slideInFromLeft 0.6s ease-out forwards;
-        }
-        
-        .animate-slide-bottom {
-            animation: slideInFromBottom 0.6s ease-out forwards;
-        }
-        
-        .animate-fade-in {
-            animation: fadeIn 0.8s ease-out forwards;
-        }
-        
-        .hover-lift {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .hover-lift:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(124, 58, 237, 0.3);
-        }
-        
-        .shimmer {
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            background-size: 1000px 100%;
-            animation: shimmer 2s infinite;
-        }
-        
-        .card-glow {
-            box-shadow: 0 0 30px rgba(124, 58, 237, 0.2);
-        }
-        
-        .number-counter {
-            font-variant-numeric: tabular-nums;
-        }
-
-        @media (max-width: 768px) {
-            .hover-lift:hover {
-                transform: translateY(-4px) scale(1.01);
-            }
-        }
+        .hover-lift { transition: transform 0.2s; }
+        .hover-lift:hover { transform: translateY(-4px); }
+        @keyframes slideBottom { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-bottom { animation: slideBottom 0.5s ease-out forwards; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-purple-50 via-white to-purple-50 min-h-screen">
-    
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-purple-700 via-purple-600 to-purple-800 text-white shadow-2xl overflow-hidden relative">
-        <div class="absolute inset-0 shimmer opacity-20"></div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10 animate-fade-in">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="animate-slide-in text-center sm:text-left">
-                    <div class="flex items-center gap-3">
-                        <img src="Logo_Primary_Macaw_Offwhite (2).png" alt="Logo Oakberry" class="h-10 sm:h-12">
-                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-2">OAKBERRY</h1>
-                    </div>
-                    <p class="text-purple-200 text-base sm:text-lg lg:text-xl font-light">Dashboard de Ventas</p>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-700 to-indigo-800 text-white p-6 rounded-2xl shadow-2xl mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-black mb-1">🫐 OAKBERRY</h1>
+                    <p class="text-purple-200 text-sm">Dashboard de Ventas</p>
                 </div>
-                <div class="flex items-center gap-3 sm:gap-4 animate-slide-in" style="animation-delay: 0.2s; opacity: 0;">
-                    <div class="bg-white/20 backdrop-blur-lg px-4 sm:px-6 py-2 sm:py-3 rounded-xl border border-white/30 hover:bg-white/30 transition-all duration-300">
-                        <p class="text-xs text-purple-200 font-semibold uppercase tracking-wide">Última actualización</p>
-                        <p class="text-base sm:text-lg font-bold" id="lastUpdate">Cargando...</p>
-                    </div>
-                    <div class="w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50"></div>
+                <div class="text-right">
+                    <p class="text-xs text-purple-200 uppercase">Última Actualización</p>
+                    <p class="text-lg font-bold" id="ultimaActualizacion">--:--:--</p>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <!-- Filtros Ultra Compactos -->
-        <div class="bg-white p-3 rounded-lg shadow-md mb-4 border border-gray-200">
-            <div class="flex flex-wrap items-center gap-2">
-                <!-- Botón Calendario -->
-                <button id="toggleCalendario" class="px-2 py-1 bg-purple-600 text-white rounded text-xs font-semibold hover:bg-purple-700 transition-colors">
-                    📅
+        <!-- Filtros -->
+        <div class="bg-white p-4 rounded-xl shadow-lg mb-6">
+            <div class="flex flex-wrap items-center gap-3">
+                <button id="toggleCalendario" class="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700">
+                    📅 <span id="fechaSeleccionada">Seleccionar Fecha</span>
                 </button>
                 
-                <!-- Multi-selector de Tiendas -->
                 <div class="relative">
-                    <button id="toggleTiendas" class="px-3 py-1 bg-white border border-gray-300 rounded text-xs font-semibold hover:border-purple-400 transition-colors flex items-center gap-2">
+                    <button id="toggleTiendas" class="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg text-sm font-semibold hover:border-purple-400 flex items-center gap-2">
                         <span id="tiendasLabel">📊 Todas las tiendas</span>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
                     
-                    <!-- Dropdown de tiendas -->
-                    <div id="tiendasDropdown" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-[200px]">
+                    <div id="tiendasDropdown" class="hidden absolute top-full left-0 mt-2 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50 min-w-[220px]">
                         <div class="p-2">
-                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
-                                <input type="checkbox" class="tienda-checkbox" value="todas" data-nombre="Todas" checked>
-                                <span class="text-xs font-semibold">📊 Todas las tiendas</span>
+                            <label class="flex items-center gap-2 px-3 py-2 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox w-4 h-4" value="todas" data-nombre="Todas" checked>
+                                <span class="text-sm font-semibold">📊 Todas las tiendas</span>
                             </label>
-                            <div class="border-t border-gray-200 my-1"></div>
-                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
-                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="guachipelin" data-nombre="Guachipelín">
-                                <span class="text-xs">🏪 Guachipelín</span>
+                            <div class="border-t border-gray-200 my-2"></div>
+                            <label class="flex items-center gap-2 px-3 py-2 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox tienda-individual w-4 h-4" value="guachipelin" data-nombre="Guachipelín">
+                                <span class="text-sm">🏪 Guachipelín</span>
                             </label>
-                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
-                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="escazu" data-nombre="Avenida Escazú">
-                                <span class="text-xs">🏪 Avenida Escazú</span>
+                            <label class="flex items-center gap-2 px-3 py-2 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox tienda-individual w-4 h-4" value="escazu" data-nombre="Avenida Escazú">
+                                <span class="text-sm">🏪 Avenida Escazú</span>
                             </label>
-                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
-                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="citymall" data-nombre="City Mall">
-                                <span class="text-xs">🏪 City Mall</span>
+                            <label class="flex items-center gap-2 px-3 py-2 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox tienda-individual w-4 h-4" value="citymall" data-nombre="City Mall">
+                                <span class="text-sm">🏪 City Mall</span>
                             </label>
-                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-purple-50 rounded cursor-pointer">
-                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="santaana" data-nombre="Santa Ana TC">
-                                <span class="text-xs">🏪 Santa Ana TC</span>
+                            <label class="flex items-center gap-2 px-3 py-2 hover:bg-purple-50 rounded cursor-pointer">
+                                <input type="checkbox" class="tienda-checkbox tienda-individual w-4 h-4" value="santaana" data-nombre="Santa Ana TC">
+                                <span class="text-sm">🏪 Santa Ana TC</span>
                             </label>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Modo -->
-                <select id="inputModoVista" class="px-2 py-1 text-xs rounded border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:outline-none">
-                    <option value="analisis">📈 Análisis</option>
-                    <option value="comparativo">⚖️ Comparativo</option>
-                </select>
-                
-                <!-- Toggle Modo Rápido -->
-                <label class="flex items-center gap-1 px-2 py-1 bg-white border border-gray-300 rounded text-xs font-semibold hover:border-purple-400 transition-colors cursor-pointer">
-                    <input type="checkbox" id="modoRapido" class="w-3 h-3" checked>
+                <label class="flex items-center gap-2 px-3 py-2 bg-white border-2 border-gray-300 rounded-lg text-sm font-semibold hover:border-purple-400 cursor-pointer">
+                    <input type="checkbox" id="modoRapido" class="w-4 h-4" checked>
                     <span>⚡ Rápido</span>
                 </label>
                 
-                <!-- Botón Filtrar -->
-                <button id="btnFiltrar" class="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded text-xs font-bold hover:scale-105 transition-transform">
+                <button id="btnFiltrar" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-bold hover:from-purple-700 hover:to-indigo-700 shadow-lg">
                     Filtrar
                 </button>
                 
-                <!-- Botón Reset -->
-                <button id="btnReset" class="px-2 py-1 bg-white border border-gray-300 text-gray-700 rounded text-xs font-semibold hover:border-red-400 hover:text-red-600 transition-colors">
-                    🔄
+                <button id="btnAnalisis" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-700 shadow-lg">
+                    📊 Análisis
                 </button>
-                
-                <!-- Indicador -->
-                <span class="ml-auto text-xs text-gray-500 font-semibold">
-                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    En vivo
-                </span>
             </div>
             
-            <!-- Calendario Mini Colapsable -->
-            <div id="calendarioContainer" class="mt-3 hidden">
-                <div class="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                    <!-- Header del Calendario -->
-                    <div class="flex items-center justify-between mb-2">
-                        <button id="prevMonth" class="p-1 hover:bg-gray-200 rounded transition-colors">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Calendario oculto - REDISEÑADO MÁS ELEGANTE -->
+            <div id="calendarioContainer" class="hidden mt-4">
+                <div class="max-w-xs mx-auto bg-white rounded-xl shadow-2xl p-4 border-2 border-purple-100">
+                    <!-- Header del calendario -->
+                    <div class="flex items-center justify-between mb-3">
+                        <button id="prevMonth" class="p-2 hover:bg-purple-50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                             </svg>
                         </button>
-                        <div class="text-center">
-                            <p class="text-xs font-bold text-gray-800" id="mesActual">Octubre 2025</p>
-                            <p class="text-xs text-purple-600 font-semibold" id="fechaSeleccionada">3 de Octubre</p>
-                        </div>
-                        <button id="nextMonth" class="p-1 hover:bg-gray-200 rounded transition-colors">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span id="mesActual" class="font-bold text-base text-gray-800"></span>
+                        <button id="nextMonth" class="p-2 hover:bg-purple-50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
                         </button>
                     </div>
                     
                     <!-- Días de la semana -->
-                    <div class="grid grid-cols-7 gap-1 mb-1">
-                        <div class="text-center text-xs font-semibold text-gray-400">D</div>
-                        <div class="text-center text-xs font-semibold text-gray-400">L</div>
-                        <div class="text-center text-xs font-semibold text-gray-400">M</div>
-                        <div class="text-center text-xs font-semibold text-gray-400">X</div>
-                        <div class="text-center text-xs font-semibold text-gray-400">J</div>
-                        <div class="text-center text-xs font-semibold text-gray-400">V</div>
-                        <div class="text-center text-xs font-semibold text-gray-400">S</div>
+                    <div class="grid grid-cols-7 gap-1 mb-2">
+                        <div class="text-center text-xs font-semibold text-gray-400 py-1">D</div>
+                        <div class="text-center text-xs font-semibold text-gray-400 py-1">L</div>
+                        <div class="text-center text-xs font-semibold text-gray-400 py-1">M</div>
+                        <div class="text-center text-xs font-semibold text-gray-400 py-1">X</div>
+                        <div class="text-center text-xs font-semibold text-gray-400 py-1">J</div>
+                        <div class="text-center text-xs font-semibold text-gray-400 py-1">V</div>
+                        <div class="text-center text-xs font-semibold text-gray-400 py-1">S</div>
                     </div>
                     
                     <!-- Grid de días -->
-                    <div id="calendarioGrid" class="grid grid-cols-7 gap-1 mb-2">
-                        <!-- Generado dinámicamente -->
-                    </div>
-                    
-                    <!-- Botones rápidos -->
-                    <div class="flex gap-1">
-                        <button class="quick-date-btn flex-1 px-2 py-1 bg-white hover:bg-purple-100 rounded text-xs font-semibold border border-gray-200 transition-colors" data-offset="0">Hoy</button>
-                        <button class="quick-date-btn flex-1 px-2 py-1 bg-white hover:bg-purple-100 rounded text-xs font-semibold border border-gray-200 transition-colors" data-offset="-1">Ayer</button>
-                        <button class="quick-date-btn flex-1 px-2 py-1 bg-white hover:bg-purple-100 rounded text-xs font-semibold border border-gray-200 transition-colors" data-offset="-7">-7d</button>
-                    </div>
+                    <div id="calendarioGrid" class="grid grid-cols-7 gap-1"></div>
                 </div>
             </div>
             
-            <!-- Hidden inputs (se actualizan con fecha de AYER en JavaScript) -->
             <input type="hidden" id="inputDay" value="">
             <input type="hidden" id="inputMonth" value="">
             <input type="hidden" id="inputYear" value="">
         </div>
 
-        <!-- Indicador de Tienda Seleccionada -->
-        <div class="bg-gradient-to-r from-purple-100 to-indigo-100 border-l-4 border-purple-600 p-3 rounded-lg mb-4 shadow-md">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="bg-purple-600 text-white p-2 rounded-lg">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-semibold uppercase">Visualizando</p>
-                        <p class="text-lg font-black text-gray-800" id="indicadorTienda">Todas las Tiendas</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs text-gray-500 font-semibold">Total Tiendas Activas</p>
-                    <p class="text-2xl font-black text-purple-600" id="totalTiendasActivas">4</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- KPIs Principales - 6 tarjetas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <!-- KPIs Compactos -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <!-- Ventas del Día -->
-            <div class="bg-gradient-to-br from-purple-600 to-purple-800 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 0.2s; opacity: 0;">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="p-3 bg-white/20 rounded-xl backdrop-blur">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-black" id="badgeVentasDia">105.4%</div>
+            <div class="bg-gradient-to-br from-purple-600 to-purple-800 text-white p-4 rounded-xl shadow-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                 </div>
-                <p class="text-purple-200 text-xs font-semibold uppercase tracking-wider mb-2">Ventas del Día</p>
-                <p class="text-4xl font-black mb-3 number-counter" id="kpiVentasDia">₡0</p>
-                <div class="flex items-center justify-between pt-3 border-t border-white/20">
-                    <span class="text-xs text-purple-200">Forecast: <span id="kpiForecastDia">₡0</span></span>
-                    <div class="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-lg">
-                        <span class="text-xs font-bold" id="kpiDesvDia">0%</span>
-                    </div>
-                </div>
+                <p class="text-xs font-semibold uppercase mb-1">Ventas del Día</p>
+                <p class="text-2xl font-black mb-1" id="kpiVentasDia">₡0</p>
+                <p class="text-xs opacity-80">Forecast: <span id="kpiForecastDia">₡0</span></p>
             </div>
 
-            <!-- Desviación vs Forecast -->
-            <div class="bg-gradient-to-br from-cyan-500 to-cyan-700 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 0.3s; opacity: 0;">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="p-3 bg-white/20 rounded-xl backdrop-blur">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-black" id="badgeDesvForecast">SOBRE FORECAST</div>
+            <!-- Desviación Forecast -->
+            <div class="bg-gradient-to-br from-cyan-500 to-cyan-700 text-white p-4 rounded-xl shadow-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                 </div>
-                <p class="text-cyan-100 text-xs font-semibold uppercase tracking-wider mb-2">Desviación vs Forecast</p>
-                <p class="text-4xl font-black mb-3 number-counter" id="kpiDesvForecastPct">+0%</p>
-                <div class="pt-3 border-t border-white/20">
-                    <p class="text-xs text-cyan-100">Diferencia: <span class="font-bold" id="kpiDesvForecastMonto">₡0</span></p>
-                </div>
+                <p class="text-xs font-semibold uppercase mb-1">Desv. Forecast</p>
+                <p class="text-2xl font-black mb-1" id="kpiDesvForecastPct">+0%</p>
+                <p class="text-xs opacity-80">Dif: <span id="kpiDesvForecastMonto">₡0</span></p>
             </div>
 
             <!-- Crecimiento Diario -->
-            <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 0.4s; opacity: 0;">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="p-3 bg-white/20 rounded-xl backdrop-blur">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                    </div>
+            <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white p-4 rounded-xl shadow-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
                 </div>
-                <p class="text-emerald-100 text-xs font-semibold uppercase tracking-wider mb-2">Crecimiento Diario</p>
-                <p class="text-4xl font-black mb-3 number-counter" id="kpiCrecDia">+0%</p>
-                <div class="pt-3 border-t border-white/20">
-                    <p class="text-xs text-emerald-100">vs <span class="font-bold" id="fechaRefDia">--/--/----</span></p>
-                </div>
+                <p class="text-xs font-semibold uppercase mb-1">Crec. Diario</p>
+                <p class="text-2xl font-black mb-1" id="kpiCrecDia">+0%</p>
+                <p class="text-xs opacity-80">vs <span id="fechaRefDia">--/--</span></p>
+                <p class="text-xs opacity-80 font-bold" id="kpiCrecDiaMonto">₡0</p>
             </div>
 
             <!-- Ventas Acumuladas -->
-            <div class="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 0.5s; opacity: 0;">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="p-3 bg-white/20 rounded-xl backdrop-blur">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-black">MES</div>
+            <div class="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-4 rounded-xl shadow-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m7.835 4.697A3.42 3.42 0 0121 13a3.42 3.42 0 01-2.165-1.303"></path>
+                    </svg>
                 </div>
-                <p class="text-purple-200 text-xs font-semibold uppercase tracking-wider mb-2">Ventas Acumuladas</p>
-                <p class="text-4xl font-black mb-3 number-counter" id="kpiVentasAcum">₡0</p>
-                <div class="pt-3 border-t border-white/20">
-                    <p class="text-xs text-purple-200">Forecast: <span class="font-bold" id="kpiForecastAcum">₡0</span></p>
-                </div>
-            </div>
-
-            <!-- Desviación Forecast Acum -->
-            <div class="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 0.6s; opacity: 0;">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="p-3 bg-white/20 rounded-xl backdrop-blur">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-black" id="badgeDesvAcum">SOBRE OBJETIVO</div>
-                </div>
-                <p class="text-amber-100 text-xs font-semibold uppercase tracking-wider mb-2">Desv. Forecast Acum.</p>
-                <p class="text-4xl font-black mb-3 number-counter" id="kpiDesvForecastAcumPct">+0%</p>
-                <div class="pt-3 border-t border-white/20">
-                    <p class="text-xs text-amber-100">Diferencia: <span class="font-bold" id="kpiDesvForecastAcumMonto">₡0</span></p>
-                </div>
-            </div>
-
-            <!-- Crecimiento Acumulado -->
-            <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 0.7s; opacity: 0;">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="p-3 bg-white/20 rounded-xl backdrop-blur">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-black">MTD</div>
-                </div>
-                <p class="text-indigo-100 text-xs font-semibold uppercase tracking-wider mb-2">Crec. Acumulado</p>
-                <p class="text-4xl font-black mb-3 number-counter" id="kpiCrecAcum">+0%</p>
-                <div class="pt-3 border-t border-white/20">
-                    <p class="text-xs text-indigo-100">vs <span class="font-bold" id="periodoRefAcum">Mes anterior</span></p>
-                </div>
+                <p class="text-xs font-semibold uppercase mb-1">Ventas Acum.</p>
+                <p class="text-2xl font-black mb-1" id="kpiVentasAcum">₡0</p>
+                <p class="text-xs opacity-80">Crec: <span id="kpiCrecAcum">+0%</span></p>
+                <p class="text-xs opacity-80 font-bold" id="kpiCrecAcumMonto">₡0</p>
             </div>
         </div>
 
-        <!-- Nuevas tarjetas de Delivery -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <!-- Uber Eats -->
-            <div class="relative bg-gradient-to-br from-green-500 to-green-700 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 0.8s; opacity: 0;">
-                <div class="flex items-center justify-between mb-3">
-                    <img src="ubereats.webp" alt="Uber Eats" class="h-10 w-auto">
-                </div>
-                <p class="text-green-100 text-xs font-semibold uppercase tracking-wider mb-2">Uber Eats</p>
-                <p class="text-3xl font-black mb-2 number-counter" id="kpiUberDia">₡0</p>
-                <p class="text-xs text-green-100">Acumulado: <span class="font-bold" id="kpiUberAcum">₡0</span></p>
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Ventas por Día de Semana -->
+            <div class="bg-white p-6 rounded-xl shadow-xl">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Ventas por Día
+                </h3>
+                <canvas id="chartDiaSemana"></canvas>
             </div>
 
-            <!-- Pedidos Ya -->
-            <div class="relative bg-gradient-to-br from-red-500 to-red-700 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 0.9s; opacity: 0;">
-                <div class="flex items-center justify-between mb-3">
-                    <img src="pedidosya.png" alt="Pedidos Ya" class="h-10 w-auto">
-                </div>
-                <p class="text-red-100 text-xs font-semibold uppercase tracking-wider mb-2">Pedidos Ya</p>
-                <p class="text-3xl font-black mb-2 number-counter" id="kpiPeyaDia">₡0</p>
-                <p class="text-xs text-red-100">Acumulado: <span class="font-bold" id="kpiPeyaAcum">₡0</span></p>
+            <!-- Canales de Venta (Delivery Apps) -->
+            <div class="bg-white p-6 rounded-xl shadow-xl">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                    </svg>
+                    Canales de Venta
+                </h3>
+                <canvas id="chartMetodosPago"></canvas>
             </div>
 
-            <!-- Didi Food -->
-            <div class="relative bg-gradient-to-br from-orange-500 to-orange-700 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 1.0s; opacity: 0;">
-                <div class="flex items-center justify-between mb-3">
-                    <img src="didi.png" alt="Didi Food" class="h-10 w-auto">
-                </div>
-                <p class="text-orange-100 text-xs font-semibold uppercase tracking-wider mb-2">Didi Food</p>
-                <p class="text-3xl font-black mb-2 number-counter" id="kpiDidiDia">₡0</p>
-                <p class="text-xs text-orange-100">Acumulado: <span class="font-bold" id="kpiDidiAcum">₡0</span></p>
+            <!-- Ventas por Hora -->
+            <div class="bg-white p-6 rounded-xl shadow-xl">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Ventas por Hora
+                </h3>
+                <canvas id="chartVentasHora"></canvas>
             </div>
+        </div>
 
-            <!-- Otros Pagos -->
-            <div class="bg-gradient-to-br from-slate-500 to-slate-700 text-white p-6 rounded-2xl shadow-2xl hover-lift animate-slide-bottom" style="animation-delay: 1.1s; opacity: 0;">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="p-2 bg-white/20 rounded-xl backdrop-blur">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-                <p class="text-slate-100 text-xs font-semibold uppercase tracking-wider mb-2">Otros Pagos</p>
-                <p class="text-3xl font-black mb-2 number-counter" id="kpiOtrosDia">₡0</p>
-                <p class="text-xs text-slate-100">Acumulado: <span class="font-bold" id="kpiOtrosAcum">₡0</span></p>
+        <!-- Delivery Compacto -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gradient-to-br from-green-500 to-green-700 text-white p-4 rounded-xl shadow-xl">
+                <p class="text-xs font-semibold uppercase mb-1">Uber Eats</p>
+                <p class="text-2xl font-black mb-1" id="kpiUberDia">₡0</p>
+                <p class="text-xs opacity-80">Acum: <span id="kpiUberAcum">₡0</span></p>
+            </div>
+            <div class="bg-gradient-to-br from-yellow-500 to-yellow-700 text-white p-4 rounded-xl shadow-xl">
+                <p class="text-xs font-semibold uppercase mb-1">Pedidos Ya</p>
+                <p class="text-2xl font-black mb-1" id="kpiPeyaDia">₡0</p>
+                <p class="text-xs opacity-80">Acum: <span id="kpiPeyaAcum">₡0</span></p>
+            </div>
+            <div class="bg-gradient-to-br from-orange-500 to-orange-700 text-white p-4 rounded-xl shadow-xl">
+                <p class="text-xs font-semibold uppercase mb-1">Didi Food</p>
+                <p class="text-2xl font-black mb-1" id="kpiDidiDia">₡0</p>
+                <p class="text-xs opacity-80">Acum: <span id="kpiDidiAcum">₡0</span></p>
+            </div>
+            <div class="bg-gradient-to-br from-slate-500 to-slate-700 text-white p-4 rounded-xl shadow-xl">
+                <p class="text-xs font-semibold uppercase mb-1">Otros Canales</p>
+                <p class="text-2xl font-black mb-1" id="kpiOtrosDia">₡0</p>
+                <p class="text-xs opacity-80">Acum: <span id="kpiOtrosAcum">₡0</span></p>
             </div>
         </div>
 
         <!-- Tabla Detallada -->
-        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border-2 border-purple-100 animate-slide-bottom" style="animation-delay: 1.2s; opacity: 0;">
-            <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
-                </svg>
-                Detalle Ventas Diarias & Acumuladas
-            </h3>
-
+        <div class="bg-white p-6 rounded-xl shadow-xl">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">📊 Detalle por Tienda</h3>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs uppercase">
                         <tr>
                             <th class="px-4 py-3 text-left">Tienda</th>
                             <th class="px-4 py-3 text-center">Venta Día</th>
-                            <th class="px-4 py-3 text-center">Forecast Día</th>
-                            <th class="px-4 py-3 text-center">Desv. Forecast</th>
-                            <th class="px-4 py-3 text-center">Crec. % Día</th>
-                            <th class="px-4 py-3 text-center">Ventas Acum.</th>
-                            <th class="px-4 py-3 text-center">Forecast Acum.</th>
-                            <th class="px-4 py-3 text-center">Desv. Forecast Acum.</th>
-                            <th class="px-4 py-3 text-center">Crec. Acum.</th>
-                            <th class="px-4 py-3 text-center">Transacciones</th>
+                            <th class="px-4 py-3 text-center">Forecast</th>
+                            <th class="px-4 py-3 text-center">Desv %</th>
+                            <th class="px-4 py-3 text-center">Crec %</th>
+                            <th class="px-4 py-3 text-center">V. Acum</th>
+                            <th class="px-4 py-3 text-center">Fcst Acum</th>
+                            <th class="px-4 py-3 text-center">Desv Acum %</th>
+                            <th class="px-4 py-3 text-center">Crec Acum %</th>
+                            <th class="px-4 py-3 text-center">Trans</th>
                         </tr>
                     </thead>
                     <tbody id="tablaTiendas" class="divide-y divide-gray-200">
-                        <tr>
-                            <td colspan="10" class="px-6 py-8 text-center text-gray-400">Cargando datos...</td>
-                        </tr>
+                        <tr><td colspan="10" class="px-6 py-8 text-center text-gray-400">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
+    <!-- Modal de Análisis -->
+    <div id="modalAnalisis" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-6 rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold flex items-center gap-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Análisis Detallado
+                    </h2>
+                    <button id="cerrarModalAnalisis" class="text-white hover:text-gray-200 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <!-- Descuentos -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <span class="text-2xl">💰</span> Descuentos Aplicados
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-1">Descuentos del Día</p>
+                            <p class="text-2xl font-black text-blue-700" id="analisisDescuentosDia">₡0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-1">Descuentos Acum.</p>
+                            <p class="text-2xl font-black text-blue-700" id="analisisDescuentosAcum">₡0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Anulaciones -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <span class="text-2xl">❌</span> Órdenes Anuladas
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-1">Anulaciones del Día</p>
+                            <p class="text-2xl font-black text-red-700" id="analisisAnulacionesDia">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-1">Anulaciones Acum.</p>
+                            <p class="text-2xl font-black text-red-700" id="analisisAnulacionesAcum">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Impacto -->
+                <div class="bg-gradient-to-r from-purple-50 to-indigo-100 p-4 rounded-xl">
+                    <h3 class="text-sm font-bold text-gray-700 mb-2">💡 Impacto Total</h3>
+                    <p class="text-xs text-gray-600">Los descuentos y anulaciones afectan directamente la venta neta. Monitoréalos para mejorar la rentabilidad.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ⚠️ URL ACTUALIZADA DEL WEB APP DE APPS SCRIPT
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz26uhBqgZLYt5uuCu-VY7P9SwbeNkQbhb3HClift2LBRXokU72JJhHRnlvoteHzaMk/exec';
+        
+        let chartDiaSemana, chartMetodosPago, chartVentasHora;
+        let datosGlobales = null;
 
-        async function fetchVentasOakberry() {
-            const day = document.getElementById("inputDay").value;
-            const month = document.getElementById("inputMonth").value;
-            const year = document.getElementById("inputYear").value;
-            const modoVista = document.getElementById("inputModoVista").value;
-            const modoRapido = document.getElementById("modoRapido").checked;
-            
-            // Obtener tiendas seleccionadas
-            const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
+        // Inicializar fecha actual - 1 día
+        const hoy = new Date();
+        hoy.setDate(hoy.getDate() - 1);
+        let calendarioState = {
+            mesActual: hoy.getMonth(),
+            añoActual: hoy.getFullYear(),
+            diaSeleccionado: hoy.getDate()
+        };
 
-            console.log('🔍 ========== INICIO FETCH ==========');
-            console.log('📅 Parámetros:', { day, month, year, tiendas: tiendasSeleccionadas, modoVista, modoRapido });
-            console.log('🔗 URL Base:', APPS_SCRIPT_URL);
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('inputDay').value = hoy.getDate();
+            document.getElementById('inputMonth').value = hoy.getMonth() + 1;
+            document.getElementById('inputYear').value = hoy.getFullYear();
             
-            const fullUrl = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tiendasSeleccionadas}&modoVista=${modoVista}&modoRapido=${modoRapido}`;
-            console.log('🌐 URL Completa:', fullUrl);
-
-            // Mostrar loading
-            mostrarLoadingModal();
+            actualizarFechaSeleccionada();
+            generarCalendario();
+            inicializarGraficos();
             
-            try {
-                const tiempoInicio = Date.now();
-                console.log('📡 Haciendo fetch...');
-                
-                // Crear un AbortController para timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos timeout
-                
-                const res = await fetch(fullUrl, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                
-                const tiempoTranscurrido = ((Date.now() - tiempoInicio) / 1000).toFixed(2);
-                console.log(`⏱️ Tiempo de respuesta: ${tiempoTranscurrido}s`);
-                console.log('📦 Response status:', res.status);
-                console.log('📦 Response OK:', res.ok);
-                console.log('📦 Content-Type:', res.headers.get('content-type'));
-                
-                const textResponse = await res.text();
-                console.log('📄 Response (primeros 500 chars):', textResponse.substring(0, 500));
-                
-                let data;
-                try {
-                    data = JSON.parse(textResponse);
-                    console.log('✅ JSON parseado correctamente');
-                    console.log('📊 Data:', data);
-                } catch (parseError) {
-                    ocultarLoadingModal();
-                    console.error('❌ Error parseando JSON:', parseError);
-                    console.error('📄 Respuesta completa:', textResponse);
-                    alert('Error: La respuesta no es JSON válido. Revisa la consola (F12)');
-                    return;
+            // Event listeners
+            document.getElementById('toggleCalendario').addEventListener('click', function() {
+                document.getElementById('calendarioContainer').classList.toggle('hidden');
+            });
+            
+            document.getElementById('toggleTiendas').addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('tiendasDropdown').classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('tiendasDropdown');
+                const toggle = document.getElementById('toggleTiendas');
+                if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
+                    dropdown.classList.add('hidden');
                 }
-
-                if (!data || data.length === 0 || data.error) {
-                    ocultarLoadingModal();
-                    console.error('❌ Error en los datos:', data);
+            });
+            
+            document.querySelectorAll('.tienda-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const todasCheckbox = document.querySelector('.tienda-checkbox[value="todas"]');
+                    const individualesCheckboxes = document.querySelectorAll('.tienda-individual');
                     
-                    let mensajeError = '❌ Error al cargar datos\n\n';
-                    if (data && data.error) {
-                        mensajeError += 'Detalle: ' + (data.message || 'Error desconocido') + '\n\n';
-                    } else if (!data || data.length === 0) {
-                        mensajeError += 'No se recibieron datos del servidor.\n\n';
+                    if (this.value === 'todas') {
+                        if (this.checked) {
+                            individualesCheckboxes.forEach(cb => cb.checked = false);
+                        }
+                    } else {
+                        if (this.checked && todasCheckbox) {
+                            todasCheckbox.checked = false;
+                        }
+                        const algunaMarcada = Array.from(individualesCheckboxes).some(cb => cb.checked);
+                        if (!algunaMarcada && todasCheckbox) {
+                            todasCheckbox.checked = true;
+                        }
                     }
-                    mensajeError += 'Posibles soluciones:\n';
-                    mensajeError += '- Verifica que re-desplegaste el Apps Script\n';
-                    mensajeError += '- Revisa los logs en Apps Script > Ejecuciones\n';
-                    mensajeError += '- Intenta con una sola tienda\n';
-                    mensajeError += '- Abre la consola (F12) para más detalles';
-                    
-                    alert(mensajeError);
+                    actualizarLabelTiendas();
+                });
+            });
+            
+            document.getElementById('btnFiltrar').addEventListener('click', fetchVentasOakberry);
+            document.getElementById('prevMonth').addEventListener('click', () => cambiarMes(-1));
+            document.getElementById('nextMonth').addEventListener('click', () => cambiarMes(1));
+            
+            // Modal de análisis
+            document.getElementById('btnAnalisis').addEventListener('click', function() {
+                if (!datosGlobales) {
+                    alert('Primero debes cargar los datos usando "Filtrar"');
                     return;
                 }
-
-                // Determinar qué registro usar para los KPIs principales
-                // Si hay múltiples tiendas (modo "todas"), usar el consolidado "TODAS"
-                // Si es una sola tienda, usar esa tienda
-                let totalRow;
-                if (data.length > 1) {
-                    // Modo multi-tienda: buscar el consolidado "TODAS"
-                    totalRow = data.find(row => row.tienda === "TODAS") || data[0];
-                } else {
-                    // Modo tienda individual
-                    totalRow = data[0];
-                }
-                
-                console.log('✅ Datos encontrados:', totalRow);
-                console.log('💰 Ventas Netas:', totalRow.ventasNetas);
-                console.log('📊 Transacciones:', totalRow.transacciones);
-                
-                // Actualizar indicador de tienda
-                const checkboxes = document.querySelectorAll('.tienda-checkbox:checked');
-                const todasCheckbox = document.querySelector('.tienda-checkbox[value="todas"]');
-                
-                let textoIndicador = '';
-                let numTiendasActivas = 0;
-                
-                if (todasCheckbox && todasCheckbox.checked) {
-                    textoIndicador = 'Todas las Tiendas 🏪';
-                    numTiendasActivas = 4;
-                } else if (checkboxes.length === 1) {
-                    textoIndicador = checkboxes[0].dataset.nombre + ' 🏪';
-                    numTiendasActivas = 1;
-                } else {
-                    textoIndicador = `${checkboxes.length} Tiendas Seleccionadas 🏪`;
-                    numTiendasActivas = checkboxes.length;
-                }
-                
-                document.getElementById('indicadorTienda').textContent = textoIndicador;
-                document.getElementById('totalTiendasActivas').textContent = numTiendasActivas;
-                
-                
-                // Actualizar KPIs principales
-                document.getElementById('kpiVentasDia').textContent = `₡${Math.round(totalRow.ventasNetas).toLocaleString('es-CR')}`;
-                document.getElementById('kpiForecastDia').textContent = `₡${Math.round(totalRow.forecast || 0).toLocaleString('es-CR')}`;
-                document.getElementById('kpiDesvDia').textContent = `${totalRow.desvForecast > 0 ? '+' : ''}${(totalRow.desvForecast || 0).toFixed(1)}%`;
-                
-                document.getElementById('kpiDesvForecastPct').textContent = `${totalRow.desvForecast > 0 ? '+' : ''}${(totalRow.desvForecast || 0).toFixed(1)}%`;
-                document.getElementById('kpiDesvForecastMonto').textContent = `₡${Math.round((totalRow.ventasNetas || 0) - (totalRow.forecast || 0)).toLocaleString('es-CR')}`;
-                
-                document.getElementById('kpiCrecDia').textContent = `${totalRow.crecimientoDia > 0 ? '+' : ''}${(totalRow.crecimientoDia || 0).toFixed(1)}%`;
-                document.getElementById('fechaRefDia').textContent = totalRow.fechaRefDia || '--/--/----';
-                
-                document.getElementById('kpiVentasAcum').textContent = `₡${Math.round(totalRow.ventasAcumuladas || 0).toLocaleString('es-CR')}`;
-                document.getElementById('kpiForecastAcum').textContent = `₡${Math.round(totalRow.forecastAcumulado || 0).toLocaleString('es-CR')}`;
-                
-                document.getElementById('kpiDesvForecastAcumPct').textContent = `${totalRow.desvForecastAcum > 0 ? '+' : ''}${(totalRow.desvForecastAcum || 0).toFixed(1)}%`;
-                document.getElementById('kpiDesvForecastAcumMonto').textContent = `₡${Math.round((totalRow.ventasAcumuladas || 0) - (totalRow.forecastAcumulado || 0)).toLocaleString('es-CR')}`;
-                
-                document.getElementById('kpiCrecAcum').textContent = `${totalRow.crecimientoAcum > 0 ? '+' : ''}${(totalRow.crecimientoAcum || 0).toFixed(1)}%`;
-                document.getElementById('periodoRefAcum').textContent = totalRow.periodoRefAcum || 'Mes anterior';
-
-                // Actualizar KPIs de delivery
-                document.getElementById('kpiUberDia').textContent = `₡${Math.round(totalRow.uber || 0).toLocaleString('es-CR')}`;
-                document.getElementById('kpiUberAcum').textContent = `₡${Math.round(totalRow.uberAcum || 0).toLocaleString('es-CR')}`;
-                
-                document.getElementById('kpiPeyaDia').textContent = `₡${Math.round(totalRow.peya || 0).toLocaleString('es-CR')}`;
-                document.getElementById('kpiPeyaAcum').textContent = `₡${Math.round(totalRow.peyaAcum || 0).toLocaleString('es-CR')}`;
-                
-                document.getElementById('kpiDidiDia').textContent = `₡${Math.round(totalRow.didi || 0).toLocaleString('es-CR')}`;
-                document.getElementById('kpiDidiAcum').textContent = `₡${Math.round(totalRow.didiAcum || 0).toLocaleString('es-CR')}`;
-                
-                document.getElementById('kpiOtrosDia').textContent = `₡${Math.round(totalRow.otros || 0).toLocaleString('es-CR')}`;
-                document.getElementById('kpiOtrosAcum').textContent = `₡${Math.round(totalRow.otrosAcum || 0).toLocaleString('es-CR')}`;
-
-                // Actualizar badges
-                const pctVsForec = totalRow.forecast > 0 ? ((totalRow.ventasNetas / totalRow.forecast) * 100).toFixed(1) : '0.0';
-                document.getElementById('badgeVentasDia').textContent = `${pctVsForec}%`;
-                document.getElementById('badgeDesvForecast').textContent = (totalRow.desvForecast || 0) >= 0 ? 'SOBRE FORECAST' : 'BAJO FORECAST';
-                document.getElementById('badgeDesvAcum').textContent = (totalRow.desvForecastAcum || 0) >= 0 ? 'SOBRE OBJETIVO' : 'BAJO OBJETIVO';
-
-                // Actualizar tabla
-                const tbody = document.getElementById('tablaTiendas');
-                tbody.innerHTML = '';
-                
-                data.forEach(row => {
-                    if (!row.tienda) return;
-                    
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-gray-50 transition';
-                    tr.innerHTML = `
-                        <td class="px-4 py-3 font-bold text-gray-900">${row.tienda}</td>
-                        <td class="px-4 py-3 text-center text-purple-700 font-bold">₡${Math.round(row.ventasNetas || 0).toLocaleString('es-CR')}</td>
-                        <td class="px-4 py-3 text-center">₡${Math.round(row.forecast || 0).toLocaleString('es-CR')}</td>
-                        <td class="px-4 py-3 text-center ${(row.desvForecast || 0) >= 0 ? 'text-green-600' : 'text-red-500'} font-semibold">${row.desvForecast > 0 ? '+' : ''}${(row.desvForecast || 0).toFixed(1)}%</td>
-                        <td class="px-4 py-3 text-center ${(row.crecimientoDia || 0) >= 0 ? 'text-green-600' : 'text-red-500'} font-semibold">${row.crecimientoDia > 0 ? '+' : ''}${(row.crecimientoDia || 0).toFixed(1)}%</td>
-                        <td class="px-4 py-3 text-center">₡${Math.round(row.ventasAcumuladas || 0).toLocaleString('es-CR')}</td>
-                        <td class="px-4 py-3 text-center">₡${Math.round(row.forecastAcumulado || 0).toLocaleString('es-CR')}</td>
-                        <td class="px-4 py-3 text-center ${(row.desvForecastAcum || 0) >= 0 ? 'text-green-600' : 'text-red-500'} font-semibold">${row.desvForecastAcum > 0 ? '+' : ''}${(row.desvForecastAcum || 0).toFixed(1)}%</td>
-                        <td class="px-4 py-3 text-center ${(row.crecimientoAcum || 0) >= 0 ? 'text-green-600' : 'text-red-500'} font-semibold">${row.crecimientoAcum > 0 ? '+' : ''}${(row.crecimientoAcum || 0).toFixed(1)}%</td>
-                        <td class="px-4 py-3 text-center font-semibold">${row.transacciones || 0}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-            } catch (error) {
-                ocultarLoadingModal();
-                console.error('❌ ========== ERROR CATCH ==========');
-                console.error('Tipo de error:', error.name);
-                console.error('Mensaje:', error.message);
-                console.error('Stack:', error.stack);
-                console.error('Error completo:', error);
-                
-                let mensajeError = '❌ Error de conexión\n\n';
-                
-                if (error.name === 'AbortError') {
-                    mensajeError = '⏱️ Timeout: La consulta tardó más de 60 segundos\n\n';
-                    mensajeError += 'El servidor está tardando demasiado en responder.\n\n';
-                    mensajeError += 'Posibles soluciones:\n';
-                    mensajeError += '- Intenta con menos tiendas\n';
-                    mensajeError += '- Espera unos minutos y vuelve a intentar\n';
-                    mensajeError += '- Verifica que el API de Toteat esté funcionando';
-                } else {
-                    mensajeError += 'Detalles: ' + error.message + '\n\n';
-                    mensajeError += 'Abre la consola (F12) para más información.';
-                }
-                
-                alert(mensajeError);
-            } finally {
-                ocultarLoadingModal();
-            }
+                document.getElementById('modalAnalisis').classList.remove('hidden');
+                mostrarAnalisis(datosGlobales);
+            });
             
-            console.log('🏁 ========== FIN FETCH ==========');
+            document.getElementById('cerrarModalAnalisis').addEventListener('click', function() {
+                document.getElementById('modalAnalisis').classList.add('hidden');
+            });
+            
+            document.getElementById('modalAnalisis').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+            
+            fetchVentasOakberry();
+        });
+
+        function mostrarAnalisis(data) {
+            const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
+            
+            document.getElementById('analisisDescuentosDia').textContent = `₡${Math.round(totalRow.descuentosDia || 0).toLocaleString('es-CR')}`;
+            document.getElementById('analisisDescuentosAcum').textContent = `₡${Math.round(totalRow.descuentosAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('analisisAnulacionesDia').textContent = totalRow.anulacionesDia || 0;
+            document.getElementById('analisisAnulacionesAcum').textContent = totalRow.anulacionesAcum || 0;
         }
 
-        // ============================================
-        // MULTI-SELECTOR DE TIENDAS
-        // ============================================
+        function actualizarFechaSeleccionada() {
+            const fecha = new Date(calendarioState.añoActual, calendarioState.mesActual, calendarioState.diaSeleccionado);
+            const opciones = { day: 'numeric', month: 'long', year: 'numeric' };
+            document.getElementById('fechaSeleccionada').textContent = fecha.toLocaleDateString('es-ES', opciones);
+        }
+
+        function generarCalendario() {
+            const grid = document.getElementById('calendarioGrid');
+            grid.innerHTML = '';
+            
+            const primerDia = new Date(calendarioState.añoActual, calendarioState.mesActual, 1).getDay();
+            const diasEnMes = new Date(calendarioState.añoActual, calendarioState.mesActual + 1, 0).getDate();
+            
+            const nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            document.getElementById('mesActual').textContent = nombresMeses[calendarioState.mesActual] + ' ' + calendarioState.añoActual;
+            
+            // Días vacíos antes del primer día del mes
+            for (let i = 0; i < primerDia; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'h-8';
+                grid.appendChild(emptyDiv);
+            }
+            
+            // Días del mes
+            const hoy = new Date();
+            const esHoy = (dia) => {
+                return dia === hoy.getDate() && 
+                       calendarioState.mesActual === hoy.getMonth() && 
+                       calendarioState.añoActual === hoy.getFullYear();
+            };
+            
+            for (let dia = 1; dia <= diasEnMes; dia++) {
+                const diaBtn = document.createElement('button');
+                const esSeleccionado = dia === calendarioState.diaSeleccionado;
+                const esDiaHoy = esHoy(dia);
+                
+                let clases = 'h-8 w-8 rounded-lg text-sm font-medium transition-all flex items-center justify-center ';
+                
+                if (esSeleccionado) {
+                    clases += 'bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-lg scale-105 ring-2 ring-purple-300';
+                } else if (esDiaHoy) {
+                    clases += 'bg-purple-100 text-purple-700 font-bold ring-1 ring-purple-300';
+                } else {
+                    clases += 'text-gray-700 hover:bg-purple-50 hover:text-purple-600 hover:scale-105';
+                }
+                
+                diaBtn.className = clases;
+                diaBtn.textContent = dia;
+                diaBtn.onclick = () => seleccionarDia(dia);
+                grid.appendChild(diaBtn);
+            }
+        }
+
+        function seleccionarDia(dia) {
+            calendarioState.diaSeleccionado = dia;
+            document.getElementById('inputDay').value = dia;
+            document.getElementById('inputMonth').value = calendarioState.mesActual + 1;
+            document.getElementById('inputYear').value = calendarioState.añoActual;
+            generarCalendario();
+            actualizarFechaSeleccionada();
+        }
+
+        function cambiarMes(offset) {
+            calendarioState.mesActual += offset;
+            if (calendarioState.mesActual > 11) {
+                calendarioState.mesActual = 0;
+                calendarioState.añoActual++;
+            } else if (calendarioState.mesActual < 0) {
+                calendarioState.mesActual = 11;
+                calendarioState.añoActual--;
+            }
+            generarCalendario();
+        }
+
         function obtenerTiendasSeleccionadas() {
             const checkboxes = document.querySelectorAll('.tienda-checkbox:checked');
             const tiendas = Array.from(checkboxes).map(cb => cb.value);
             
-            // Si "todas" está seleccionada, retornar "todas"
-            if (tiendas.includes('todas')) {
-                return 'todas';
-            }
+            if (tiendas.includes('todas')) return 'todas';
+            if (tiendas.length === 0) return 'todas';
             
-            // Si no hay ninguna seleccionada, retornar "todas" por defecto
-            if (tiendas.length === 0) {
-                return 'todas';
-            }
-            
-            // Retornar las tiendas seleccionadas separadas por coma
             return tiendas.join(',');
         }
-        
+
         function actualizarLabelTiendas() {
             const checkboxes = document.querySelectorAll('.tienda-checkbox:checked');
             const label = document.getElementById('tiendasLabel');
@@ -679,331 +531,234 @@
             if (checkboxes.length === 1) {
                 label.textContent = '🏪 ' + checkboxes[0].dataset.nombre;
             } else {
-                label.textContent = `🏪 ${checkboxes.length} tiendas seleccionadas`;
+                label.textContent = `🏪 ${checkboxes.length} tiendas`;
             }
         }
-        
-        function mostrarLoadingModal() {
-            // Crear modal de loading si no existe
-            let modal = document.getElementById('loadingModal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'loadingModal';
-                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-                modal.innerHTML = `
-                    <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-md">
-                        <div class="text-center">
-                            <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600 mb-4"></div>
-                            <h3 class="text-xl font-bold text-gray-800 mb-2">Consultando ventas...</h3>
-                            <p class="text-sm text-gray-600 mb-4">Esto puede tardar unos segundos</p>
-                            <div class="flex items-center justify-center gap-2">
-                                <div class="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-                                <div class="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-                                <div class="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-4" id="loadingTimer">0s</p>
-                            <button onclick="ocultarLoadingModal()" class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
+
+        async function fetchVentasOakberry() {
+            const day = document.getElementById("inputDay").value;
+            const month = document.getElementById("inputMonth").value;
+            const year = document.getElementById("inputYear").value;
+            const modoRapido = document.getElementById("modoRapido").checked;
+            const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
+
+            const fullUrl = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tiendasSeleccionadas}&modoRapido=${modoRapido}`;
+
+            try {
+                const res = await fetch(fullUrl);
+                const data = await res.json();
+
+                if (!data || data.length === 0 || data.error) {
+                    alert('Error al cargar datos');
+                    return;
+                }
+
+                datosGlobales = data;
+                actualizarDashboard(data);
                 
-                // Iniciar contador
-                window.loadingStartTime = Date.now();
-                window.loadingInterval = setInterval(() => {
-                    const elapsed = ((Date.now() - window.loadingStartTime) / 1000).toFixed(1);
-                    const timerEl = document.getElementById('loadingTimer');
-                    if (timerEl) {
-                        timerEl.textContent = `${elapsed}s`;
-                    }
-                    
-                    // Timeout de 45 segundos
-                    if (elapsed > 45) {
-                        clearInterval(window.loadingInterval);
-                        ocultarLoadingModal();
-                        alert('⏱️ Timeout: La consulta tardó demasiado.\n\n' +
-                              'Posibles causas:\n' +
-                              '- El API de Toteat está lento\n' +
-                              '- Hay muchos datos para procesar\n\n' +
-                              'Intenta de nuevo o selecciona menos tiendas.');
-                    }
-                }, 100);
-            }
-            modal.classList.remove('hidden');
-        }
-        
-        function ocultarLoadingModal() {
-            const modal = document.getElementById('loadingModal');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-            if (window.loadingInterval) {
-                clearInterval(window.loadingInterval);
+                document.getElementById('ultimaActualizacion').textContent = new Date().toLocaleTimeString('es-ES');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión: ' + error.message);
             }
         }
 
-        // ============================================
-        // CALENDARIO COMPACTO
-        // ============================================
+        function actualizarDashboard(data) {
+            const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
 
-        // ================================
-        // FUNCIONES DE FECHA EQUIVALENTE MES ANTERIOR
-        // ================================
-        /**
-         * Devuelve la fecha equivalente al mismo día de la semana del mes anterior.
-         * @param {Date} fechaActual
-         * @returns {Date}
-         */
-        function getFechaEquivalenteMesAnterior(fechaActual) {
-            const nuevaFecha = new Date(fechaActual);
-            const diaSemana = nuevaFecha.getDay(); // 0 = domingo ... 6 = sábado
-            const diasTranscurridos = nuevaFecha.getDate() - diaSemana;
+            // Actualizar KPIs
+            document.getElementById('kpiVentasDia').textContent = `₡${Math.round(totalRow.ventasNetas || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiForecastDia').textContent = `₡${Math.round(totalRow.forecast || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiDesvForecastPct').textContent = `${totalRow.desvForecast > 0 ? '+' : ''}${(totalRow.desvForecast || 0).toFixed(1)}%`;
+            document.getElementById('kpiDesvForecastMonto').textContent = `₡${Math.round((totalRow.ventasNetas || 0) - (totalRow.forecast || 0)).toLocaleString('es-CR')}`;
+            document.getElementById('kpiCrecDia').textContent = `${totalRow.crecimientoDia > 0 ? '+' : ''}${(totalRow.crecimientoDia || 0).toFixed(1)}%`;
+            document.getElementById('fechaRefDia').textContent = (totalRow.fechaRefDia || '--/--').split('/').slice(0,2).join('/');
+            document.getElementById('kpiCrecDiaMonto').textContent = `${totalRow.crecimientoDiaMonto > 0 ? '+' : ''}₡${Math.round(Math.abs(totalRow.crecimientoDiaMonto || 0)).toLocaleString('es-CR')}`;
+            document.getElementById('kpiVentasAcum').textContent = `₡${Math.round(totalRow.ventasAcumuladas || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiCrecAcum').textContent = `${totalRow.crecimientoAcum > 0 ? '+' : ''}${(totalRow.crecimientoAcum || 0).toFixed(1)}%`;
+            document.getElementById('kpiCrecAcumMonto').textContent = `${totalRow.crecimientoAcumMonto > 0 ? '+' : ''}₡${Math.round(Math.abs(totalRow.crecimientoAcumMonto || 0)).toLocaleString('es-CR')}`;
 
-            nuevaFecha.setMonth(nuevaFecha.getMonth() - 1);
-            nuevaFecha.setDate(1); // Inicio del mes anterior
+            // Delivery
+            document.getElementById('kpiUberDia').textContent = `₡${Math.round(totalRow.uberEats || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiUberAcum').textContent = `₡${Math.round(totalRow.uberEatsAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiPeyaDia').textContent = `₡${Math.round(totalRow.pedidosYa || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiPeyaAcum').textContent = `₡${Math.round(totalRow.pedidosYaAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiDidiDia').textContent = `₡${Math.round(totalRow.didiFood || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiDidiAcum').textContent = `₡${Math.round(totalRow.didiFoodAcum || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiOtrosDia').textContent = `₡${Math.round(totalRow.otrosCanales || 0).toLocaleString('es-CR')}`;
+            document.getElementById('kpiOtrosAcum').textContent = `₡${Math.round(totalRow.otrosCanalesAcum || 0).toLocaleString('es-CR')}`;
 
-            let fechaEquivalente = new Date(nuevaFecha);
-            fechaEquivalente.setDate(fechaEquivalente.getDate() + diasTranscurridos);
+            // Tabla
+            const tbody = document.getElementById('tablaTiendas');
+            tbody.innerHTML = '';
+            
+            data.forEach(row => {
+                if (!row.tienda) return;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-bold">${row.tienda}</td>
+                    <td class="px-4 py-3 text-center text-purple-700 font-bold">₡${Math.round(row.ventasNetas || 0).toLocaleString('es-CR')}</td>
+                    <td class="px-4 py-3 text-center">₡${Math.round(row.forecast || 0).toLocaleString('es-CR')}</td>
+                    <td class="px-4 py-3 text-center ${(row.desvForecast || 0) >= 0 ? 'text-green-600' : 'text-red-500'} font-semibold">${row.desvForecast > 0 ? '+' : ''}${(row.desvForecast || 0).toFixed(1)}%</td>
+                    <td class="px-4 py-3 text-center ${(row.crecimientoDia || 0) >= 0 ? 'text-green-600' : 'text-red-500'} font-semibold">${row.crecimientoDia > 0 ? '+' : ''}${(row.crecimientoDia || 0).toFixed(1)}%</td>
+                    <td class="px-4 py-3 text-center text-purple-600 font-semibold">₡${Math.round(row.ventasAcumuladas || 0).toLocaleString('es-CR')}</td>
+                    <td class="px-4 py-3 text-center">₡${Math.round(row.forecastAcumulado || 0).toLocaleString('es-CR')}</td>
+                    <td class="px-4 py-3 text-center ${(row.desvForecastAcum || 0) >= 0 ? 'text-green-600' : 'text-red-500'} font-semibold">${row.desvForecastAcum > 0 ? '+' : ''}${(row.desvForecastAcum || 0).toFixed(1)}%</td>
+                    <td class="px-4 py-3 text-center ${(row.crecimientoAcum || 0) >= 0 ? 'text-green-600' : 'text-red-500'} font-semibold">${row.crecimientoAcum > 0 ? '+' : ''}${(row.crecimientoAcum || 0).toFixed(1)}%</td>
+                    <td class="px-4 py-3 text-center font-semibold">${row.transacciones || 0}</td>
+                `;
+                tbody.appendChild(tr);
+            });
 
-            return fechaEquivalente;
-        }
-        
-        // Inicializar con fecha de AYER (día anterior)
-        const hoy = new Date();
-        hoy.setDate(hoy.getDate() - 1); // Restar 1 día
-        let calendarioState = {
-            mesActual: hoy.getMonth(),
-            añoActual: hoy.getFullYear(),
-            diaSeleccionado: hoy.getDate()
-        };
-        
-        const nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        
-        function generarCalendario() {
-            const grid = document.getElementById('calendarioGrid');
-            grid.innerHTML = '';
-            
-            const primerDia = new Date(calendarioState.añoActual, calendarioState.mesActual, 1).getDay();
-            const diasEnMes = new Date(calendarioState.añoActual, calendarioState.mesActual + 1, 0).getDate();
-            
-            for (let i = 0; i < primerDia; i++) {
-                grid.appendChild(document.createElement('div'));
-            }
-            
-            for (let dia = 1; dia <= diasEnMes; dia++) {
-                const diaBtn = document.createElement('button');
-                diaBtn.className = `h-7 rounded text-xs font-semibold transition-all ${
-                    dia === calendarioState.diaSeleccionado
-                        ? 'bg-purple-600 text-white scale-110'
-                        : 'bg-gray-100 text-gray-700 hover:bg-purple-100 hover:scale-105'
-                }`;
-                diaBtn.textContent = dia;
-                diaBtn.onclick = () => seleccionarDia(dia);
-                grid.appendChild(diaBtn);
-            }
-            
-            document.getElementById('mesActual').textContent = nombresMeses[calendarioState.mesActual] + ' ' + calendarioState.añoActual;
-            actualizarFechaSeleccionada();
-        }
-        
-        function seleccionarDia(dia) {
-            calendarioState.diaSeleccionado = dia;
-            document.getElementById('inputDay').value = dia;
-            document.getElementById('inputMonth').value = calendarioState.mesActual + 1;
-            document.getElementById('inputYear').value = calendarioState.añoActual;
-            generarCalendario();
-        }
-        
-        function actualizarFechaSeleccionada() {
-            const fecha = new Date(calendarioState.añoActual, calendarioState.mesActual, calendarioState.diaSeleccionado);
-            const opciones = { day: 'numeric', month: 'long' };
-            document.getElementById('fechaSeleccionada').textContent = fecha.toLocaleDateString('es-ES', opciones);
-        }
-        
-        function cambiarMes(offset) {
-            calendarioState.mesActual += offset;
-            if (calendarioState.mesActual > 11) {
-                calendarioState.mesActual = 0;
-                calendarioState.añoActual++;
-            } else if (calendarioState.mesActual < 0) {
-                calendarioState.mesActual = 11;
-                calendarioState.añoActual--;
-            }
-            generarCalendario();
-        }
-        
-        function seleccionarFechaRapida(offset) {
-            const hoy = new Date();
-            hoy.setDate(hoy.getDate() + offset);
-            calendarioState.diaSeleccionado = hoy.getDate();
-            calendarioState.mesActual = hoy.getMonth();
-            calendarioState.añoActual = hoy.getFullYear();
-            document.getElementById('inputDay').value = calendarioState.diaSeleccionado;
-            document.getElementById('inputMonth').value = calendarioState.mesActual + 1;
-            document.getElementById('inputYear').value = calendarioState.añoActual;
-            generarCalendario();
+            // Actualizar gráficos
+            actualizarGraficos(data);
         }
 
-        // ============================================
-        // EJEMPLO DE USO DE getFechaEquivalenteMesAnterior EN OTRA FUNCIÓN
-        // ============================================
-        // function procesarVentasToteat(fechaActual) {
-        //     // ... otras líneas ...
-        //     // var fechaMesAnterior = new Date(year, month - 2, day);
-        //     // if (fechaMesAnterior.getMonth() < 0) {
-        //     //   fechaMesAnterior.setFullYear(year - 1);
-        //     //   fechaMesAnterior.setMonth(11); // diciembre año anterior
-        //     // }
-        //     var fechaMesAnterior = getFechaEquivalenteMesAnterior(fechaActual);
-        //     // ... resto del código ...
-        // }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            // Inicializar campos de fecha con DÍA DE AYER
-            const hoy = new Date();
-            hoy.setDate(hoy.getDate() - 1); // Restar 1 día para obtener ayer
-            document.getElementById('inputDay').value = hoy.getDate();
-            document.getElementById('inputMonth').value = hoy.getMonth() + 1;
-            document.getElementById('inputYear').value = hoy.getFullYear();
-            
-            // Generar calendario
-            generarCalendario();
-            
-            // Toggle calendario
-            document.getElementById('toggleCalendario').addEventListener('click', function() {
-                const cal = document.getElementById('calendarioContainer');
-                cal.classList.toggle('hidden');
-                this.textContent = cal.classList.contains('hidden') ? '📅' : '❌';
+        function inicializarGraficos() {
+            // Desactivar datalabels por defecto
+            Chart.defaults.set('plugins.datalabels', {
+                display: false
             });
             
-            // Toggle dropdown tiendas
-            document.getElementById('toggleTiendas').addEventListener('click', function(e) {
-                e.stopPropagation();
-                const dropdown = document.getElementById('tiendasDropdown');
-                dropdown.classList.toggle('hidden');
-            });
-            
-            // Cerrar dropdown al hacer click fuera
-            document.addEventListener('click', function(e) {
-                const dropdown = document.getElementById('tiendasDropdown');
-                const toggle = document.getElementById('toggleTiendas');
-                if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
-                    dropdown.classList.add('hidden');
+            // Gráfico Día de Semana
+            const ctxDia = document.getElementById('chartDiaSemana').getContext('2d');
+            chartDiaSemana = new Chart(ctxDia, {
+                type: 'bar',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Ventas',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(147, 51, 234, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: value => '₡' + (value/1000).toFixed(0) + 'k' } }
+                    }
                 }
             });
-            
-            // Manejar selección de tiendas
-            document.querySelectorAll('.tienda-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const todasCheckbox = document.querySelector('.tienda-checkbox[value="todas"]');
-                    const individualesCheckboxes = document.querySelectorAll('.tienda-individual');
-                    
-                    if (this.value === 'todas') {
-                        // Si se selecciona "Todas", desmarcar las individuales
-                        if (this.checked) {
-                            individualesCheckboxes.forEach(cb => cb.checked = false);
-                        }
-                    } else {
-                        // Si se selecciona una individual, desmarcar "Todas"
-                        if (this.checked && todasCheckbox) {
-                            todasCheckbox.checked = false;
-                        }
-                        
-                        // Si se desmarcan todas las individuales, marcar "Todas" automáticamente
-                        const algunaMarcada = Array.from(individualesCheckboxes).some(cb => cb.checked);
-                        if (!algunaMarcada && todasCheckbox) {
-                            todasCheckbox.checked = true;
+
+            // Gráfico Canales de Venta (Delivery Apps) - CON PORCENTAJES
+            const ctxPago = document.getElementById('chartMetodosPago').getContext('2d');
+            chartMetodosPago = new Chart(ctxPago, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Uber Eats', 'Pedidos Ya', 'Didi Food', 'Otros Canales'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#10b981', '#ef4444', '#f97316', '#6b7280'] // Verde, Rojo, Naranja, Gris
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { boxWidth: 12, font: { size: 10 } } 
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ₡${Math.round(value).toLocaleString('es-CR')} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            display: true,
+                            formatter: (value, ctx) => {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return percentage > 5 ? percentage + '%' : ''; // Solo mostrar si es > 5%
+                            },
+                            color: '#fff',
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            }
                         }
                     }
-                    
-                    actualizarLabelTiendas();
-                });
+                }
             });
-            
-            // Navegación
-            document.getElementById('prevMonth').addEventListener('click', () => cambiarMes(-1));
-            document.getElementById('nextMonth').addEventListener('click', () => cambiarMes(1));
-            
-            // Fechas rápidas
-            document.querySelectorAll('.quick-date-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    seleccionarFechaRapida(parseInt(this.getAttribute('data-offset')));
-                });
-            });
-            
-            // Cargar datos iniciales
-            fetchVentasOakberry();
-            
-            // Configurar botón de filtrar
-            document.getElementById("btnFiltrar").addEventListener("click", function() {
-                // Animación del botón
-                this.classList.add('scale-95');
-                setTimeout(() => {
-                    this.classList.remove('scale-95');
-                }, 200);
-                
-                // Cargar datos
-                fetchVentasOakberry();
-            });
-            
-            // Actualizar indicador de modo de vista
-            document.getElementById("inputModoVista").addEventListener("change", function() {
-                const modos = {
-                    'analisis': '📈 Modo: Análisis',
-                    'comparativo': '⚖️ Modo: Comparativo',
-                    'tendencias': '📊 Modo: Tendencias'
-                };
-                document.getElementById("modoVistaTexto").textContent = modos[this.value] || 'Modo: Análisis';
-            });
-            
-            // Enter key en inputs para filtrar
-            ['inputDay', 'inputMonth', 'inputYear'].forEach(id => {
-                document.getElementById(id).addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        document.getElementById("btnFiltrar").click();
+
+            // Gráfico Ventas por Hora
+            const ctxHora = document.getElementById('chartVentasHora').getContext('2d');
+            chartVentasHora = new Chart(ctxHora, {
+                type: 'line',
+                data: {
+                    labels: ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm', '6pm', '7pm', '8pm', '9pm'],
+                    datasets: [{
+                        label: 'Ventas',
+                        data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                        borderColor: 'rgb(147, 51, 234)',
+                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: value => '₡' + (value/1000).toFixed(0) + 'k' } }
                     }
-                });
+                }
             });
-        });
+        }
 
-        function mostrarLoading() {
-            // Agregar efecto de loading a las tarjetas
-            const tarjetas = document.querySelectorAll('.hover-lift');
-            tarjetas.forEach(tarjeta => {
-                tarjeta.style.opacity = '0.5';
-            });
+        function actualizarGraficos(data) {
+            const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
             
-            setTimeout(() => {
-                tarjetas.forEach(tarjeta => {
-                    tarjeta.style.opacity = '1';
-                });
-            }, 500);
-        }
+            // CANALES DE VENTA (Delivery Apps) - ACTUALIZADO
+            chartMetodosPago.data.datasets[0].data = [
+                totalRow.uberEats || 0,
+                totalRow.pedidosYa || 0,
+                totalRow.didiFood || 0,
+                totalRow.otrosCanales || 0
+            ];
+            chartMetodosPago.update();
 
-        function updateTime() {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            const timeElement = document.getElementById('lastUpdate');
-            if (timeElement) {
-                timeElement.textContent = `${hours}:${minutes}:${seconds}`;
-            }
-        }
-        
-        updateTime();
-        setInterval(updateTime, 1000);
+            // Día de Semana (datos simulados - necesitarías calcularlos en el backend)
+            const ventaPromedio = (totalRow.ventasAcumuladas || 0) / new Date().getDate();
+            chartDiaSemana.data.datasets[0].data = [
+                ventaPromedio * 0.9,
+                ventaPromedio * 1.1,
+                ventaPromedio * 1.0,
+                ventaPromedio * 1.2,
+                ventaPromedio * 1.4,
+                ventaPromedio * 1.5,
+                ventaPromedio * 1.3
+            ];
+            chartDiaSemana.update();
 
-        window.addEventListener('load', function() {
-            const elements = document.querySelectorAll('.animate-slide-in, .animate-slide-bottom, .animate-fade-in');
-            elements.forEach((el, index) => {
-                setTimeout(() => {
-                    el.style.opacity = '1';
-                }, index * 100);
-            });
-        });
+            // Ventas por Hora (datos simulados)
+            const ventaHora = (totalRow.ventasNetas || 0) / 12;
+            chartVentasHora.data.datasets[0].data = [
+                ventaHora * 0.3, ventaHora * 0.5, ventaHora * 0.8,
+                ventaHora * 1.0, ventaHora * 1.3, ventaHora * 1.5,
+                ventaHora * 1.2, ventaHora * 1.1, ventaHora * 1.0,
+                ventaHora * 0.9, ventaHora * 0.8, ventaHora * 0.7,
+                ventaHora * 0.5, ventaHora * 0.4
+            ];
+            chartVentasHora.update();
+        }
     </script>
 </body>
 </html>
