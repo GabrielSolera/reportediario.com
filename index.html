@@ -107,13 +107,81 @@
                 background-color: #1f2937 !important;
             }
             
-            /* Desglose de descuentos en modal */
+            /* Desglose de descuentos en modal - mejor contraste */
             .bg-gray-50 {
                 background-color: #374151 !important;
             }
             
+            /* Tarjetas internas del modal - fondo más oscuro */
             #modalAnalisis .bg-white.p-2 {
-                background-color: #1f2937 !important;
+                background-color: #111827 !important;
+            }
+            
+            /* Headers de secciones en modal */
+            #modalAnalisis .bg-gray-50 h4,
+            #modalAnalisis .text-gray-700 {
+                color: #f3f4f6 !important;
+            }
+            
+            /* Labels en las tarjetas pequeñas */
+            #modalAnalisis .text-gray-600 {
+                color: #d1d5db !important;
+            }
+            
+            /* Valores numéricos - más brillantes */
+            #modalAnalisis .text-green-400,
+            #modalAnalisis .text-red-400,
+            #modalAnalisis .text-orange-400,
+            #modalAnalisis .text-purple-400,
+            #modalAnalisis .text-blue-400 {
+                filter: brightness(1.2);
+            }
+            
+            /* Gradientes de descuentos y anulaciones */
+            .from-blue-50 {
+                background: linear-gradient(to bottom right, #1e3a8a, #1e40af) !important;
+            }
+            
+            .from-red-50 {
+                background: linear-gradient(to bottom right, #7f1d1d, #991b1b) !important;
+            }
+            
+            /* Textos en tarjetas de resumen */
+            .from-blue-50 .text-gray-600,
+            .from-red-50 .text-gray-600 {
+                color: #e5e7eb !important;
+            }
+            
+            .from-blue-50 .text-blue-700,
+            .from-red-50 .text-red-700 {
+                color: #93c5fd !important;
+            }
+            
+            .text-red-700 {
+                color: #fca5a5 !important;
+            }
+            
+            /* Impacto total box */
+            .from-purple-50 {
+                background: linear-gradient(to right, #4c1d95, #5b21b6) !important;
+            }
+            
+            .from-purple-50 .text-gray-700,
+            .from-purple-50 .text-gray-600 {
+                color: #e9d5ff !important;
+            }
+            
+            /* Tabla de descuentos altos */
+            .bg-amber-50 {
+                background-color: #78350f !important;
+            }
+            
+            .border-amber-200 {
+                border-color: #92400e !important;
+            }
+            
+            .text-amber-800 {
+                color: #fde68a !important;
             }
             
             /* Gráficos - fondo oscuro */
@@ -353,7 +421,7 @@
         </div>
 
         <!-- Tabla Detallada -->
-        <div class="bg-white p-6 rounded-xl shadow-xl">
+        <div class="bg-white p-6 rounded-xl shadow-xl mb-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4">📊 Detalle por Tienda</h3>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -375,6 +443,38 @@
                         <tr><td colspan="10" class="px-6 py-8 text-center text-gray-400">Cargando...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- NUEVA SECCIÓN: Tabla de Órdenes con Descuentos Altos -->
+        <div id="seccionDescuentosAltos" class="bg-white p-6 rounded-xl shadow-xl hidden">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span class="text-2xl">🎁</span> Órdenes con Descuentos Significativos (≥50%)
+            </h3>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs uppercase">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Tienda</th>
+                            <th class="px-4 py-3 text-center">Fecha</th>
+                            <th class="px-4 py-3 text-center"># Orden</th>
+                            <th class="px-4 py-3 text-center">Monto Descuento</th>
+                            <th class="px-4 py-3 text-center">% Descuento</th>
+                            <th class="px-4 py-3 text-center">Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaDescuentosAltos" class="divide-y divide-gray-200">
+                        <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No hay órdenes con descuentos ≥50%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <p class="text-sm text-amber-800">
+                    <span class="font-bold">💡 Nota:</span> Esta tabla muestra órdenes con descuentos del 50% o más. 
+                    Revisa estas transacciones para asegurar que son promociones válidas o ajustes autorizados.
+                </p>
             </div>
         </div>
     </div>
@@ -406,11 +506,11 @@
                     </h3>
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
-                            <p class="text-sm text-gray-600 mb-1">Descuentos del Día</p>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Descuentos del Día</p>
                             <p class="text-2xl font-black text-blue-700" id="analisisDescuentosDia">₡0</p>
                         </div>
                         <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
-                            <p class="text-sm text-gray-600 mb-1">Descuentos Acum.</p>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Descuentos Acum.</p>
                             <p class="text-2xl font-black text-blue-700" id="analisisDescuentosAcum">₡0</p>
                         </div>
                     </div>
@@ -420,36 +520,36 @@
                         <h4 class="text-sm font-bold text-gray-700 mb-3">📱 Por Canal de Venta</h4>
                         <div class="grid grid-cols-2 gap-3">
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">🟢 Uber Eats</span>
-                                <span class="text-sm font-bold text-green-600" id="descUberDia">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">🟢 Uber Eats</span>
+                                <span class="text-sm font-bold text-green-400" id="descUberDia">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">🟢 Uber (Acum)</span>
-                                <span class="text-sm font-bold text-green-600" id="descUberAcum">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">🟢 Uber (Acum)</span>
+                                <span class="text-sm font-bold text-green-400" id="descUberAcum">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">🔴 Pedidos Ya</span>
-                                <span class="text-sm font-bold text-red-600" id="descPeyaDia">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">🔴 Pedidos Ya</span>
+                                <span class="text-sm font-bold text-red-400" id="descPeyaDia">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">🔴 Pedidos (Acum)</span>
-                                <span class="text-sm font-bold text-red-600" id="descPeyaAcum">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">🔴 Pedidos (Acum)</span>
+                                <span class="text-sm font-bold text-red-400" id="descPeyaAcum">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">🟠 Didi Food</span>
-                                <span class="text-sm font-bold text-orange-600" id="descDidiDia">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">🟠 Didi Food</span>
+                                <span class="text-sm font-bold text-orange-400" id="descDidiDia">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">🟠 Didi (Acum)</span>
-                                <span class="text-sm font-bold text-orange-600" id="descDidiAcum">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">🟠 Didi (Acum)</span>
+                                <span class="text-sm font-bold text-orange-400" id="descDidiAcum">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">⚫ Otros</span>
-                                <span class="text-sm font-bold text-gray-600" id="descOtrosCanalDia">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">⚫ Otros</span>
+                                <span class="text-sm font-bold text-gray-300" id="descOtrosCanalDia">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">⚫ Otros (Acum)</span>
-                                <span class="text-sm font-bold text-gray-600" id="descOtrosCanalAcum">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">⚫ Otros (Acum)</span>
+                                <span class="text-sm font-bold text-gray-300" id="descOtrosCanalAcum">₡0</span>
                             </div>
                         </div>
                     </div>
@@ -459,36 +559,36 @@
                         <h4 class="text-sm font-bold text-gray-700 mb-3">💳 Por Método de Pago</h4>
                         <div class="grid grid-cols-2 gap-3">
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">💳 Tarjeta</span>
-                                <span class="text-sm font-bold text-purple-600" id="descTarjetaDia">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">💳 Tarjeta</span>
+                                <span class="text-sm font-bold text-purple-400" id="descTarjetaDia">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">💳 Tarjeta (Acum)</span>
-                                <span class="text-sm font-bold text-purple-600" id="descTarjetaAcum">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">💳 Tarjeta (Acum)</span>
+                                <span class="text-sm font-bold text-purple-400" id="descTarjetaAcum">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">💵 Efectivo</span>
-                                <span class="text-sm font-bold text-green-600" id="descEfectivoDia">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">💵 Efectivo</span>
+                                <span class="text-sm font-bold text-green-400" id="descEfectivoDia">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">💵 Efectivo (Acum)</span>
-                                <span class="text-sm font-bold text-green-600" id="descEfectivoAcum">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">💵 Efectivo (Acum)</span>
+                                <span class="text-sm font-bold text-green-400" id="descEfectivoAcum">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">📱 Sinpe</span>
-                                <span class="text-sm font-bold text-blue-600" id="descSinpeDia">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">📱 Sinpe</span>
+                                <span class="text-sm font-bold text-blue-400" id="descSinpeDia">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">📱 Sinpe (Acum)</span>
-                                <span class="text-sm font-bold text-blue-600" id="descSinpeAcum">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">📱 Sinpe (Acum)</span>
+                                <span class="text-sm font-bold text-blue-400" id="descSinpeAcum">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">💰 Otros</span>
-                                <span class="text-sm font-bold text-gray-600" id="descOtrosPagoDia">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">💰 Otros</span>
+                                <span class="text-sm font-bold text-gray-300" id="descOtrosPagoDia">₡0</span>
                             </div>
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg">
-                                <span class="text-xs text-gray-600">💰 Otros (Acum)</span>
-                                <span class="text-sm font-bold text-gray-600" id="descOtrosPagoAcum">₡0</span>
+                                <span class="text-xs font-medium text-gray-600">💰 Otros (Acum)</span>
+                                <span class="text-sm font-bold text-gray-300" id="descOtrosPagoAcum">₡0</span>
                             </div>
                         </div>
                     </div>
@@ -501,11 +601,11 @@
                     </h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl">
-                            <p class="text-sm text-gray-600 mb-1">Anulaciones del Día</p>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Anulaciones del Día</p>
                             <p class="text-2xl font-black text-red-700" id="analisisAnulacionesDia">0</p>
                         </div>
                         <div class="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl">
-                            <p class="text-sm text-gray-600 mb-1">Anulaciones Acum.</p>
+                            <p class="text-sm font-medium text-gray-600 mb-1">Anulaciones Acum.</p>
                             <p class="text-2xl font-black text-red-700" id="analisisAnulacionesAcum">0</p>
                         </div>
                     </div>
@@ -833,6 +933,59 @@
 
             // Actualizar gráficos
             actualizarGraficos(data);
+            
+            // NUEVO: Actualizar tabla de descuentos altos
+            actualizarTablaDescuentosAltos(data);
+        }
+
+        // NUEVA FUNCIÓN: Actualizar tabla de descuentos altos
+        function actualizarTablaDescuentosAltos(data) {
+            const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
+            const ordenes = totalRow.ordenesDescuentosAltos || [];
+            
+            const tbody = document.getElementById('tablaDescuentosAltos');
+            const seccion = document.getElementById('seccionDescuentosAltos');
+            
+            if (!ordenes || ordenes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No hay órdenes con descuentos ≥50%</td></tr>';
+                seccion.classList.add('hidden');
+                return;
+            }
+            
+            // Mostrar la sección
+            seccion.classList.remove('hidden');
+            
+            tbody.innerHTML = '';
+            
+            ordenes.forEach(function(orden) {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                
+                // Determinar color según porcentaje
+                let colorPorcentaje = 'text-orange-600';
+                if (orden.porcentaje >= 90) {
+                    colorPorcentaje = 'text-red-600 font-black';
+                } else if (orden.porcentaje >= 75) {
+                    colorPorcentaje = 'text-red-500 font-bold';
+                } else if (orden.porcentaje >= 50) {
+                    colorPorcentaje = 'text-orange-500 font-semibold';
+                }
+                
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-medium">${orden.tienda}</td>
+                    <td class="px-4 py-3 text-center">${orden.fecha}</td>
+                    <td class="px-4 py-3 text-center font-mono text-xs">${orden.ordenId}</td>
+                    <td class="px-4 py-3 text-center font-bold text-orange-600">₡${Math.round(orden.descuento).toLocaleString('es-CR')}</td>
+                    <td class="px-4 py-3 text-center ${colorPorcentaje}">${orden.porcentaje.toFixed(1)}%</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="px-2 py-1 rounded text-xs font-semibold ${orden.fiscalType === 'BM' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">
+                            ${orden.fiscalType}
+                        </span>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
         }
 
         function inicializarGraficos() {
