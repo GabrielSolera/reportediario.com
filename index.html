@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oakberry Dashboard - Con Gráficos</title>
+    <title>Oakberry Dashboard - Mejorado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -13,192 +13,104 @@
         @keyframes slideBottom { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-bottom { animation: slideBottom 0.5s ease-out forwards; }
         
-        /* MODO DARK - Detecta automáticamente la preferencia del sistema */
+        /* MODO DARK */
         @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(to bottom right, #1e1b4b, #312e81) !important;
-            }
-            
-            /* Tarjetas blancas -> oscuras */
-            .bg-white {
-                background-color: #1f2937 !important;
-                color: #f3f4f6 !important;
-            }
-            
-            /* Textos oscuros -> claros */
-            .text-gray-800 {
-                color: #f3f4f6 !important;
-            }
-            
-            .text-gray-600 {
-                color: #d1d5db !important;
-            }
-            
-            .text-gray-700 {
-                color: #e5e7eb !important;
-            }
-            
-            .text-gray-400 {
-                color: #9ca3af !important;
-            }
-            
-            /* Bordes */
-            .border-gray-200 {
-                border-color: #374151 !important;
-            }
-            
-            .border-gray-300 {
-                border-color: #4b5563 !important;
-            }
-            
-            /* Hover states */
-            .hover\:bg-purple-50:hover {
-                background-color: #374151 !important;
-            }
-            
-            .hover\:bg-gray-50:hover {
-                background-color: #374151 !important;
-            }
-            
-            /* Dropdown */
-            #tiendasDropdown {
-                background-color: #1f2937 !important;
-                border-color: #4b5563 !important;
-            }
-            
-            /* Calendario */
-            #calendarioContainer .bg-white {
-                background-color: #1f2937 !important;
-            }
-            
-            #calendarioContainer .border-purple-100 {
-                border-color: #4c1d95 !important;
-            }
-            
-            .text-gray-700:not(.hover\:text-purple-600) {
-                color: #e5e7eb !important;
-            }
-            
-            /* Días del calendario */
-            .bg-purple-100 {
-                background-color: #4c1d95 !important;
-                color: #e9d5ff !important;
-            }
-            
-            /* Tabla */
-            table {
-                color: #f3f4f6 !important;
-            }
-            
-            thead {
-                background: linear-gradient(to right, #6b21a8, #7c3aed) !important;
-            }
-            
-            tbody tr {
-                border-color: #374151 !important;
-            }
-            
-            tbody tr:hover {
-                background-color: #374151 !important;
-            }
-            
-            /* Modal */
-            #modalAnalisis .bg-white {
-                background-color: #1f2937 !important;
-            }
-            
-            /* Desglose de descuentos en modal - mejor contraste */
-            .bg-gray-50 {
-                background-color: #374151 !important;
-            }
-            
-            /* Tarjetas internas del modal - fondo más oscuro */
-            #modalAnalisis .bg-white.p-2 {
-                background-color: #111827 !important;
-            }
-            
-            /* Headers de secciones en modal */
-            #modalAnalisis .bg-gray-50 h4,
-            #modalAnalisis .text-gray-700 {
-                color: #f3f4f6 !important;
-            }
-            
-            /* Labels en las tarjetas pequeñas */
-            #modalAnalisis .text-gray-600 {
-                color: #d1d5db !important;
-            }
-            
-            /* Valores numéricos - más brillantes */
-            #modalAnalisis .text-green-400,
-            #modalAnalisis .text-red-400,
-            #modalAnalisis .text-orange-400,
-            #modalAnalisis .text-purple-400,
-            #modalAnalisis .text-blue-400 {
-                filter: brightness(1.2);
-            }
-            
-            /* Gradientes de descuentos y anulaciones */
-            .from-blue-50 {
-                background: linear-gradient(to bottom right, #1e3a8a, #1e40af) !important;
-            }
-            
-            .from-red-50 {
-                background: linear-gradient(to bottom right, #7f1d1d, #991b1b) !important;
-            }
-            
-            /* Textos en tarjetas de resumen */
-            .from-blue-50 .text-gray-600,
-            .from-red-50 .text-gray-600 {
-                color: #e5e7eb !important;
-            }
-            
-            .from-blue-50 .text-blue-700,
-            .from-red-50 .text-red-700 {
-                color: #93c5fd !important;
-            }
-            
-            .text-red-700 {
-                color: #fca5a5 !important;
-            }
-            
-            /* Impacto total box */
-            .from-purple-50 {
-                background: linear-gradient(to right, #4c1d95, #5b21b6) !important;
-            }
-            
-            .from-purple-50 .text-gray-700,
-            .from-purple-50 .text-gray-600 {
-                color: #e9d5ff !important;
-            }
-            
-            /* Tabla de descuentos altos */
-            .bg-amber-50 {
-                background-color: #78350f !important;
-            }
-            
-            .border-amber-200 {
-                border-color: #92400e !important;
-            }
-            
-            .text-amber-800 {
-                color: #fde68a !important;
-            }
-            
-            /* Gráficos - fondo oscuro */
-            canvas {
-                background-color: transparent !important;
-            }
-            
-            /* Inputs */
-            input[type="checkbox"] {
-                filter: brightness(1.2);
-            }
+            body { background: linear-gradient(to bottom right, #1e1b4b, #312e81) !important; }
+            .bg-white { background-color: #1f2937 !important; color: #f3f4f6 !important; }
+            .text-gray-800 { color: #f3f4f6 !important; }
+            .text-gray-600 { color: #d1d5db !important; }
+            .text-gray-700 { color: #e5e7eb !important; }
+            .text-gray-400 { color: #9ca3af !important; }
+            .border-gray-200 { border-color: #374151 !important; }
+            .border-gray-300 { border-color: #4b5563 !important; }
+            .hover\:bg-purple-50:hover { background-color: #374151 !important; }
+            .hover\:bg-gray-50:hover { background-color: #374151 !important; }
+            #tiendasDropdown { background-color: #1f2937 !important; border-color: #4b5563 !important; }
+            #calendarioContainer .bg-white { background-color: #1f2937 !important; }
+            #calendarioContainer .border-purple-100 { border-color: #4c1d95 !important; }
+            .text-gray-700:not(.hover\:text-purple-600) { color: #e5e7eb !important; }
+            .bg-purple-100 { background-color: #4c1d95 !important; color: #e9d5ff !important; }
+            table { color: #f3f4f6 !important; }
+            thead { background: linear-gradient(to right, #6b21a8, #7c3aed) !important; }
+            tbody tr { border-color: #374151 !important; }
+            tbody tr:hover { background-color: #374151 !important; }
+            #modalAnalisis .bg-white { background-color: #1f2937 !important; }
+            .bg-gray-50 { background-color: #374151 !important; }
+            #modalAnalisis .bg-white.p-2 { background-color: #111827 !important; }
+            #modalAnalisis .bg-gray-50 h4, #modalAnalisis .text-gray-700 { color: #f3f4f6 !important; }
+            #modalAnalisis .text-gray-600 { color: #d1d5db !important; }
+            #modalAnalisis .text-green-400, #modalAnalisis .text-red-400,
+            #modalAnalisis .text-orange-400, #modalAnalisis .text-purple-400,
+            #modalAnalisis .text-blue-400 { filter: brightness(1.2); }
+            .from-blue-50 { background: linear-gradient(to bottom right, #1e3a8a, #1e40af) !important; }
+            .from-red-50 { background: linear-gradient(to bottom right, #7f1d1d, #991b1b) !important; }
+            .from-blue-50 .text-gray-600, .from-red-50 .text-gray-600 { color: #e5e7eb !important; }
+            .from-blue-50 .text-blue-700, .from-red-50 .text-red-700 { color: #93c5fd !important; }
+            .text-red-700 { color: #fca5a5 !important; }
+            .from-purple-50 { background: linear-gradient(to right, #4c1d95, #5b21b6) !important; }
+            .from-purple-50 .text-gray-700, .from-purple-50 .text-gray-600 { color: #e9d5ff !important; }
+            .bg-amber-50 { background-color: #78350f !important; }
+            .border-amber-200 { border-color: #92400e !important; }
+            .text-amber-800 { color: #fde68a !important; }
+            canvas { background-color: transparent !important; }
+            input[type="checkbox"] { filter: brightness(1.2); }
+        }
+        
+        /* MEJORAS */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(147, 51, 234, 0.1);
+            z-index: 9999;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #6366f1);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+        .progress-bar.loading {
+            background: linear-gradient(90deg, #8b5cf6, #6366f1, #8b5cf6);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .badge-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+            min-width: 20px;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen">
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
     <div class="container mx-auto px-4 py-6 max-w-7xl">
-        <!-- Header -->
         <div class="bg-gradient-to-r from-purple-700 to-indigo-800 text-white p-6 rounded-2xl shadow-2xl mb-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -212,7 +124,6 @@
             </div>
         </div>
 
-        <!-- Filtros -->
         <div class="bg-white p-4 rounded-xl shadow-lg mb-6">
             <div class="flex flex-wrap items-center gap-3">
                 <button id="toggleCalendario" class="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700">
@@ -259,19 +170,18 @@
                     <span>⚡ Rápido</span>
                 </label>
                 
-                <button id="btnFiltrar" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-bold hover:from-purple-700 hover:to-indigo-700 shadow-lg">
-                    Filtrar
+                <button id="btnAuditoria" class="relative px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-700 shadow-lg">
+                    🔍 Auditoría
+                    <span class="badge-count hidden" id="badgeAuditoria">0</span>
                 </button>
                 
-                <button id="btnAnalisis" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-700 shadow-lg">
+                <button id="btnAnalisis" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg text-sm font-bold hover:from-blue-600 hover:to-indigo-700 shadow-lg">
                     📊 Análisis
                 </button>
             </div>
             
-            <!-- Calendario oculto - REDISEÑADO MÁS ELEGANTE -->
             <div id="calendarioContainer" class="hidden mt-4">
                 <div class="max-w-xs mx-auto bg-white rounded-xl shadow-2xl p-4 border-2 border-purple-100">
-                    <!-- Header del calendario -->
                     <div class="flex items-center justify-between mb-3">
                         <button id="prevMonth" class="p-2 hover:bg-purple-50 rounded-lg transition-colors">
                             <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,8 +195,6 @@
                             </svg>
                         </button>
                     </div>
-                    
-                    <!-- Días de la semana -->
                     <div class="grid grid-cols-7 gap-1 mb-2">
                         <div class="text-center text-xs font-semibold text-gray-400 py-1">D</div>
                         <div class="text-center text-xs font-semibold text-gray-400 py-1">L</div>
@@ -296,8 +204,6 @@
                         <div class="text-center text-xs font-semibold text-gray-400 py-1">V</div>
                         <div class="text-center text-xs font-semibold text-gray-400 py-1">S</div>
                     </div>
-                    
-                    <!-- Grid de días -->
                     <div id="calendarioGrid" class="grid grid-cols-7 gap-1"></div>
                 </div>
             </div>
@@ -307,9 +213,7 @@
             <input type="hidden" id="inputYear" value="">
         </div>
 
-        <!-- KPIs Compactos -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <!-- Ventas del Día -->
             <div class="bg-gradient-to-br from-purple-600 to-purple-800 text-white p-4 rounded-xl shadow-xl">
                 <div class="flex items-center justify-between mb-2">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,8 +224,6 @@
                 <p class="text-2xl font-black mb-1" id="kpiVentasDia">₡0</p>
                 <p class="text-xs opacity-80">Forecast: <span id="kpiForecastDia">₡0</span></p>
             </div>
-
-            <!-- Desviación Forecast -->
             <div class="bg-gradient-to-br from-cyan-500 to-cyan-700 text-white p-4 rounded-xl shadow-xl">
                 <div class="flex items-center justify-between mb-2">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,8 +234,6 @@
                 <p class="text-2xl font-black mb-1" id="kpiDesvForecastPct">+0%</p>
                 <p class="text-xs opacity-80">Dif: <span id="kpiDesvForecastMonto">₡0</span></p>
             </div>
-
-            <!-- Crecimiento Diario -->
             <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white p-4 rounded-xl shadow-xl">
                 <div class="flex items-center justify-between mb-2">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -345,8 +245,6 @@
                 <p class="text-xs opacity-80">vs <span id="fechaRefDia">--/--</span></p>
                 <p class="text-xs opacity-80 font-bold" id="kpiCrecDiaMonto">₡0</p>
             </div>
-
-            <!-- Ventas Acumuladas -->
             <div class="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-4 rounded-xl shadow-xl">
                 <div class="flex items-center justify-between mb-2">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,9 +258,7 @@
             </div>
         </div>
 
-        <!-- Gráficos -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <!-- Ventas por Día de Semana -->
             <div class="bg-white p-6 rounded-xl shadow-xl">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,8 +268,6 @@
                 </h3>
                 <canvas id="chartDiaSemana"></canvas>
             </div>
-
-            <!-- Canales de Venta (Delivery Apps) -->
             <div class="bg-white p-6 rounded-xl shadow-xl">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,8 +277,6 @@
                 </h3>
                 <canvas id="chartMetodosPago"></canvas>
             </div>
-
-            <!-- Ventas por Hora -->
             <div class="bg-white p-6 rounded-xl shadow-xl">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,7 +288,6 @@
             </div>
         </div>
 
-        <!-- Delivery Compacto -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-gradient-to-br from-green-500 to-green-700 text-white p-4 rounded-xl shadow-xl">
                 <p class="text-xs font-semibold uppercase mb-1">Uber Eats</p>
@@ -420,7 +311,6 @@
             </div>
         </div>
 
-        <!-- Tabla Detallada -->
         <div class="bg-white p-6 rounded-xl shadow-xl mb-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4">📊 Detalle por Tienda</h3>
             <div class="overflow-x-auto">
@@ -446,12 +336,10 @@
             </div>
         </div>
 
-        <!-- NUEVA SECCIÓN: Tabla de Órdenes con Descuentos Altos -->
         <div id="seccionDescuentosAltos" class="bg-white p-6 rounded-xl shadow-xl hidden">
             <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <span class="text-2xl">🎁</span> Órdenes con Descuentos Significativos (≥50%)
             </h3>
-            
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs uppercase">
@@ -469,7 +357,6 @@
                     </tbody>
                 </table>
             </div>
-            
             <div class="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
                 <p class="text-sm text-amber-800">
                     <span class="font-bold">💡 Nota:</span> Esta tabla muestra órdenes con descuentos del 50% o más. 
@@ -479,7 +366,6 @@
         </div>
     </div>
 
-    <!-- Modal de Análisis -->
     <div id="modalAnalisis" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-6 rounded-t-2xl">
@@ -497,9 +383,7 @@
                     </button>
                 </div>
             </div>
-            
             <div class="p-6">
-                <!-- Descuentos -->
                 <div class="mb-6">
                     <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                         <span class="text-2xl">💰</span> Descuentos Aplicados
@@ -514,8 +398,6 @@
                             <p class="text-2xl font-black text-blue-700" id="analisisDescuentosAcum">₡0</p>
                         </div>
                     </div>
-                    
-                    <!-- Desglose por Canal -->
                     <div class="bg-gray-50 p-4 rounded-xl mb-3">
                         <h4 class="text-sm font-bold text-gray-700 mb-3">📱 Por Canal de Venta</h4>
                         <div class="grid grid-cols-2 gap-3">
@@ -553,8 +435,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Desglose por Método de Pago -->
                     <div class="bg-gray-50 p-4 rounded-xl">
                         <h4 class="text-sm font-bold text-gray-700 mb-3">💳 Por Método de Pago</h4>
                         <div class="grid grid-cols-2 gap-3">
@@ -593,8 +473,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Anulaciones -->
                 <div class="mb-6">
                     <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                         <span class="text-2xl">❌</span> Órdenes Anuladas
@@ -610,8 +488,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Impacto -->
                 <div class="bg-gradient-to-r from-purple-50 to-indigo-100 p-4 rounded-xl">
                     <h3 class="text-sm font-bold text-gray-700 mb-2">💡 Impacto Total</h3>
                     <p class="text-xs text-gray-600">Los descuentos y anulaciones afectan directamente la venta neta. Monitoréalos para mejorar la rentabilidad.</p>
@@ -625,8 +501,53 @@
         
         let chartDiaSemana, chartMetodosPago, chartVentasHora;
         let datosGlobales = null;
+        let progressInterval;
 
-        // Inicializar fecha actual - 1 día
+        function mostrarProgreso() {
+            const container = document.getElementById('progressContainer');
+            const bar = document.getElementById('progressBar');
+            container.style.display = 'block';
+            bar.style.width = '0%';
+            bar.classList.add('loading');
+            let progress = 0;
+            progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                bar.style.width = progress + '%';
+            }, 200);
+        }
+
+        function completarProgreso() {
+            const bar = document.getElementById('progressBar');
+            clearInterval(progressInterval);
+            bar.style.width = '100%';
+            setTimeout(() => {
+                const container = document.getElementById('progressContainer');
+                container.style.display = 'none';
+                bar.style.width = '0%';
+                bar.classList.remove('loading');
+            }, 500);
+        }
+
+        function ocultarProgreso() {
+            clearInterval(progressInterval);
+            const container = document.getElementById('progressContainer');
+            const bar = document.getElementById('progressBar');
+            container.style.display = 'none';
+            bar.style.width = '0%';
+            bar.classList.remove('loading');
+        }
+
+        function actualizarBadgeAuditoria(cantidad) {
+            const badge = document.getElementById('badgeAuditoria');
+            if (cantidad > 0) {
+                badge.textContent = cantidad;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
         const hoy = new Date();
         hoy.setDate(hoy.getDate() - 1);
         let calendarioState = {
@@ -644,7 +565,6 @@
             generarCalendario();
             inicializarGraficos();
             
-            // Event listeners
             document.getElementById('toggleCalendario').addEventListener('click', function() {
                 document.getElementById('calendarioContainer').classList.toggle('hidden');
             });
@@ -681,17 +601,36 @@
                         }
                     }
                     actualizarLabelTiendas();
+                    
+                    setTimeout(() => {
+                        document.getElementById('tiendasDropdown').classList.add('hidden');
+                        fetchVentasOakberry();
+                    }, 300);
                 });
             });
             
-            document.getElementById('btnFiltrar').addEventListener('click', fetchVentasOakberry);
             document.getElementById('prevMonth').addEventListener('click', () => cambiarMes(-1));
             document.getElementById('nextMonth').addEventListener('click', () => cambiarMes(1));
             
-            // Modal de análisis
+            document.getElementById('btnAuditoria').addEventListener('click', function() {
+                if (!datosGlobales) {
+                    alert('Primero debes cargar los datos');
+                    return;
+                }
+                const seccion = document.getElementById('seccionDescuentosAltos');
+                if (seccion.classList.contains('hidden')) {
+                    seccion.classList.remove('hidden');
+                    setTimeout(() => {
+                        seccion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                } else {
+                    seccion.classList.add('hidden');
+                }
+            });
+            
             document.getElementById('btnAnalisis').addEventListener('click', function() {
                 if (!datosGlobales) {
-                    alert('Primero debes cargar los datos usando "Filtrar"');
+                    alert('Primero debes cargar los datos');
                     return;
                 }
                 document.getElementById('modalAnalisis').classList.remove('hidden');
@@ -713,36 +652,24 @@
 
         function mostrarAnalisis(data) {
             const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
-            
-            // Descuentos totales
             document.getElementById('analisisDescuentosDia').textContent = `₡${Math.round(totalRow.descuentosDia || 0).toLocaleString('es-CR')}`;
             document.getElementById('analisisDescuentosAcum').textContent = `₡${Math.round(totalRow.descuentosAcum || 0).toLocaleString('es-CR')}`;
-            
-            // Descuentos por canal - DÍA
             document.getElementById('descUberDia').textContent = `₡${Math.round(totalRow.descUberDia || 0).toLocaleString('es-CR')}`;
             document.getElementById('descPeyaDia').textContent = `₡${Math.round(totalRow.descPeyaDia || 0).toLocaleString('es-CR')}`;
             document.getElementById('descDidiDia').textContent = `₡${Math.round(totalRow.descDidiDia || 0).toLocaleString('es-CR')}`;
             document.getElementById('descOtrosCanalDia').textContent = `₡${Math.round(totalRow.descOtrosCanalDia || 0).toLocaleString('es-CR')}`;
-            
-            // Descuentos por canal - ACUMULADO
             document.getElementById('descUberAcum').textContent = `₡${Math.round(totalRow.descUberAcum || 0).toLocaleString('es-CR')}`;
             document.getElementById('descPeyaAcum').textContent = `₡${Math.round(totalRow.descPeyaAcum || 0).toLocaleString('es-CR')}`;
             document.getElementById('descDidiAcum').textContent = `₡${Math.round(totalRow.descDidiAcum || 0).toLocaleString('es-CR')}`;
             document.getElementById('descOtrosCanalAcum').textContent = `₡${Math.round(totalRow.descOtrosCanalAcum || 0).toLocaleString('es-CR')}`;
-            
-            // Descuentos por método de pago - DÍA
             document.getElementById('descTarjetaDia').textContent = `₡${Math.round(totalRow.descTarjetaDia || 0).toLocaleString('es-CR')}`;
             document.getElementById('descEfectivoDia').textContent = `₡${Math.round(totalRow.descEfectivoDia || 0).toLocaleString('es-CR')}`;
             document.getElementById('descSinpeDia').textContent = `₡${Math.round(totalRow.descSinpeDia || 0).toLocaleString('es-CR')}`;
             document.getElementById('descOtrosPagoDia').textContent = `₡${Math.round(totalRow.descOtrosPagoDia || 0).toLocaleString('es-CR')}`;
-            
-            // Descuentos por método de pago - ACUMULADO
             document.getElementById('descTarjetaAcum').textContent = `₡${Math.round(totalRow.descTarjetaAcum || 0).toLocaleString('es-CR')}`;
             document.getElementById('descEfectivoAcum').textContent = `₡${Math.round(totalRow.descEfectivoAcum || 0).toLocaleString('es-CR')}`;
             document.getElementById('descSinpeAcum').textContent = `₡${Math.round(totalRow.descSinpeAcum || 0).toLocaleString('es-CR')}`;
             document.getElementById('descOtrosPagoAcum').textContent = `₡${Math.round(totalRow.descOtrosPagoAcum || 0).toLocaleString('es-CR')}`;
-            
-            // Anulaciones
             document.getElementById('analisisAnulacionesDia').textContent = totalRow.anulacionesDia || 0;
             document.getElementById('analisisAnulacionesAcum').textContent = totalRow.anulacionesAcum || 0;
         }
@@ -756,21 +683,17 @@
         function generarCalendario() {
             const grid = document.getElementById('calendarioGrid');
             grid.innerHTML = '';
-            
             const primerDia = new Date(calendarioState.añoActual, calendarioState.mesActual, 1).getDay();
             const diasEnMes = new Date(calendarioState.añoActual, calendarioState.mesActual + 1, 0).getDate();
-            
             const nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
             document.getElementById('mesActual').textContent = nombresMeses[calendarioState.mesActual] + ' ' + calendarioState.añoActual;
             
-            // Días vacíos antes del primer día del mes
             for (let i = 0; i < primerDia; i++) {
                 const emptyDiv = document.createElement('div');
                 emptyDiv.className = 'h-8';
                 grid.appendChild(emptyDiv);
             }
             
-            // Días del mes
             const hoy = new Date();
             const esHoy = (dia) => {
                 return dia === hoy.getDate() && 
@@ -782,9 +705,7 @@
                 const diaBtn = document.createElement('button');
                 const esSeleccionado = dia === calendarioState.diaSeleccionado;
                 const esDiaHoy = esHoy(dia);
-                
                 let clases = 'h-8 w-8 rounded-lg text-sm font-medium transition-all flex items-center justify-center ';
-                
                 if (esSeleccionado) {
                     clases += 'bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-lg scale-105 ring-2 ring-purple-300';
                 } else if (esDiaHoy) {
@@ -792,7 +713,6 @@
                 } else {
                     clases += 'text-gray-700 hover:bg-purple-50 hover:text-purple-600 hover:scale-105';
                 }
-                
                 diaBtn.className = clases;
                 diaBtn.textContent = dia;
                 diaBtn.onclick = () => seleccionarDia(dia);
@@ -807,6 +727,8 @@
             document.getElementById('inputYear').value = calendarioState.añoActual;
             generarCalendario();
             actualizarFechaSeleccionada();
+            document.getElementById('calendarioContainer').classList.add('hidden');
+            fetchVentasOakberry();
         }
 
         function cambiarMes(offset) {
@@ -824,29 +746,23 @@
         function obtenerTiendasSeleccionadas() {
             const checkboxes = document.querySelectorAll('.tienda-checkbox:checked');
             const tiendas = Array.from(checkboxes).map(cb => cb.value);
-            
             if (tiendas.includes('todas')) return 'todas';
             if (tiendas.length === 0) return 'todas';
-            
             return tiendas.join(',');
         }
 
         function actualizarLabelTiendas() {
             const checkboxes = document.querySelectorAll('.tienda-checkbox:checked');
             const label = document.getElementById('tiendasLabel');
-            
             if (checkboxes.length === 0) {
                 label.textContent = '📊 Selecciona tiendas';
                 return;
             }
-            
             const todasCheckbox = document.querySelector('.tienda-checkbox[value="todas"]');
-            
             if (todasCheckbox && todasCheckbox.checked) {
                 label.textContent = '📊 Todas las tiendas';
                 return;
             }
-            
             if (checkboxes.length === 1) {
                 label.textContent = '🏪 ' + checkboxes[0].dataset.nombre;
             } else {
@@ -860,33 +776,31 @@
             const year = document.getElementById("inputYear").value;
             const modoRapido = document.getElementById("modoRapido").checked;
             const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
-
             const fullUrl = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tiendasSeleccionadas}&modoRapido=${modoRapido}`;
+            
+            mostrarProgreso();
 
             try {
                 const res = await fetch(fullUrl);
                 const data = await res.json();
-
                 if (!data || data.length === 0 || data.error) {
+                    ocultarProgreso();
                     alert('Error al cargar datos');
                     return;
                 }
-
                 datosGlobales = data;
                 actualizarDashboard(data);
-                
                 document.getElementById('ultimaActualizacion').textContent = new Date().toLocaleTimeString('es-ES');
-
+                completarProgreso();
             } catch (error) {
                 console.error('Error:', error);
+                ocultarProgreso();
                 alert('Error de conexión: ' + error.message);
             }
         }
 
         function actualizarDashboard(data) {
             const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
-
-            // Actualizar KPIs
             document.getElementById('kpiVentasDia').textContent = `₡${Math.round(totalRow.ventasNetas || 0).toLocaleString('es-CR')}`;
             document.getElementById('kpiForecastDia').textContent = `₡${Math.round(totalRow.forecast || 0).toLocaleString('es-CR')}`;
             document.getElementById('kpiDesvForecastPct').textContent = `${totalRow.desvForecast > 0 ? '+' : ''}${(totalRow.desvForecast || 0).toFixed(1)}%`;
@@ -897,8 +811,6 @@
             document.getElementById('kpiVentasAcum').textContent = `₡${Math.round(totalRow.ventasAcumuladas || 0).toLocaleString('es-CR')}`;
             document.getElementById('kpiCrecAcum').textContent = `${totalRow.crecimientoAcum > 0 ? '+' : ''}${(totalRow.crecimientoAcum || 0).toFixed(1)}%`;
             document.getElementById('kpiCrecAcumMonto').textContent = `${totalRow.crecimientoAcumMonto > 0 ? '+' : ''}₡${Math.round(Math.abs(totalRow.crecimientoAcumMonto || 0)).toLocaleString('es-CR')}`;
-
-            // Delivery
             document.getElementById('kpiUberDia').textContent = `₡${Math.round(totalRow.uberEats || 0).toLocaleString('es-CR')}`;
             document.getElementById('kpiUberAcum').textContent = `₡${Math.round(totalRow.uberEatsAcum || 0).toLocaleString('es-CR')}`;
             document.getElementById('kpiPeyaDia').textContent = `₡${Math.round(totalRow.pedidosYa || 0).toLocaleString('es-CR')}`;
@@ -908,10 +820,8 @@
             document.getElementById('kpiOtrosDia').textContent = `₡${Math.round(totalRow.otrosCanales || 0).toLocaleString('es-CR')}`;
             document.getElementById('kpiOtrosAcum').textContent = `₡${Math.round(totalRow.otrosCanalesAcum || 0).toLocaleString('es-CR')}`;
 
-            // Tabla
             const tbody = document.getElementById('tablaTiendas');
             tbody.innerHTML = '';
-            
             data.forEach(row => {
                 if (!row.tienda) return;
                 const tr = document.createElement('tr');
@@ -930,38 +840,26 @@
                 `;
                 tbody.appendChild(tr);
             });
-
-            // Actualizar gráficos
             actualizarGraficos(data);
-            
-            // NUEVO: Actualizar tabla de descuentos altos
             actualizarTablaDescuentosAltos(data);
         }
 
-        // NUEVA FUNCIÓN: Actualizar tabla de descuentos altos
         function actualizarTablaDescuentosAltos(data) {
             const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
             const ordenes = totalRow.ordenesDescuentosAltos || [];
-            
+            actualizarBadgeAuditoria(ordenes.length);
             const tbody = document.getElementById('tablaDescuentosAltos');
             const seccion = document.getElementById('seccionDescuentosAltos');
-            
             if (!ordenes || ordenes.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No hay órdenes con descuentos ≥50%</td></tr>';
                 seccion.classList.add('hidden');
                 return;
             }
-            
-            // Mostrar la sección
             seccion.classList.remove('hidden');
-            
             tbody.innerHTML = '';
-            
             ordenes.forEach(function(orden) {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-50';
-                
-                // Determinar color según porcentaje
                 let colorPorcentaje = 'text-orange-600';
                 if (orden.porcentaje >= 90) {
                     colorPorcentaje = 'text-red-600 font-black';
@@ -970,7 +868,6 @@
                 } else if (orden.porcentaje >= 50) {
                     colorPorcentaje = 'text-orange-500 font-semibold';
                 }
-                
                 tr.innerHTML = `
                     <td class="px-4 py-3 font-medium">${orden.tienda}</td>
                     <td class="px-4 py-3 text-center">${orden.fecha}</td>
@@ -983,95 +880,50 @@
                         </span>
                     </td>
                 `;
-                
                 tbody.appendChild(tr);
             });
         }
 
         function inicializarGraficos() {
-            // Detectar si está en modo dark
             const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             const textColor = isDarkMode ? '#f3f4f6' : '#1f2937';
             const gridColor = isDarkMode ? '#374151' : '#e5e7eb';
-            
-            // Desactivar datalabels por defecto
-            Chart.defaults.set('plugins.datalabels', {
-                display: false
-            });
-            
-            // Configuración global para modo dark
+            Chart.defaults.set('plugins.datalabels', { display: false });
             if (isDarkMode) {
                 Chart.defaults.color = textColor;
                 Chart.defaults.borderColor = gridColor;
             }
             
-            // Gráfico Día de Semana
             const ctxDia = document.getElementById('chartDiaSemana').getContext('2d');
             chartDiaSemana = new Chart(ctxDia, {
                 type: 'bar',
                 data: {
                     labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-                    datasets: [{
-                        label: 'Ventas',
-                        data: [0, 0, 0, 0, 0, 0, 0],
-                        backgroundColor: 'rgba(147, 51, 234, 0.8)'
-                    }]
+                    datasets: [{ label: 'Ventas', data: [0,0,0,0,0,0,0], backgroundColor: 'rgba(147, 51, 234, 0.8)' }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: { 
-                        legend: { 
-                            display: false
-                        },
-                        datalabels: { display: false }
-                    },
+                    plugins: { legend: { display: false }, datalabels: { display: false } },
                     scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { 
-                                callback: value => '₡' + (value/1000).toFixed(0) + 'k',
-                                color: textColor
-                            },
-                            grid: {
-                                color: gridColor
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: textColor
-                            },
-                            grid: {
-                                color: gridColor
-                            }
-                        }
+                        y: { beginAtZero: true, ticks: { callback: value => '₡' + (value/1000).toFixed(0) + 'k', color: textColor }, grid: { color: gridColor } },
+                        x: { ticks: { color: textColor }, grid: { color: gridColor } }
                     }
                 }
             });
 
-            // Gráfico Canales de Venta (Delivery Apps) - CON PORCENTAJES
             const ctxPago = document.getElementById('chartMetodosPago').getContext('2d');
             chartMetodosPago = new Chart(ctxPago, {
                 type: 'doughnut',
                 data: {
                     labels: ['Uber Eats', 'Pedidos Ya', 'Didi Food', 'Otros Canales'],
-                    datasets: [{
-                        data: [0, 0, 0, 0],
-                        backgroundColor: ['#10b981', '#ef4444', '#f97316', '#6b7280'] // Verde, Rojo, Naranja, Gris
-                    }]
+                    datasets: [{ data: [0,0,0,0], backgroundColor: ['#10b981', '#ef4444', '#f97316', '#6b7280'] }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: {
-                        legend: { 
-                            position: 'bottom', 
-                            labels: { 
-                                boxWidth: 12, 
-                                font: { size: 10 },
-                                color: textColor
-                            } 
-                        },
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 }, color: textColor } },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -1088,77 +940,42 @@
                             formatter: (value, ctx) => {
                                 const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                return percentage > 5 ? percentage + '%' : ''; // Solo mostrar si es > 5%
+                                return percentage > 5 ? percentage + '%' : '';
                             },
                             color: '#fff',
-                            font: {
-                                weight: 'bold',
-                                size: 12
-                            }
+                            font: { weight: 'bold', size: 12 }
                         }
                     }
                 }
             });
 
-            // Gráfico Ventas por Hora
             const ctxHora = document.getElementById('chartVentasHora').getContext('2d');
             chartVentasHora = new Chart(ctxHora, {
                 type: 'line',
                 data: {
                     labels: ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm', '6pm', '7pm', '8pm', '9pm'],
-                    datasets: [{
-                        label: 'Ventas',
-                        data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                        borderColor: 'rgb(147, 51, 234)',
-                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
+                    datasets: [{ label: 'Ventas', data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0], borderColor: 'rgb(147, 51, 234)', backgroundColor: 'rgba(147, 51, 234, 0.1)', tension: 0.4, fill: true }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: { 
-                        legend: { 
-                            display: false
-                        },
-                        datalabels: { display: false }
-                    },
+                    plugins: { legend: { display: false }, datalabels: { display: false } },
                     scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { 
-                                callback: value => '₡' + (value/1000).toFixed(0) + 'k',
-                                color: textColor
-                            },
-                            grid: {
-                                color: gridColor
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: textColor
-                            },
-                            grid: {
-                                color: gridColor
-                            }
-                        }
+                        y: { beginAtZero: true, ticks: { callback: value => '₡' + (value/1000).toFixed(0) + 'k', color: textColor }, grid: { color: gridColor } },
+                        x: { ticks: { color: textColor }, grid: { color: gridColor } }
                     }
                 }
             });
             
-            // Listener para cambios en el tema del sistema
             if (window.matchMedia) {
                 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-                    location.reload(); // Recargar para aplicar los nuevos estilos
+                    location.reload();
                 });
             }
         }
 
         function actualizarGraficos(data) {
             const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
-            
-            // CANALES DE VENTA (Delivery Apps) - ACTUALIZADO
             chartMetodosPago.data.datasets[0].data = [
                 totalRow.uberEats || 0,
                 totalRow.pedidosYa || 0,
@@ -1167,7 +984,6 @@
             ];
             chartMetodosPago.update();
 
-            // Día de Semana (datos simulados - necesitarías calcularlos en el backend)
             const ventaPromedio = (totalRow.ventasAcumuladas || 0) / new Date().getDate();
             chartDiaSemana.data.datasets[0].data = [
                 ventaPromedio * 0.9,
@@ -1180,7 +996,6 @@
             ];
             chartDiaSemana.update();
 
-            // Ventas por Hora (datos simulados)
             const ventaHora = (totalRow.ventasNetas || 0) / 12;
             chartVentasHora.data.datasets[0].data = [
                 ventaHora * 0.3, ventaHora * 0.5, ventaHora * 0.8,
