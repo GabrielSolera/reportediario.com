@@ -57,27 +57,168 @@
         }
         
         /* MEJORAS */
-        .progress-container {
+        /* Loader de Oakberry - Texto Animado */
+        .oakberry-loader {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 4px;
-            background: rgba(147, 51, 234, 0.1);
+            height: 100%;
+            background: linear-gradient(135deg, #581C87 0%, #6B21A8 50%, #7C3AED 100%);
             z-index: 9999;
             display: none;
+            align-items: center;
+            justify-content: center;
         }
-        .progress-bar {
+        .oakberry-loader.active {
+            display: flex;
+        }
+        .loader-container {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+        }
+        
+        /* Logo animado OAKBERRY */
+        .oakberry-text {
+            font-size: 72px;
+            font-weight: 900;
+            font-family: 'Arial Black', Arial, sans-serif;
+            letter-spacing: 8px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .oakberry-text span {
+            display: inline-block;
+            color: white;
+            opacity: 0;
+            transform: translateY(30px) scale(0.5);
+            animation: letterAppear 0.6s ease-out forwards;
+            text-shadow: 
+                0 0 20px rgba(251, 191, 36, 0.5),
+                0 0 40px rgba(251, 191, 36, 0.3),
+                0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .oakberry-text span:nth-child(1) { animation-delay: 0.1s; }
+        .oakberry-text span:nth-child(2) { animation-delay: 0.2s; }
+        .oakberry-text span:nth-child(3) { animation-delay: 0.3s; }
+        .oakberry-text span:nth-child(4) { animation-delay: 0.4s; }
+        .oakberry-text span:nth-child(5) { animation-delay: 0.5s; }
+        .oakberry-text span:nth-child(6) { animation-delay: 0.6s; }
+        .oakberry-text span:nth-child(7) { animation-delay: 0.7s; }
+        .oakberry-text span:nth-child(8) { animation-delay: 0.8s; }
+        
+        @keyframes letterAppear {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.5) rotateX(-90deg);
+            }
+            50% {
+                opacity: 0.5;
+                transform: translateY(-10px) scale(1.1) rotateX(10deg);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotateX(0deg);
+            }
+        }
+        
+        /* Barra de progreso */
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 
+                inset 0 2px 8px rgba(0, 0, 0, 0.3),
+                0 2px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #8b5cf6, #6366f1);
             width: 0%;
-            transition: width 0.3s ease;
-            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
-        }
-        .progress-bar.loading {
-            background: linear-gradient(90deg, #8b5cf6, #6366f1, #8b5cf6);
+            background: linear-gradient(90deg, 
+                #FCD34D 0%,
+                #FBBF24 25%,
+                #F59E0B 50%,
+                #FBBF24 75%,
+                #FCD34D 100%
+            );
             background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
+            border-radius: 20px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 0 20px rgba(251, 191, 36, 0.6),
+                0 0 40px rgba(251, 191, 36, 0.3);
+            animation: shimmerProgress 2s linear infinite;
+            position: relative;
+        }
+        
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+            border-radius: 20px 20px 0 0;
+        }
+        
+        @keyframes shimmerProgress {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Porcentaje */
+        .loading-percentage {
+            color: #FCD34D;
+            font-size: 42px;
+            font-weight: 900;
+            font-family: 'Arial Black', sans-serif;
+            text-shadow: 
+                0 0 30px rgba(252, 211, 77, 0.8),
+                0 5px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+            letter-spacing: 3px;
+        }
+        
+        /* Texto de carga */
+        .loading-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulse-text 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-text {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .oakberry-text {
+                font-size: 48px;
+                letter-spacing: 4px;
+            }
+            .loading-percentage {
+                font-size: 32px;
+            }
+            .loader-container {
+                padding: 20px;
+            }
         }
         @keyframes shimmer {
             0% { background-position: -200% 0; }
@@ -106,8 +247,31 @@
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen">
 
-    <div class="progress-container" id="progressContainer">
-        <div class="progress-bar" id="progressBar"></div>
+            <div class="oakberry-loader" id="oakberryLoader">
+        <div class="loader-container">
+            <div class="oakberry-text">
+                <span>O</span>
+                <span>A</span>
+                <span>K</span>
+                <span>B</span>
+                <span>E</span>
+                <span>R</span>
+                <span>R</span>
+                <span>Y</span>
+            </div>
+            
+            <div class="loading-percentage" id="loadingPercentage">0%</div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+            
+            <div class="loading-text">Cargando Dashboard</div>
+        </div>
+    </div>
+            <div class="loading-text">Cargando datos de Oakberry...</div>
+            <div class="loading-percentage" id="loadingPercentage">0%</div>
+        </div>
     </div>
 
     <div class="container mx-auto px-4 py-6 max-w-7xl">
@@ -504,38 +668,72 @@
         let progressInterval;
 
         function mostrarProgreso() {
-            const container = document.getElementById('progressContainer');
-            const bar = document.getElementById('progressBar');
-            container.style.display = 'block';
-            bar.style.width = '0%';
-            bar.classList.add('loading');
+            const loader = document.getElementById('oakberryLoader');
+            const progressBar = document.getElementById('progressBarFill');
+            const percentage = document.getElementById('loadingPercentage');
+            
+            loader.classList.add('active');
+            progressBar.style.width = '0%';
+            percentage.textContent = '0%';
+            
             let progress = 0;
             progressInterval = setInterval(() => {
-                progress += Math.random() * 15;
+                // Incremento más lento conforme se acerca al 90%
+                const incremento = progress < 50 ? Math.random() * 12 : 
+                                  progress < 70 ? Math.random() * 8 : 
+                                  progress < 85 ? Math.random() * 5 : 
+                                  Math.random() * 2;
+                
+                progress += incremento;
                 if (progress > 90) progress = 90;
-                bar.style.width = progress + '%';
-            }, 200);
+                
+                progressBar.style.width = progress + '%';
+                percentage.textContent = Math.round(progress) + '%';
+            }, 120);
         }
 
         function completarProgreso() {
-            const bar = document.getElementById('progressBar');
+            const progressBar = document.getElementById('progressBarFill');
+            const percentage = document.getElementById('loadingPercentage');
+            const loader = document.getElementById('oakberryLoader');
+            
+            // Detener el interval actual
             clearInterval(progressInterval);
-            bar.style.width = '100%';
-            setTimeout(() => {
-                const container = document.getElementById('progressContainer');
-                container.style.display = 'none';
-                bar.style.width = '0%';
-                bar.classList.remove('loading');
-            }, 500);
+            
+            // Ir de donde esté hasta 100%
+            let currentProgress = parseFloat(progressBar.style.width) || 90;
+            
+            const completeInterval = setInterval(() => {
+                currentProgress += 5;
+                if (currentProgress >= 100) {
+                    currentProgress = 100;
+                    clearInterval(completeInterval);
+                    
+                    progressBar.style.width = '100%';
+                    percentage.textContent = '100%';
+                    
+                    // Esperar un momento mostrando 100% antes de ocultar
+                    setTimeout(() => {
+                        loader.classList.remove('active');
+                        progressBar.style.width = '0%';
+                        percentage.textContent = '0%';
+                    }, 500);
+                } else {
+                    progressBar.style.width = currentProgress + '%';
+                    percentage.textContent = Math.round(currentProgress) + '%';
+                }
+            }, 50);
         }
 
         function ocultarProgreso() {
             clearInterval(progressInterval);
-            const container = document.getElementById('progressContainer');
-            const bar = document.getElementById('progressBar');
-            container.style.display = 'none';
-            bar.style.width = '0%';
-            bar.classList.remove('loading');
+            const loader = document.getElementById('oakberryLoader');
+            const progressBar = document.getElementById('progressBarFill');
+            const percentage = document.getElementById('loadingPercentage');
+            
+            loader.classList.remove('active');
+            progressBar.style.width = '0%';
+            percentage.textContent = '0%';
         }
 
         function actualizarBadgeAuditoria(cantidad) {
@@ -788,10 +986,21 @@
                     alert('Error al cargar datos');
                     return;
                 }
+                
+                // Guardar datos globales
                 datosGlobales = data;
+                
+                // Actualizar dashboard (incluye tablas, gráficos y descuentos)
                 actualizarDashboard(data);
+                
+                // Actualizar timestamp
                 document.getElementById('ultimaActualizacion').textContent = new Date().toLocaleTimeString('es-ES');
-                completarProgreso();
+                
+                // Pequeño delay para asegurar que todo se renderizó
+                setTimeout(() => {
+                    completarProgreso();
+                }, 100);
+                
             } catch (error) {
                 console.error('Error:', error);
                 ocultarProgreso();
@@ -845,18 +1054,31 @@
         }
 
         function actualizarTablaDescuentosAltos(data) {
+            console.log('🔍 Actualizando tabla de descuentos altos...');
+            console.log('📊 Data recibida:', data);
+            
             const totalRow = data.length > 1 ? data.find(r => r.tienda === 'TODAS') || data[0] : data[0];
+            console.log('📋 Total Row:', totalRow);
+            
             const ordenes = totalRow.ordenesDescuentosAltos || [];
+            console.log(`🎁 Órdenes con descuentos altos: ${ordenes.length}`);
+            console.log('📦 Detalle órdenes:', ordenes);
+            
             actualizarBadgeAuditoria(ordenes.length);
             const tbody = document.getElementById('tablaDescuentosAltos');
             const seccion = document.getElementById('seccionDescuentosAltos');
+            
             if (!ordenes || ordenes.length === 0) {
+                console.log('❌ No hay órdenes con descuentos altos');
                 tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No hay órdenes con descuentos ≥50%</td></tr>';
                 seccion.classList.add('hidden');
                 return;
             }
+            
+            console.log(`✅ Mostrando ${ordenes.length} órdenes con descuentos altos`);
             seccion.classList.remove('hidden');
             tbody.innerHTML = '';
+            
             ordenes.forEach(function(orden) {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-50';
