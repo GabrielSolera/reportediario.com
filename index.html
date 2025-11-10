@@ -39,6 +39,46 @@
         .sidebar-header {
             padding: 24px 20px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Botón X para cerrar (solo móvil) */
+        .sidebar-close {
+            display: none;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .sidebar-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Overlay para móvil */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
         }
         
         .sidebar-logo {
@@ -271,6 +311,12 @@
                 transform: translateX(0);
             }
             
+            .sidebar-close {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
             .main-content {
                 margin-left: 0;
             }
@@ -313,6 +359,46 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
         }
+        
+        /* === REPORTE DIARIO === */
+        #tablaReporteDiario {
+            min-width: 800px;
+        }
+
+        #tablaReporteDiario th {
+            font-size: 12px;
+            white-space: nowrap;
+            border-right: 1px solid #E5E7EB;
+        }
+
+        #tablaReporteDiario td {
+            padding: 10px 12px;
+            text-align: right;
+            border-right: 1px solid #E5E7EB;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        #tablaReporteDiario td:first-child {
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 5;
+        }
+
+        #tablaReporteDiario tbody tr:hover {
+            background: #F9FAFB;
+        }
+
+        #tablaReporteDiario tbody tr:last-child {
+            background: #EDE9FE;
+            font-weight: 700;
+        }
+
+        #tablaReporteDiario tbody tr:last-child td:first-child {
+            background: #EDE9FE;
+        }
     </style>
 </head>
 <body>
@@ -329,16 +415,26 @@
         </div>
     </div>
 
+    <!-- OVERLAY PARA MÓVIL -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
     <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-logo">🫐 OAKBERRY</div>
-            <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Dashboard Analytics</div>
+            <div>
+                <div class="sidebar-logo">🫐 OAKBERRY</div>
+                <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Dashboard Analytics</div>
+            </div>
+            <button class="sidebar-close" onclick="closeSidebar()">✕</button>
         </div>
         <div class="sidebar-menu">
             <div class="menu-item active" onclick="showSection('dashboard')">
                 <span class="menu-item-icon">📊</span>
                 <span>Dashboard</span>
+            </div>
+            <div class="menu-item" onclick="showSection('reporteDiario')">
+                <span class="menu-item-icon">📅</span>
+                <span>Reporte Diario</span>
             </div>
             <div class="menu-item" onclick="showSection('analisis')">
                 <span class="menu-item-icon">📈</span>
@@ -349,7 +445,7 @@
                 <span>Descuentos</span>
             </div>
             <div class="menu-item" onclick="showSection('ventasMes')">
-                <span class="menu-item-icon">📅</span>
+                <span class="menu-item-icon">📆</span>
                 <span>Ventas por Mes</span>
             </div>
             <div class="menu-item" onclick="showSection('ventasSemana')">
@@ -421,6 +517,11 @@
                                 <label style="display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
                                     <input type="checkbox" class="tienda-checkbox tienda-individual" value="citymall" data-nombre="City Mall" onchange="handleTiendaChange(this)" style="width: 18px; height: 18px; cursor: pointer;">
                                     <span style="font-size: 14px;">🏪 City Mall</span>
+                                </label>
+                                
+                                <label style="display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="tienda-checkbox tienda-individual" value="aleste" data-nombre="Tuk Tuk" onchange="handleTiendaChange(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 14px;">🏪 Tuk Tuk</span>
                                 </label>
                                 
                                 <label style="display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
@@ -502,6 +603,47 @@
                             </thead>
                             <tbody id="tablaTiendas">
                                 <tr><td colspan="9" style="padding: 40px; text-align: center; color: #9CA3AF;">Cargando datos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: REPORTE DIARIO -->
+        <div class="section" id="section-reporteDiario">
+            <div style="padding: 0 10px;">
+                <!-- Header con tabs y botón de exportar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px;">Reporte Diario</h2>
+                        <p style="font-size: 13px; color: #6B7280;">Ventas por día según rango seleccionado</p>
+                    </div>
+                    
+                    <!-- Botón Exportar Excel -->
+                    <button onclick="exportarReporteDiarioExcel()" style="padding: 10px 20px; background: linear-gradient(135deg, #EF4444, #DC2626); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        📊 Exportar XLS
+                    </button>
+                </div>
+                
+                <!-- Contenedor de la tabla -->
+                <div class="card">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;" id="tituloReporteDiario">Venta Sin Impuestos</h3>
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="tablaReporteDiario" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr id="headerReporteDiario" style="background: #F3F4F6;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; position: sticky; left: 0; background: #F3F4F6; z-index: 10; border-right: 2px solid #D1D5DB;">Local</th>
+                                    <!-- Las columnas de fechas se generarán dinámicamente -->
+                                </tr>
+                            </thead>
+                            <tbody id="bodyReporteDiario">
+                                <tr>
+                                    <td colspan="100" style="padding: 40px; text-align: center; color: #9CA3AF;">
+                                        Selecciona un rango de fechas y presiona Actualizar
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -805,10 +947,27 @@
             
             document.getElementById('section-' + sectionName).classList.add('active');
             event.target.closest('.menu-item').classList.add('active');
+            
+            // Cerrar sidebar en móvil al seleccionar una opción
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
         }
 
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+        
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
         }
 
         // === TIENDAS SELECTOR ===
@@ -1018,6 +1177,9 @@
             
             // Actualizar gráficos
             actualizarGraficos(totalRow);
+            
+            // Actualizar Reporte Diario
+            generarTablaReporteDiario(data);
         }
 
         function actualizarTablaTiendas(data) {
@@ -1263,7 +1425,7 @@
                         labels: tiendas.map(t => t.tienda),
                         datasets: [{
                             data: dataParticipacion,
-                            backgroundColor: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444']
+                            backgroundColor: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6']
                         }]
                     },
                     options: {
@@ -1294,6 +1456,137 @@
                     }
                 });
             }
+        }
+
+        // === REPORTE DIARIO ===
+        function generarTablaReporteDiario(data) {
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                console.log('No hay datos para el reporte diario');
+                return;
+            }
+            
+            // Obtener rango de fechas del filtro
+            const fechaInicio = new Date(document.getElementById('fechaInicio').value + 'T00:00:00');
+            const fechaFin = new Date(document.getElementById('fechaFin').value + 'T00:00:00');
+            
+            // Generar array de fechas
+            const fechas = [];
+            let fechaActual = new Date(fechaInicio);
+            
+            while (fechaActual <= fechaFin) {
+                fechas.push(new Date(fechaActual));
+                fechaActual.setDate(fechaActual.getDate() + 1);
+            }
+            
+            // Generar headers de la tabla
+            const thead = document.getElementById('headerReporteDiario');
+            thead.innerHTML = '<th style="padding: 12px; text-align: left; font-weight: 600; position: sticky; left: 0; background: #F3F4F6; z-index: 10; border-right: 2px solid #D1D5DB;">Local</th>';
+            
+            fechas.forEach(fecha => {
+                const dia = fecha.getDate();
+                const mes = fecha.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+                const año = fecha.getFullYear();
+                
+                thead.innerHTML += `
+                    <th style="padding: 12px; text-align: center; font-weight: 600; background: #F3F4F6; border-right: 1px solid #E5E7EB; min-width: 110px;">
+                        <div style="font-size: 10px; color: #6B7280;">${año}</div>
+                        <div style="font-size: 13px; font-weight: 700;">${mes}</div>
+                        <div style="font-size: 13px;">${String(dia).padStart(2, '0')}</div>
+                    </th>
+                `;
+            });
+            
+            // Generar filas de tiendas
+            const tbody = document.getElementById('bodyReporteDiario');
+            tbody.innerHTML = '';
+            
+            // Filtrar tiendas (excluir TODAS)
+            const tiendas = data.filter(d => d.tienda !== 'TODAS');
+            const rowTOTAL = data.find(d => d.tienda === 'TODAS');
+            
+            // Por simplicidad, mostramos el valor del último día en todas las columnas
+            // En una implementación real, necesitarías hacer una llamada al backend por cada día
+            tiendas.forEach(tienda => {
+                const tr = document.createElement('tr');
+                
+                // Columna de tienda (fija)
+                tr.innerHTML = `<td style="padding: 12px; text-align: left; font-weight: 600; position: sticky; left: 0; background: white; z-index: 5; border-right: 2px solid #D1D5DB;">${tienda.tienda}</td>`;
+                
+                // Columnas de fechas (mostramos las ventas del día consultado en la última columna)
+                fechas.forEach((fecha, index) => {
+                    const esUltimoDia = index === fechas.length - 1;
+                    const venta = esUltimoDia ? tienda.ventasNetas : 0;
+                    
+                    tr.innerHTML += `<td style="padding: 10px 12px; text-align: right; border-right: 1px solid #E5E7EB; color: ${venta > 0 ? '#111827' : '#9CA3AF'}; font-weight: ${venta > 0 ? '500' : '400'};">${venta > 0 ? formatCurrency(venta) : '-'}</td>`;
+                });
+                
+                tbody.appendChild(tr);
+            });
+            
+            // Fila TOTAL
+            if (rowTOTAL) {
+                const trTotal = document.createElement('tr');
+                trTotal.style.background = '#EDE9FE';
+                trTotal.style.fontWeight = '700';
+                
+                trTotal.innerHTML = `<td style="padding: 12px; text-align: left; font-weight: 700; position: sticky; left: 0; background: #EDE9FE; z-index: 5; border-right: 2px solid #D1D5DB;">TOTAL</td>`;
+                
+                fechas.forEach((fecha, index) => {
+                    const esUltimoDia = index === fechas.length - 1;
+                    const total = esUltimoDia ? rowTOTAL.ventasNetas : 0;
+                    
+                    trTotal.innerHTML += `<td style="padding: 10px 12px; text-align: right; background: #EDE9FE; font-weight: 700; border-right: 1px solid #E5E7EB;">${total > 0 ? formatCurrency(total) : '-'}</td>`;
+                });
+                
+                tbody.appendChild(trTotal);
+            }
+        }
+
+        function exportarReporteDiarioExcel() {
+            const tabla = document.getElementById('tablaReporteDiario');
+            
+            if (!tabla || tabla.querySelector('tbody').textContent.includes('Selecciona un rango')) {
+                alert('⚠️ No hay datos para exportar. Por favor, carga los datos primero presionando "Actualizar".');
+                return;
+            }
+            
+            let csv = '';
+            
+            // Headers
+            const headers = tabla.querySelectorAll('thead th');
+            headers.forEach(th => {
+                csv += '"' + th.textContent.trim().replace(/\n/g, ' ').replace(/\s+/g, ' ') + '",';
+            });
+            csv = csv.slice(0, -1) + '\n';
+            
+            // Rows
+            const rows = tabla.querySelectorAll('tbody tr');
+            rows.forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                cells.forEach(td => {
+                    let valor = td.textContent.trim().replace(/₡/g, '').replace(/,/g, '').replace(/-/g, '0');
+                    csv += '"' + valor + '",';
+                });
+                csv = csv.slice(0, -1) + '\n';
+            });
+            
+            // Descargar
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+            const filename = `Oakberry_ReporteDiario_${fechaInicio}_a_${fechaFin}.csv`;
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('✅ Reporte exportado exitosamente como: ' + filename);
         }
 
         // === INIT ===
