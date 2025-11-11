@@ -1045,65 +1045,76 @@
         });
 
         // === DATA LOADING ===
-        async function cargarDatos() {
-            const fechaInicioInput = document.getElementById('fechaInicio').value;
-            const fechaFinInput = document.getElementById('fechaFin').value;
+async function cargarDatos() {
+    const fechaInicioInput = document.getElementById('fechaInicio').value;
+    const fechaFinInput = document.getElementById('fechaFin').value;
+    
+    if (!fechaInicioInput || !fechaFinInput) {
+        alert('Por favor selecciona ambas fechas (inicio y fin)');
+        return;
+    }
+    
+    // Validar que fecha inicio sea menor o igual a fecha fin
+    const fechaInicio = new Date(fechaInicioInput + 'T12:00:00');
+    const fechaFin = new Date(fechaFinInput + 'T12:00:00');
+    
+    if (fechaInicio > fechaFin) {
+        alert('La fecha inicial debe ser menor o igual a la fecha final');
+        return;
+    }
+    
+    // Obtener tiendas seleccionadas
+    const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
+    
+    // 🔥 NUEVO: Detectar si estamos en la sección de Reporte Diario
+    const seccionActiva = document.querySelector('.section.active');
+    const esReporteDiario = seccionActiva && seccionActiva.id === 'section-reporteDiario';
+    
+    console.log('🎯 Sección activa:', seccionActiva ? seccionActiva.id : 'ninguna');
+    console.log('📅 Es Reporte Diario:', esReporteDiario);
+    
+    if (esReporteDiario) {
+        // 🔥 CARGAR REPORTE DIARIO
+        await cargarReporteDiario();
+    } else {
+        // ✅ CARGAR DASHBOARD NORMAL (solo fecha fin)
+        const day = fechaFin.getDate();
+        const month = fechaFin.getMonth() + 1;
+        const year = fechaFin.getFullYear();
+        
+        const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tiendasSeleccionadas}&modoRapido=true`;
+        
+        console.log('📡 Cargando dashboard desde:', url);
+        console.log('📅 Fecha seleccionada:', fechaFinInput);
+        console.log('🏪 Tiendas seleccionadas:', tiendasSeleccionadas);
+        mostrarProgreso();
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
             
-            if (!fechaInicioInput || !fechaFinInput) {
-                alert('Por favor selecciona ambas fechas (inicio y fin)');
-                return;
-            }
+            console.log('📊 Datos recibidos:', data);
             
-            // Validar que fecha inicio sea menor o igual a fecha fin
-            const fechaInicio = new Date(fechaInicioInput + 'T12:00:00');
-            const fechaFin = new Date(fechaFinInput + 'T12:00:00');
-            
-            if (fechaInicio > fechaFin) {
-                alert('La fecha inicial debe ser menor o igual a la fecha final');
-                return;
-            }
-            
-            // Por ahora usamos solo la fecha final para el query (el backend espera una fecha específica)
-            // En el futuro se puede extender el backend para soportar rangos
-            const day = fechaFin.getDate();
-            const month = fechaFin.getMonth() + 1;
-            const year = fechaFin.getFullYear();
-            
-            // Obtener tiendas seleccionadas
-            const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
-            
-            const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tiendasSeleccionadas}&modoRapido=true`;
-            
-            console.log('📡 Cargando datos desde:', url);
-            console.log('📅 Rango seleccionado:', fechaInicioInput, 'a', fechaFinInput);
-            console.log('🏪 Tiendas seleccionadas:', tiendasSeleccionadas);
-            mostrarProgreso();
-            
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                console.log('📊 Datos recibidos:', data);
-                
-                if (!data || data.length === 0 || data.error) {
-                    alert('Error al cargar datos: ' + (data.error || data.message || 'Sin datos'));
-                    completarProgreso();
-                    return;
-                }
-                
-                datosGlobales = data;
-                actualizarDashboard(data);
-                
-                setTimeout(() => {
-                    completarProgreso();
-                }, 200);
-                
-            } catch (error) {
-                console.error('❌ Error:', error);
-                alert('Error de conexión: ' + error.message);
+            if (!data || data.length === 0 || data.error) {
+                alert('Error al cargar datos: ' + (data.error || data.message || 'Sin datos'));
                 completarProgreso();
+                return;
             }
+            
+            datosGlobales = data;
+            actualizarDashboard(data);
+            
+            setTimeout(() => {
+                completarProgreso();
+            }, 200);
+            
+        } catch (error) {
+            console.error('❌ Error:', error);
+            alert('Error de conexión: ' + error.message);
+            completarProgreso();
         }
+    }
+}
 
         function actualizarDashboard(data) {
             console.log('🔄 Actualizando dashboard...');
