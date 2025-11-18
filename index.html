@@ -1062,13 +1062,19 @@ async function cargarDatos() {
         return;
     }
     
-    const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
+    // 🔥 VERIFICAR QUÉ SECCIÓN ESTÁ ACTIVA
     const seccionActiva = document.querySelector('.section.active');
     const esReporteDiario = seccionActiva && seccionActiva.id === 'section-reporteDiario';
     
+    console.log('📍 Sección activa:', seccionActiva?.id);
+    console.log('📊 Es Reporte Diario?', esReporteDiario);
+    
     if (esReporteDiario) {
+        // 🔥 CARGAR REPORTE DIARIO
         await cargarReporteDiario();
     } else {
+        // 🔥 CARGAR DASHBOARD NORMAL
+        const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
         const day = fechaFin.getDate();
         const month = fechaFin.getMonth() + 1;
         const year = fechaFin.getFullYear();
@@ -1077,7 +1083,6 @@ async function cargarDatos() {
         
         console.log('📡 Cargando dashboard desde:', url);
         
-        // 🔥 MOSTRAR LOADING SIN RECARGAR PÁGINA
         mostrarLoadingDashboard();
         
         try {
@@ -1093,7 +1098,7 @@ async function cargarDatos() {
             }
             
             datosGlobales = data;
-            actualizarDashboard(data); // Esta función ya existe en tu código
+            actualizarDashboard(data);
             ocultarLoadingDashboard();
             
         } catch (error) {
@@ -1740,28 +1745,48 @@ async function cargarReporteDiario() {
 /**
  * Genera la tabla del reporte diario con todos los días
  */
+/**
+ * Genera la tabla del reporte diario con todos los días
+ */
 function generarTablaReporteDiarioCompleta(datosReporte) {
     if (!datosReporte || !Array.isArray(datosReporte) || datosReporte.length === 0) {
-        console.log('No hay datos para el reporte diario');
+        console.log('❌ No hay datos para el reporte diario');
+        const tbody = document.getElementById('bodyReporteDiario');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="100" style="padding: 40px; text-align: center; color: #EF4444;">
+                        ❌ No se encontraron datos para el rango seleccionado
+                    </td>
+                </tr>
+            `;
+        }
         return;
     }
     
     console.log('📊 Generando tabla con', datosReporte.length, 'días de datos');
+    console.log('🏪 Tiendas en primer día:', datosReporte[0].tiendas);
     
     // Obtener lista única de tiendas
     const tiendasSet = new Set();
     datosReporte.forEach(dia => {
         if (dia.tiendas && Array.isArray(dia.tiendas)) {
-            dia.tiendas.forEach(t => tiendasSet.add(t.tienda));
+            dia.tiendas.forEach(t => {
+                if (t.tienda) {
+                    tiendasSet.add(t.tienda);
+                }
+            });
         }
     });
     
     const tiendas = Array.from(tiendasSet).sort();
     
+    console.log('🏪 Tiendas encontradas:', tiendas);
+    
     // Generar headers de la tabla
     const thead = document.getElementById('headerReporteDiario');
     if (!thead) {
-        console.error('No se encontró el elemento headerReporteDiario');
+        console.error('❌ No se encontró el elemento headerReporteDiario');
         return;
     }
     
@@ -1785,7 +1810,7 @@ function generarTablaReporteDiarioCompleta(datosReporte) {
     // Generar cuerpo de la tabla
     const tbody = document.getElementById('bodyReporteDiario');
     if (!tbody) {
-        console.error('No se encontró el elemento bodyReporteDiario');
+        console.error('❌ No se encontró el elemento bodyReporteDiario');
         return;
     }
     
@@ -1806,7 +1831,7 @@ function generarTablaReporteDiarioCompleta(datosReporte) {
         
         // Columnas de ventas por día
         datosReporte.forEach(dia => {
-            const tiendaData = dia.tiendas.find(t => t.tienda === tienda);
+            const tiendaData = dia.tiendas ? dia.tiendas.find(t => t.tienda === tienda) : null;
             const venta = tiendaData ? (tiendaData.ventasNetas || 0) : 0;
             
             // Acumular para totales
@@ -1821,9 +1846,12 @@ function generarTablaReporteDiarioCompleta(datosReporte) {
             if (venta > 0) {
                 td.style.color = '#111827';
                 td.style.fontWeight = '500';
+                td.textContent = formatCurrency(venta);
+            } else {
+                td.style.color = '#9CA3AF';
+                td.textContent = '-';
             }
             
-            td.textContent = formatCurrency(venta);
             tr.appendChild(td);
         });
         
@@ -1845,13 +1873,14 @@ function generarTablaReporteDiarioCompleta(datosReporte) {
         td.style.cssText = 'padding: 10px 12px; text-align: right; font-weight: 700; border-right: 1px solid #E5E7EB; background: #EDE9FE;';
         
         const total = totalesPorDia[dia.fecha] || 0;
-        td.textContent = formatCurrency(total);
+        td.textContent = total > 0 ? formatCurrency(total) : '-';
         trTotal.appendChild(td);
     });
     
     tbody.appendChild(trTotal);
     
     console.log('✅ Tabla generada con', tiendas.length, 'tiendas y', datosReporte.length, 'días');
+    console.log('💰 Totales por día:', totalesPorDia);
 }
 
 /**
