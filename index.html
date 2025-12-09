@@ -1673,6 +1673,7 @@ function ocultarLoadingDashboard() {
         });
         // Variable global para almacenar datos del reporte
 let datosReporteDiario = null;
+
 /**
  * Función para cargar el reporte diario desde el backend
  */
@@ -1685,22 +1686,15 @@ async function cargarReporteDiario() {
         return;
     }
     
-    // Convertir fechas
-    const inicio = new Date(fechaInicio + 'T12:00:00');
-    const fin = new Date(fechaFin + 'T12:00:00');
-    
-    if (inicio > fin) {
-        alert('La fecha inicial debe ser menor o igual a la fecha final');
-        return;
-    }
-    
     // Obtener tiendas seleccionadas
     const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
     
-    console.log('📡 Cargando reporte diario del', fechaInicio, 'al', fechaFin);
+    const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&tienda=${tiendasSeleccionadas}`;
+    
+    console.log('📡 Cargando reporte diario:', url);
     
     try {
-        // Mostrar indicador de carga
+        // Mostrar indicador de carga en la tabla
         const tbody = document.getElementById('bodyReporteDiario');
         if (tbody) {
             tbody.innerHTML = `
@@ -1713,71 +1707,6 @@ async function cargarReporteDiario() {
                 </tr>
             `;
         }
-        
-        // Array para almacenar datos de cada día
-        const datosReporte = [];
-        
-        // Iterar por cada día del rango
-        let fechaActual = new Date(inicio);
-        
-        while (fechaActual <= fin) {
-            const day = fechaActual.getDate();
-            const month = fechaActual.getMonth() + 1;
-            const year = fechaActual.getFullYear();
-            
-            const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tiendasSeleccionadas}&modoRapido=true`;
-            
-            console.log(`📅 Cargando día: ${day}/${month}/${year}`);
-            
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                if (data && !data.error && Array.isArray(data)) {
-                    // Guardar datos del día
-                    datosReporte.push({
-                        fecha: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-                        tiendas: data
-                    });
-                }
-            } catch (error) {
-                console.error(`❌ Error cargando día ${day}/${month}/${year}:`, error);
-            }
-            
-            // Avanzar al siguiente día
-            fechaActual.setDate(fechaActual.getDate() + 1);
-        }
-        
-        console.log('📊 Reporte diario cargado:', datosReporte);
-        
-        if (datosReporte.length > 0) {
-            datosReporteDiario = datosReporte;
-            generarTablaReporteDiarioCompleta(datosReporte);
-        } else {
-            if (tbody) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="100" style="padding: 40px; text-align: center; color: #EF4444;">
-                            ❌ No se pudieron cargar datos para el rango seleccionado
-                        </td>
-                    </tr>
-                `;
-            }
-        }
-    } catch (error) {
-        console.error('❌ Error:', error);
-        const tbody = document.getElementById('bodyReporteDiario');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="100" style="padding: 40px; text-align: center; color: #EF4444;">
-                        ❌ Error de conexión: ${error.message}
-                    </td>
-                </tr>
-            `;
-        }
-    }
-}
         
         const response = await fetch(url);
         const data = await response.json();
