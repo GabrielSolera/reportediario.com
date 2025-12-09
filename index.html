@@ -1652,7 +1652,7 @@ function ocultarLoadingDashboard() {
             // Set default dates: del 1 del mes actual hasta ayer
             const hoy = new Date();
             const ayer = new Date(hoy);
-            ayer.setDate(ayer.getDate() - 1);
+            ayer.setDate(ayer.getDate());
             
             // Fecha inicio: primer día del mes
             const primerDiaMes = new Date(ayer.getFullYear(), ayer.getMonth(), 1);
