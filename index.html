@@ -1,1479 +1,1379 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oakberry Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(to bottom right, #f8f7ff, #f3f1ff);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 260px;
-            height: 100vh;
-            background: linear-gradient(180deg, #6B21A8 0%, #581C87 100%);
-            color: white;
-            z-index: 1000;
-            transition: transform 0.3s ease;
-            overflow-y: auto;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
-        }
-        
-        .sidebar-header {
-            padding: 24px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oakberry Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0c0c10;
+  --surface:  #13131a;
+  --surface2: #1a1a24;
+  --surface3: #21212e;
+  --border:   #2a2a3a;
+  --border2:  #333345;
+  --accent:   #a855f7;
+  --accent2:  #7c3aed;
+  --lime:     #c8f55a;
+  --teal:     #5af5c8;
+  --amber:    #f5c85a;
+  --red:      #f55a5a;
+  --text:     #e8e8f0;
+  --muted:    #7070a0;
+  --muted2:   #4a4a6a;
+  --font:     'Syne', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --sidebar-w: 240px;
+  --radius:   14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;}
 
-        .sidebar-close {
-            display: none;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            font-size: 24px;
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  height:100vh;overflow-y:auto;
+  position:relative;z-index:50;
+}
+.sidebar-logo{
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-mark{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.logo-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--lime);
+  box-shadow:0 0 10px var(--lime);
+  animation:pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+.logo-text{font-size:17px;font-weight:900;letter-spacing:.06em;color:var(--text);}
+.logo-sub{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.1em;text-transform:uppercase;}
+.sidebar-nav{padding:12px 0;flex:1;}
+.nav-section{padding:16px 16px 4px;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted2);}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 16px;
+  cursor:pointer;font-size:13px;font-weight:600;
+  color:var(--muted);
+  border-left:2px solid transparent;
+  transition:all .18s;
+  border-radius:0 8px 8px 0;
+  margin:1px 8px 1px 0;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2);}
+.nav-item.active{background:var(--surface3);color:var(--text);border-left-color:var(--accent);}
+.nav-item .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{
+  margin-left:auto;font-size:9px;font-weight:700;
+  background:rgba(168,85,247,.15);color:var(--accent);
+  padding:2px 7px;border-radius:10px;letter-spacing:.04em;
+}
 
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
-        }
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 28px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;gap:16px;flex-wrap:nowrap;
+}
+.topbar-left{display:flex;align-items:center;gap:16px;flex-shrink:0;}
+.page-title{font-size:16px;font-weight:800;color:var(--text);}
+.page-sub{font-size:11px;color:var(--muted);margin-top:1px;font-family:var(--mono);}
+.topbar-controls{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
+.ctrl-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;}
+.ctrl-input,.ctrl-select{
+  font-family:var(--font);font-size:12px;font-weight:600;
+  background:var(--surface2);color:var(--text);
+  border:1px solid var(--border2);
+  padding:7px 12px;border-radius:8px;
+  outline:none;cursor:pointer;
+  transition:border-color .15s;
+}
+.ctrl-input:hover,.ctrl-select:hover,.ctrl-input:focus,.ctrl-select:focus{border-color:var(--accent);}
+.ctrl-divider{width:1px;height:24px;background:var(--border2);}
+.btn{
+  font-family:var(--font);font-size:12px;font-weight:700;
+  padding:8px 18px;border-radius:8px;border:none;cursor:pointer;
+  transition:all .18s;display:flex;align-items:center;gap:6px;white-space:nowrap;
+}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#b56ef8;box-shadow:0 0 18px rgba(168,85,247,.35);}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+.btn-ghost{background:var(--surface3);color:var(--muted);border:1px solid var(--border2);}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2);}
+.btn-lime{background:rgba(200,245,90,.12);color:var(--lime);border:1px solid rgba(200,245,90,.25);}
+.btn-lime:hover{background:rgba(200,245,90,.2);box-shadow:0 0 14px rgba(200,245,90,.15);}
 
-        .sidebar-overlay.active { display: block; opacity: 1; }
-        
-        .sidebar-logo { font-size: 24px; font-weight: 900; letter-spacing: 1px; }
-        
-        .sidebar-menu { padding: 20px 0; }
-        
-        .menu-item {
-            padding: 14px 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 15px;
-            font-weight: 500;
-            border-left: 3px solid transparent;
-        }
-        
-        .menu-item:hover { background: rgba(255,255,255,0.1); border-left-color: #FCD34D; }
-        .menu-item.active { background: rgba(255,255,255,0.15); border-left-color: #FCD34D; font-weight: 600; }
-        
-        .main-content {
-            margin-left: 260px;
-            min-height: 100vh;
-            transition: margin-left 0.3s ease;
-        }
-        
-        .dashboard-header {
-            background: white;
-            padding: 20px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .toggle-sidebar {
-            display: none;
-            padding: 8px 12px;
-            background: #6B21A8;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-        }
-        
-        .section {
-            display: none;
-            padding: 30px;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .section.active { display: block; }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
-        }
-        
-        .kpi-card {
-            background: linear-gradient(135deg, #6B21A8, #7C3AED);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(107,33,168,0.3);
-        }
-        
-        .date-input {
-            padding: 10px 15px;
-            border: 2px solid #E5E7EB;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: border-color 0.2s;
-        }
-        
-        .date-input:focus { outline: none; border-color: #6B21A8; }
-        
-        .btn-apply {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #6B21A8, #7C3AED);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .btn-apply:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(107,33,168,0.3); }
-        .btn-apply:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.active { transform: translateX(0); }
-            .sidebar-close { display: flex; align-items: center; justify-content: center; }
-            .main-content { margin-left: 0; }
-            .toggle-sidebar { display: block; }
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        #tablaReporteDiario { min-width: 800px; }
-        #tablaReporteDiario th { font-size: 12px; white-space: nowrap; border-right: 1px solid #E5E7EB; }
-        #tablaReporteDiario td { padding: 10px 12px; text-align: right; border-right: 1px solid #E5E7EB; border-bottom: 1px solid #F3F4F6; }
-        #tablaReporteDiario td:first-child { text-align: left; font-weight: 600; position: sticky; left: 0; background: white; z-index: 5; }
-        #tablaReporteDiario tbody tr:hover { background: #F9FAFB; }
-        #tablaReporteDiario tbody tr:last-child { background: #EDE9FE; font-weight: 700; }
-        #tablaReporteDiario tbody tr:last-child td:first-child { background: #EDE9FE; }
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:24px 28px;}
+.content::-webkit-scrollbar{width:5px;}
+.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.section{display:none;animation:fadeUp .25s ease;}
+.section.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
-        /* ─── PROYECCIÓN: estilos específicos ─── */
-        .proy-header {
-            background: linear-gradient(135deg, #6B21A8 0%, #4C1D95 100%);
-            border-radius: 16px;
-            padding: 24px 28px;
-            color: white;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .proy-controls {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 24px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        .proy-ctrl-group { display: flex; align-items: center; gap: 8px; }
-        .proy-ctrl-label { font-size: 12px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
-        .proy-select {
-            padding: 9px 14px;
-            border: 2px solid #E5E7EB;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #111827;
-            background: white;
-            cursor: pointer;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .proy-select:focus, .proy-select:hover { border-color: #6B21A8; }
-        .proy-divider { width: 1px; height: 32px; background: #E5E7EB; }
-        .btn-proy {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #6B21A8, #7C3AED);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-proy:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(107,33,168,0.35); }
-        .btn-proy:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+/* ── CARDS ── */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+}
+.card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);}
+.card-tag{font-size:10px;font-weight:600;background:var(--surface3);color:var(--muted);padding:3px 10px;border-radius:20px;font-family:var(--mono);}
+.card-body{padding:18px;}
 
-        .proy-kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .proy-kpi {
-            background: white;
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
-            border-left: 4px solid #6B21A8;
-        }
-        .proy-kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9CA3AF; margin-bottom: 8px; }
-        .proy-kpi-value { font-size: 26px; font-weight: 900; color: #111827; }
-        .proy-kpi-sub { font-size: 12px; color: #6B7280; margin-top: 4px; }
-        .proy-kpi-delta { font-size: 12px; font-weight: 700; margin-top: 6px; display: inline-block; padding: 2px 8px; border-radius: 20px; }
-        .delta-pos { background: #D1FAE5; color: #065F46; }
-        .delta-neg { background: #FEE2E2; color: #991B1B; }
-        .delta-neu { background: #F3F4F6; color: #6B7280; }
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.kpi{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;
+  position:relative;overflow:hidden;
+  transition:border-color .2s;
+}
+.kpi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  opacity:0;transition:opacity .2s;
+}
+.kpi:hover::before{opacity:1;}
+.kpi:hover{border-color:var(--border2);}
+.kpi.k-purple::before{background:linear-gradient(90deg,var(--accent),transparent);}
+.kpi.k-lime::before{background:linear-gradient(90deg,var(--lime),transparent);}
+.kpi.k-teal::before{background:linear-gradient(90deg,var(--teal),transparent);}
+.kpi.k-amber::before{background:linear-gradient(90deg,var(--amber),transparent);}
+.kpi.k-red::before{background:linear-gradient(90deg,var(--red),transparent);}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;}
+.kpi-value{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--text);}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.kpi-delta{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:700;font-family:var(--mono);
+  padding:2px 8px;border-radius:20px;margin-top:6px;
+}
+.d-pos{background:rgba(90,245,200,.1);color:var(--teal);}
+.d-neg{background:rgba(245,90,90,.1);color:var(--red);}
+.d-neu{background:var(--surface2);color:var(--muted);}
 
-        .proy-two-col { display: grid; grid-template-columns: 1fr 360px; gap: 20px; margin-bottom: 24px; }
-        @media(max-width:1100px) { .proy-two-col { grid-template-columns: 1fr; } .proy-kpi-grid { grid-template-columns: 1fr 1fr; } }
+/* ── 2-COL GRID ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
 
-        .proy-card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; }
-        .proy-card-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #F3F4F6;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .proy-card-title { font-size: 13px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.07em; }
-        .proy-card-tag { font-size: 11px; background: #F3F4F6; color: #6B7280; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
-        .proy-card-body { padding: 20px; }
-        .chart-wrap { position: relative; height: 280px; }
+/* ── STORE TABLE ── */
+.store-table{width:100%;border-collapse:collapse;}
+.store-table thead th{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--muted);padding:10px 12px;text-align:right;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+.store-table thead th:first-child{text-align:left;}
+.store-table tbody tr{border-bottom:1px solid rgba(42,42,58,.5);transition:background .12s;}
+.store-table tbody tr:hover{background:var(--surface2);}
+.store-table tbody td{padding:11px 12px;font-size:13px;text-align:right;font-family:var(--mono);}
+.store-table tbody td:first-child{text-align:left;font-family:var(--font);font-weight:700;font-size:13px;}
+.store-table .total-row{background:rgba(168,85,247,.07);}
+.store-table .total-row td{font-weight:700;}
+.pos{color:var(--teal);}
+.neg{color:var(--red);}
 
-        .cal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .cal-item {
-            background: #F9FAFB;
-            border: 1px solid #E5E7EB;
-            border-radius: 10px;
-            padding: 10px 12px;
-        }
-        .cal-item-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9CA3AF; margin-bottom: 6px; }
-        .cal-compare { display: flex; align-items: baseline; gap: 6px; }
-        .cal-val-prev { font-size: 16px; font-weight: 700; color: #9CA3AF; }
-        .cal-arrow { font-size: 14px; color: #D1D5DB; }
-        .cal-val-next { font-size: 20px; font-weight: 900; color: #111827; }
-        .cal-up { color: #059669 !important; }
-        .cal-down { color: #DC2626 !important; }
+/* ── CHART WRAPPER ── */
+.chart-wrap{position:relative;height:240px;}
+.chart-wrap-tall{position:relative;height:300px;}
 
-        .store-list-proy { display: flex; flex-direction: column; gap: 10px; }
-        .store-proy-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 14px;
-            background: #F9FAFB;
-            border: 1px solid #E5E7EB;
-            border-radius: 10px;
-        }
-        .store-proy-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .store-proy-name { font-size: 13px; font-weight: 700; flex: 1; color: #111827; }
-        .store-proy-amount { font-size: 14px; font-weight: 800; color: #6B21A8; }
-        .store-proy-pct { font-size: 11px; color: #9CA3AF; margin-left: 6px; }
-        .store-bar-wrap { height: 3px; background: #E5E7EB; border-radius: 2px; margin-top: 6px; width: 100%; }
-        .store-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+/* ── TABS ── */
+.tab-pills{display:flex;gap:4px;background:var(--surface2);padding:3px;border-radius:8px;}
+.tab-pill{
+  font-size:11px;font-weight:700;padding:5px 14px;border-radius:6px;
+  cursor:pointer;border:none;background:none;color:var(--muted);
+  transition:all .15s;
+}
+.tab-pill.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
 
-        .proy-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .proy-table thead th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9CA3AF; padding: 10px 12px; text-align: left; border-bottom: 2px solid #F3F4F6; background: #F9FAFB; }
-        .proy-table tbody tr { border-bottom: 1px solid #F9FAFB; transition: background 0.15s; }
-        .proy-table tbody tr:hover { background: #FAFAFA; }
-        .proy-table tbody td { padding: 10px 12px; }
-        .row-weekend { background: #FEFBFF; }
-        .row-holiday { background: #FFF5F5; }
-        .row-today { background: #F0FDF4 !important; }
-        .table-scroll { max-height: 420px; overflow-y: auto; }
-        .table-scroll::-webkit-scrollbar { width: 4px; }
-        .table-scroll::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 2px; }
+/* ── PROYECCIÓN: Calendar grid ── */
+.cal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cal-item{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;
+}
+.cal-item-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+.cal-compare{display:flex;align-items:baseline;gap:6px;}
+.cal-prev{font-size:15px;font-weight:700;color:var(--muted2);}
+.cal-arr{font-size:13px;color:var(--border2);}
+.cal-next{font-size:21px;font-weight:900;color:var(--text);}
+.arr-up{color:var(--teal) !important;}
+.arr-dn{color:var(--red) !important;}
 
-        .badge-day { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
-        .badge-sab { background: #EDE9FE; color: #6B21A8; }
-        .badge-dom { background: #FEF3C7; color: #92400E; }
-        .badge-hol { background: #FEE2E2; color: #991B1B; }
-        .badge-hoy { background: #D1FAE5; color: #065F46; }
+/* ── STORE BREAKDOWN BARS ── */
+.store-list{display:flex;flex-direction:column;gap:8px;}
+.store-bar-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;}
+.store-bar-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.store-bar-name{font-size:12px;font-weight:700;}
+.store-bar-amt{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);}
+.store-bar-pct{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:6px;}
+.bar-track{height:3px;background:var(--border);border-radius:2px;}
+.bar-fill{height:100%;border-radius:2px;transition:width .9s cubic-bezier(.4,0,.2,1);}
 
-        .conf-dots { display: flex; gap: 3px; align-items: center; }
-        .conf-dot { width: 12px; height: 4px; border-radius: 2px; }
+/* ── PROY TABLE ── */
+.proy-table{width:100%;border-collapse:collapse;}
+.proy-table thead th{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--muted);padding:10px 12px;text-align:left;
+  border-bottom:1px solid var(--border);background:var(--surface2);
+  white-space:nowrap;
+}
+.proy-table tbody tr{border-bottom:1px solid rgba(42,42,58,.4);transition:background .12s;}
+.proy-table tbody tr:hover{background:var(--surface2);}
+.proy-table tbody td{padding:9px 12px;font-size:12px;}
+.row-weekend{background:rgba(168,85,247,.03);}
+.row-holiday{background:rgba(245,90,90,.04);}
+.row-today{background:rgba(90,245,200,.05) !important;}
+.badge-sm{display:inline-block;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px;margin-left:5px;}
+.b-sat{background:rgba(168,85,247,.15);color:var(--accent);}
+.b-sun{background:rgba(245,200,90,.15);color:var(--amber);}
+.b-hol{background:rgba(245,90,90,.15);color:var(--red);}
+.b-hoy{background:rgba(90,245,200,.15);color:var(--teal);}
+.conf-row{display:flex;gap:3px;align-items:center;}
+.conf-seg{width:12px;height:3px;border-radius:2px;}
 
-        .proy-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; color: #9CA3AF; gap: 10px; text-align: center; }
-        .proy-empty-icon { font-size: 42px; opacity: 0.4; }
-        .proy-empty-text { font-size: 14px; }
+/* ── LOADER ── */
+.global-loader{
+  position:fixed;inset:0;background:rgba(12,12,16,.88);
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;gap:14px;z-index:9999;backdrop-filter:blur(4px);
+}
+.loader-ring{
+  width:44px;height:44px;
+  border:3px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .75s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loader-txt{font-size:14px;font-weight:700;color:var(--accent);}
+.loader-step{font-size:12px;color:var(--muted);font-family:var(--mono);}
 
-        .proy-loader-overlay {
-            position: fixed; inset: 0;
-            background: rgba(255,255,255,0.85);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 16px;
-            z-index: 9999;
-            backdrop-filter: blur(3px);
-        }
-        .proy-loader-ring {
-            width: 48px; height: 48px;
-            border: 4px solid #E5E7EB;
-            border-top-color: #6B21A8;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        .proy-loader-text { font-size: 15px; font-weight: 700; color: #6B21A8; }
-        .proy-loader-step { font-size: 13px; color: #9CA3AF; }
+/* ── EMPTY STATE ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:12px;text-align:center;}
+.empty-icon{font-size:40px;opacity:.3;}
+.empty-txt{font-size:13px;color:var(--muted);}
 
-        .chart-tabs { display: flex; gap: 4px; background: #F3F4F6; padding: 3px; border-radius: 8px; }
-        .chart-tab { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer; border: none; background: none; color: #6B7280; transition: all 0.15s; }
-        .chart-tab.active { background: white; color: #6B21A8; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    </style>
+/* ── SCROLLABLE CONTAINER ── */
+.scroll-box{overflow-x:auto;}
+.scroll-box::-webkit-scrollbar{height:4px;}
+.scroll-box::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.table-scroll{max-height:400px;overflow-y:auto;}
+.table-scroll::-webkit-scrollbar{width:4px;}
+.table-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── PROY CONTROLS BAR ── */
+.proy-controls{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 20px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  margin-bottom:20px;
+}
+
+/* ── DATE RANGE PILL ── */
+.date-range-group{display:flex;align-items:center;gap:6px;}
+.date-sep{font-size:11px;color:var(--muted);font-family:var(--mono);}
+
+/* RESPONSIVE */
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:900px){
+  .sidebar{position:fixed;left:-260px;transition:left .3s;z-index:200;}
+  .sidebar.open{left:0;}
+  .main{margin-left:0;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+}
+</style>
 </head>
 <body>
 
-<!-- PROYECCIÓN LOADER -->
-<div class="proy-loader-overlay" id="proyLoader">
-    <div class="proy-loader-ring"></div>
-    <div class="proy-loader-text">Calculando proyección...</div>
-    <div class="proy-loader-step" id="proyLoaderStep">Consultando historial de ventas</div>
+<!-- LOADER -->
+<div class="global-loader" id="globalLoader">
+  <div class="loader-ring"></div>
+  <div class="loader-txt" id="loaderTxt">Cargando...</div>
+  <div class="loader-step" id="loaderStep"></div>
 </div>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-
+<!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div>
-            <div class="sidebar-logo">🫐 OAKBERRY</div>
-            <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Dashboard Analytics</div>
-        </div>
-        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-dot"></div>
+      <div class="logo-text">🫐 OAKBERRY</div>
     </div>
-    <div class="sidebar-menu">
-        <div class="menu-item active" onclick="showSection('dashboard', this)">
-            <span style="font-size: 20px; width: 24px;">📊</span>
-            <span>Dashboard</span>
-        </div>
-        <div class="menu-item" onclick="showSection('reporteDiario', this)">
-            <span style="font-size: 20px; width: 24px;">📅</span>
-            <span>Reporte Diario</span>
-        </div>
-        <div class="menu-item" onclick="showSection('analisis', this)">
-            <span style="font-size: 20px; width: 24px;">📈</span>
-            <span>Análisis</span>
-        </div>
-        <div class="menu-item" onclick="showSection('descuentos', this)">
-            <span style="font-size: 20px; width: 24px;">💰</span>
-            <span>Descuentos</span>
-        </div>
-        <div class="menu-item" onclick="showSection('ticketMedio', this)">
-            <span style="font-size: 20px; width: 24px;">🎫</span>
-            <span>Ticket Medio</span>
-        </div>
-        <div class="menu-item" onclick="showSection('detallePagos', this)">
-            <span style="font-size: 20px; width: 24px;">💳</span>
-            <span>Detalle de Pagos</span>
-        </div>
-        <!-- NUEVO -->
-        <div class="menu-item" onclick="showSection('proyeccion', this)">
-            <span style="font-size: 20px; width: 24px;">📉</span>
-            <span>Proyección de Ventas</span>
-        </div>
+    <div class="logo-sub">Dashboard Analytics</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <div class="nav-item active" data-section="dashboard">
+      <span class="nav-icon">📊</span><span>Dashboard</span>
     </div>
+    <div class="nav-item" data-section="reporteDiario">
+      <span class="nav-icon">📅</span><span>Reporte Diario</span>
+    </div>
+    <div class="nav-section">Análisis</div>
+    <div class="nav-item" data-section="analisis">
+      <span class="nav-icon">📈</span><span>Análisis</span>
+    </div>
+    <div class="nav-item" data-section="descuentos">
+      <span class="nav-icon">💰</span><span>Descuentos</span>
+    </div>
+    <div class="nav-item" data-section="ticketMedio">
+      <span class="nav-icon">🎫</span><span>Ticket Medio</span>
+    </div>
+    <div class="nav-item" data-section="detallePagos">
+      <span class="nav-icon">💳</span><span>Detalle de Pagos</span>
+    </div>
+    <div class="nav-section">Inteligencia</div>
+    <div class="nav-item" data-section="proyeccion">
+      <span class="nav-icon">📉</span><span>Proyección</span>
+      <span class="nav-badge">AI</span>
+    </div>
+  </div>
 </div>
 
-<div class="main-content" id="mainContent">
-    <div class="dashboard-header">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <button class="toggle-sidebar" onclick="toggleSidebar()">☰</button>
-                <div>
-                    <h1 style="font-size: 24px; font-weight: 800; color: #6B21A8;">Dashboard Oakberry</h1>
-                    <p style="font-size: 13px; color: #6B7280;">Última actualización: <span id="ultimaActualizacion">--:--</span></p>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;" id="headerControlsMain">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label style="font-size: 12px; color: #6B7280; font-weight: 600;">Desde:</label>
-                    <input type="date" class="date-input" id="fechaInicio" style="min-width: 150px;">
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label style="font-size: 12px; color: #6B7280; font-weight: 600;">Hasta:</label>
-                    <input type="date" class="date-input" id="fechaFin" style="min-width: 150px;">
-                </div>
-                <div style="position: relative;">
-                    <button class="date-input" onclick="toggleTiendasDropdown(event)" style="cursor: pointer; min-width: 180px; display: flex; justify-content: space-between; align-items: center;">
-                        <span id="tiendasLabel">📊 Todas las tiendas</span>
-                        <span style="margin-left: 8px;">▼</span>
-                    </button>
-                    <div id="tiendasDropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: white; border: 2px solid #E5E7EB; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); min-width: 250px; z-index: 1000;">
-                        <div style="padding: 12px;">
-                            <label style="display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 8px;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
-                                <input type="checkbox" class="tienda-checkbox" value="todas" data-nombre="Todas" checked onchange="handleTiendaChange(this)" style="width: 18px; height: 18px; cursor: pointer;">
-                                <span style="font-weight: 600; font-size: 14px;">📊 Todas las tiendas</span>
-                            </label>
-                            <div style="border-top: 2px solid #E5E7EB; margin: 8px 0;"></div>
-                            <label style="display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 8px;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
-                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="guachipelin" data-nombre="Guachipelín" onchange="handleTiendaChange(this)" style="width: 18px; height: 18px;">
-                                <span style="font-size: 14px;">🏪 Guachipelín</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 8px;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
-                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="escazu" data-nombre="Avenida Escazú" onchange="handleTiendaChange(this)" style="width: 18px; height: 18px;">
-                                <span style="font-size: 14px;">🏪 Avenida Escazú</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 8px;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
-                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="citymall" data-nombre="City Mall" onchange="handleTiendaChange(this)" style="width: 18px; height: 18px;">
-                                <span style="font-size: 14px;">🏪 City Mall</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; border-radius: 8px;" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">
-                                <input type="checkbox" class="tienda-checkbox tienda-individual" value="santaana" data-nombre="Santa Ana TC" onchange="handleTiendaChange(this)" style="width: 18px; height: 18px;">
-                                <span style="font-size: 14px;">🏪 Santa Ana TC</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn-apply" onclick="cargarDatos()" id="btnActualizar">🔄 Actualizar</button>
-            </div>
-        </div>
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="page-sub" id="pageSub">última actualización: —</div>
+      </div>
     </div>
+    <div class="topbar-controls" id="topbarControls">
+      <span class="ctrl-label">Desde</span>
+      <input type="date" class="ctrl-input" id="fechaInicio" style="width:130px">
+      <span class="date-sep">→</span>
+      <input type="date" class="ctrl-input" id="fechaFin" style="width:130px">
+      <div class="ctrl-divider"></div>
+      <select class="ctrl-select" id="tiendaSelect">
+        <option value="todas">Todas las tiendas</option>
+        <option value="guachipelin">Guachipelín</option>
+        <option value="escazu">Avenida Escazú</option>
+        <option value="citymall">City Mall</option>
+        <option value="santaana">Santa Ana TC</option>
+      </select>
+      <div class="ctrl-divider"></div>
+      <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos()">↻ Actualizar</button>
+    </div>
+  </div>
 
-    <!-- ════════ SECCIONES EXISTENTES ════════ -->
+  <!-- CONTENT -->
+  <div class="content">
 
+    <!-- ═══════════ DASHBOARD ═══════════ -->
     <div class="section active" id="section-dashboard">
-        <div style="padding: 0 10px;">
-            <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #111827;">Vista General</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px;">
-                <div class="kpi-card">
-                    <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">Ventas del Día</div>
-                    <div style="font-size: 28px; font-weight: 900;" id="kpiVentasDia">₡0</div>
-                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">Forecast: <span id="kpiForecast">₡0</span></div>
-                </div>
-                <div class="kpi-card" style="background: linear-gradient(135deg, #10B981, #059669);">
-                    <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">Crecimiento Día</div>
-                    <div style="font-size: 28px; font-weight: 900;" id="kpiCrecimiento">+0%</div>
-                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">vs <span id="fechaRef">--/--</span></div>
-                </div>
-                <div class="kpi-card" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);">
-                    <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">Ventas Acumuladas</div>
-                    <div style="font-size: 28px; font-weight: 900;" id="kpiVentasAcum">₡0</div>
-                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">Crec: <span id="kpiCrecAcum">+0%</span></div>
-                </div>
-                <div class="kpi-card" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
-                    <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">Transacciones</div>
-                    <div style="font-size: 28px; font-weight: 900;" id="kpiTransacciones">0</div>
-                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">Acum: <span id="kpiTransAcum">0</span></div>
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <div class="card">
-                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Canales de Venta</h3>
-                    <canvas id="chartCanales" style="max-height: 250px;"></canvas>
-                </div>
-                <div class="card">
-                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Métodos de Pago</h3>
-                    <canvas id="chartPagos" style="max-height: 250px;"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Detalle por Tienda</h3>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead style="background: #F3F4F6;">
-                            <tr>
-                                <th style="padding: 12px; text-align: left; font-size: 13px; font-weight: 600; border-right: 2px solid #E5E7EB;">Tienda</th>
-                                <th colspan="4" style="padding: 12px; text-align: center; font-size: 13px; font-weight: 600; background: #EDE9FE; border-right: 2px solid #E5E7EB;">📊 Día</th>
-                                <th colspan="4" style="padding: 12px; text-align: center; font-size: 13px; font-weight: 600; background: #DBEAFE;">📈 Acumulado</th>
-                            </tr>
-                            <tr>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 600; border-right: 2px solid #E5E7EB;"></th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; background: #F3E8FF;">Ventas</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; background: #F3E8FF;">Forecast</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; background: #F3E8FF;">Desv %</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; background: #F3E8FF; border-right: 2px solid #E5E7EB;">Crec %</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; background: #DBEAFE;">V. Acum</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; background: #DBEAFE;">Fcst Acum</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; background: #DBEAFE;">Desv %</th>
-                                <th style="padding: 12px; text-align: center; font-size: 12px; font-weight: 600; background: #DBEAFE;">Crec %</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaTiendas">
-                            <tr><td colspan="9" style="padding: 40px; text-align: center; color: #9CA3AF;">Cargando datos...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+      <div class="kpi-grid" id="dashKpis">
+        <div class="kpi k-purple">
+          <div class="kpi-label">Ventas del Día</div>
+          <div class="kpi-value" id="kVentasDia">₡0</div>
+          <div class="kpi-sub">Forecast: <span id="kForecast">₡0</span></div>
+          <div class="kpi-delta d-neu" id="kDesvForecast">—</div>
         </div>
+        <div class="kpi k-teal">
+          <div class="kpi-label">Crecimiento Día</div>
+          <div class="kpi-value" id="kCrec">+0%</div>
+          <div class="kpi-sub">vs <span id="kFechaRef">—</span></div>
+        </div>
+        <div class="kpi k-lime">
+          <div class="kpi-label">Ventas Acumuladas</div>
+          <div class="kpi-value" id="kAcum">₡0</div>
+          <div class="kpi-delta d-neu" id="kCrecAcum">—</div>
+        </div>
+        <div class="kpi k-amber">
+          <div class="kpi-label">Transacciones</div>
+          <div class="kpi-value" id="kTrans">0</div>
+          <div class="kpi-sub">Acum: <span id="kTransAcum">0</span> · Ticket: <span id="kTicket">₡0</span></div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Ventas por Tienda — Día</span>
+            <div class="tab-pills">
+              <button class="tab-pill active" onclick="switchDashChart('bar',this,'chartTiendas')">Barras</button>
+              <button class="tab-pill" onclick="switchDashChart('horizontalBar',this,'chartTiendas')">Horizontal</button>
+            </div>
+          </div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="chartTiendas"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Canales de Venta</span>
+            <span class="card-tag" id="canalesTag">Día</span>
+          </div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="chartCanales"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Métodos de Pago</span>
+          </div>
+          <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="chartPagos"></canvas></div></div>
+        </div>
+        <div class="card" style="grid-column:span 2">
+          <div class="card-header">
+            <span class="card-title">Detalle por Tienda</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="scroll-box">
+              <table class="store-table">
+                <thead>
+                  <tr>
+                    <th style="padding-left:16px">Tienda</th>
+                    <th>Ventas</th><th>Forecast</th><th>Desv%</th><th>Crec%</th>
+                    <th style="border-left:1px solid var(--border)">Acum</th>
+                    <th>Fcst Acum</th><th>Desv%</th><th style="padding-right:16px">Crec%</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaTiendas">
+                  <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-txt">Cargando...</div></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- ═══════════ REPORTE DIARIO ═══════════ -->
     <div class="section" id="section-reporteDiario">
-        <div style="padding: 0 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-                <div>
-                    <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px;">Reporte Diario</h2>
-                    <p style="font-size: 13px; color: #6B7280;">Ventas por día según rango seleccionado</p>
-                </div>
-                <button onclick="exportarReporteDiarioExcel()" style="padding: 10px 20px; background: linear-gradient(135deg, #10B981, #059669); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">📊 Exportar Excel</button>
-            </div>
-            <div class="card">
-                <div style="overflow-x: auto;">
-                    <table id="tablaReporteDiario" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <thead>
-                            <tr id="headerReporteDiario" style="background: #F3F4F6;">
-                                <th style="padding: 12px; text-align: left; font-weight: 600; position: sticky; left: 0; background: #F3F4F6; z-index: 10; border-right: 2px solid #D1D5DB;">Local</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bodyReporteDiario">
-                            <tr><td colspan="100" style="padding: 40px; text-align: center; color: #9CA3AF;">Selecciona un rango de fechas y presiona Actualizar</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:18px;font-weight:800;margin-bottom:4px">Reporte Diario</div>
+          <div style="font-size:12px;color:var(--muted)">Ventas por día, por tienda, en el rango seleccionado</div>
         </div>
+        <button class="btn btn-lime" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
+      </div>
+      <div class="card">
+        <div class="scroll-box">
+          <table id="tablaReporteDiario" style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
+            <thead><tr id="headerReporte" style="background:var(--surface2)">
+              <th style="padding:12px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;left:0;background:var(--surface2);z-index:5">Local</th>
+            </tr></thead>
+            <tbody id="bodyReporte"><tr><td colspan="100"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Seleccioná un rango y presioná Actualizar</div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
+    <!-- ═══════════ ANÁLISIS ═══════════ -->
     <div class="section" id="section-analisis">
-        <div style="padding: 0 10px;">
-            <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">Análisis Detallado</h2>
-            <div class="card"><p style="color: #6B7280;">Próximamente: Análisis avanzado de ventas</p></div>
-        </div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:20px">Análisis</div>
+      <div class="card"><div class="card-body"><div class="empty-state"><div class="empty-icon">📈</div><div class="empty-txt">Análisis avanzado — próximamente</div></div></div></div>
     </div>
 
+    <!-- ═══════════ DESCUENTOS ═══════════ -->
     <div class="section" id="section-descuentos">
-        <div style="padding: 0 10px;">
-            <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">Gestión de Descuentos</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                <div style="background: #FEF3C7; padding: 20px; border-radius: 12px;">
-                    <div style="font-size: 13px; color: #92400E; margin-bottom: 8px;">Descuentos del Día</div>
-                    <div style="font-size: 28px; font-weight: 900; color: #92400E;" id="descDia">₡0</div>
-                </div>
-                <div style="background: #FEF3C7; padding: 20px; border-radius: 12px;">
-                    <div style="font-size: 13px; color: #92400E; margin-bottom: 8px;">Descuentos Acumulados</div>
-                    <div style="font-size: 28px; font-weight: 900; color: #92400E;" id="descAcum">₡0</div>
-                </div>
-            </div>
-        </div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:20px">Descuentos</div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);max-width:500px">
+        <div class="kpi k-amber"><div class="kpi-label">Descuentos Día</div><div class="kpi-value" id="descDia">₡0</div></div>
+        <div class="kpi k-amber"><div class="kpi-label">Descuentos Acum.</div><div class="kpi-value" id="descAcum">₡0</div></div>
+      </div>
     </div>
 
+    <!-- ═══════════ TICKET MEDIO ═══════════ -->
     <div class="section" id="section-ticketMedio">
-        <div style="padding: 0 10px;">
-            <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">Ticket Medio</h2>
-            <div class="card">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                    <div style="background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: white; padding: 20px; border-radius: 12px;">
-                        <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">Ticket Promedio Día</div>
-                        <div style="font-size: 32px; font-weight: 900;" id="ticketPromedioDia">₡0</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #10B981, #059669); color: white; padding: 20px; border-radius: 12px;">
-                        <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">Ticket Promedio Acum.</div>
-                        <div style="font-size: 32px; font-weight: 900;" id="ticketPromedioAcum">₡0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:20px">Ticket Medio</div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);max-width:500px">
+        <div class="kpi k-purple"><div class="kpi-label">Ticket Promedio Día</div><div class="kpi-value" id="ticketDia">₡0</div></div>
+        <div class="kpi k-lime"><div class="kpi-label">Ticket Promedio Acum.</div><div class="kpi-value" id="ticketAcum">₡0</div></div>
+      </div>
     </div>
 
+    <!-- ═══════════ DETALLE PAGOS ═══════════ -->
     <div class="section" id="section-detallePagos">
-        <div style="padding: 0 10px;">
-            <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">Detalle de Métodos de Pago</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                <div class="kpi-card">
-                    <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">💳 Tarjeta (Día)</div>
-                    <div style="font-size: 28px; font-weight: 900;" id="pagoTarjetaDia">₡0</div>
-                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">Acum: <span id="pagoTarjetaAcum">₡0</span></div>
-                </div>
-                <div class="kpi-card" style="background: linear-gradient(135deg, #10B981, #059669);">
-                    <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">💵 Efectivo (Día)</div>
-                    <div style="font-size: 28px; font-weight: 900;" id="pagoEfectivoDia">₡0</div>
-                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">Acum: <span id="pagoEfectivoAcum">₡0</span></div>
-                </div>
-            </div>
-        </div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:20px">Detalle de Pagos</div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi k-purple"><div class="kpi-label">Tarjeta Día</div><div class="kpi-value" id="pTarjetaDia">₡0</div><div class="kpi-sub">Acum: <span id="pTarjetaAcum">₡0</span></div></div>
+        <div class="kpi k-teal"><div class="kpi-label">Efectivo Día</div><div class="kpi-value" id="pEfectivoDia">₡0</div><div class="kpi-sub">Acum: <span id="pEfectivoAcum">₡0</span></div></div>
+        <div class="kpi k-lime"><div class="kpi-label">Sinpe Día</div><div class="kpi-value" id="pSinpeDia">₡0</div><div class="kpi-sub">Acum: <span id="pSinpeAcum">₡0</span></div></div>
+      </div>
     </div>
 
-    <!-- ════════ NUEVA SECCIÓN: PROYECCIÓN DE VENTAS ════════ -->
+    <!-- ═══════════ PROYECCIÓN ═══════════ -->
     <div class="section" id="section-proyeccion">
-        <div style="padding: 0 10px;">
 
-            <!-- Header -->
-            <div class="proy-header">
-                <div>
-                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; margin-bottom: 6px;">Módulo de Proyección</div>
-                    <h2 style="font-size: 22px; font-weight: 900; margin: 0;">📉 Proyección de Ventas</h2>
-                    <p style="font-size: 13px; opacity: 0.8; margin-top: 4px;">Proyección diaria basada en historial real de Toteat · Ajuste automático por calendario</p>
-                </div>
-                <div style="background: rgba(255,255,255,0.12); border-radius: 12px; padding: 12px 18px; text-align: center;">
-                    <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">ÚLTIMA PROYECCIÓN</div>
-                    <div style="font-size: 14px; font-weight: 700;" id="proyUltimaActualizacion">—</div>
-                </div>
-            </div>
+      <!-- Controles proyección -->
+      <div class="proy-controls">
+        <span class="ctrl-label">Sucursal</span>
+        <select class="ctrl-select" id="proyStore">
+          <option value="all">Todas</option>
+          <option value="guachipelin">Guachipelín</option>
+          <option value="escazu">Avenida Escazú</option>
+          <option value="citymall">City Mall</option>
+          <option value="santaana">Santa Ana TC</option>
+        </select>
+        <div class="ctrl-divider"></div>
+        <span class="ctrl-label">Proyectar</span>
+        <select class="ctrl-select" id="proyMonth"></select>
+        <div class="ctrl-divider"></div>
+        <span class="ctrl-label">Historial</span>
+        <input type="date" class="ctrl-input" id="proyHistFrom" style="width:130px">
+        <span class="date-sep">→</span>
+        <input type="date" class="ctrl-input" id="proyHistTo" style="width:130px">
+        <div class="ctrl-divider"></div>
+        <button class="btn btn-primary" id="proyRunBtn" onclick="runProjection()">▶ Proyectar</button>
+        <button class="btn btn-lime" id="proyExcelBtn" onclick="exportProyExcel()" style="display:none">⬇ Excel</button>
+      </div>
 
-            <!-- Controls -->
-            <div class="proy-controls">
-                <div class="proy-ctrl-group">
-                    <span class="proy-ctrl-label">Sucursal</span>
-                    <select class="proy-select" id="proyStore">
-                        <option value="all">Todas las sucursales</option>
-                        <option value="guachipelin">Guachipelín</option>
-                        <option value="escazu">Avenida Escazú</option>
-                        <option value="citymall">City Mall</option>
-                        <option value="santaana">Santa Ana Town Center</option>
-                    </select>
-                </div>
-                <div class="proy-divider"></div>
-                <div class="proy-ctrl-group">
-                    <span class="proy-ctrl-label">Mes a proyectar</span>
-                    <select class="proy-select" id="proyMonth"></select>
-                </div>
-                <div class="proy-divider"></div>
-                <div class="proy-ctrl-group">
-                    <span class="proy-ctrl-label">Historial base</span>
-                    <select class="proy-select" id="proyHistory">
-                        <option value="3">3 meses</option>
-                        <option value="2">2 meses</option>
-                        <option value="6">6 meses</option>
-                    </select>
-                </div>
-                <div class="proy-divider"></div>
-                <button class="btn-proy" id="proyRunBtn" onclick="runProjection()">
-                    <span>▶</span> Proyectar
-                </button>
-            </div>
-
-            <!-- KPIs -->
-            <div class="proy-kpi-grid">
-                <div class="proy-kpi" style="border-left-color: #6B21A8;">
-                    <div class="proy-kpi-label">Proyección del Mes</div>
-                    <div class="proy-kpi-value" id="pkpiTotal">—</div>
-                    <div class="proy-kpi-sub" id="pkpiTotalSub">Seleccioná mes y ejecutá</div>
-                </div>
-                <div class="proy-kpi" style="border-left-color: #10B981;">
-                    <div class="proy-kpi-label">Promedio Diario</div>
-                    <div class="proy-kpi-value" id="pkpiAvg">—</div>
-                    <div class="proy-kpi-sub" id="pkpiAvgSub">—</div>
-                </div>
-                <div class="proy-kpi" style="border-left-color: #F59E0B;">
-                    <div class="proy-kpi-label">Mejor Día Esperado</div>
-                    <div class="proy-kpi-value" id="pkpiBest">—</div>
-                    <div class="proy-kpi-sub" id="pkpiBestSub">—</div>
-                </div>
-                <div class="proy-kpi" style="border-left-color: #8B5CF6;">
-                    <div class="proy-kpi-label">Efecto Calendario</div>
-                    <div class="proy-kpi-value" id="pkpiCal" style="font-size:18px;">—</div>
-                    <div class="proy-kpi-sub" id="pkpiCalSub">vs mes anterior</div>
-                </div>
-            </div>
-
-            <!-- Gráfico + Panel calendario -->
-            <div class="proy-two-col">
-                <div class="proy-card">
-                    <div class="proy-card-header">
-                        <span class="proy-card-title">Proyección día a día</span>
-                        <div class="chart-tabs">
-                            <button class="chart-tab active" onclick="switchProyChart('bar', this)">Barras</button>
-                            <button class="chart-tab" onclick="switchProyChart('line', this)">Línea</button>
-                        </div>
-                    </div>
-                    <div class="proy-card-body">
-                        <div class="chart-wrap">
-                            <canvas id="proyChart"></canvas>
-                            <div class="proy-empty" id="proyChartEmpty">
-                                <div class="proy-empty-icon">📊</div>
-                                <div class="proy-empty-text">Seleccioná sucursal y mes,<br>luego presioná <strong>Proyectar</strong></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <!-- Efecto calendario -->
-                    <div class="proy-card">
-                        <div class="proy-card-header">
-                            <span class="proy-card-title">⚡ Efecto Calendario</span>
-                            <span class="proy-card-tag" id="calEffectTag">Mes anterior → Próximo</span>
-                        </div>
-                        <div class="proy-card-body">
-                            <div class="cal-grid">
-                                <div class="cal-item"><div class="cal-item-label">Lunes</div><div class="cal-compare"><span class="cal-val-prev" id="calLunPrev">—</span><span class="cal-arrow" id="calLunArr">→</span><span class="cal-val-next" id="calLunNext">—</span></div></div>
-                                <div class="cal-item"><div class="cal-item-label">Martes</div><div class="cal-compare"><span class="cal-val-prev" id="calMarPrev">—</span><span class="cal-arrow" id="calMarArr">→</span><span class="cal-val-next" id="calMarNext">—</span></div></div>
-                                <div class="cal-item"><div class="cal-item-label">Miércoles</div><div class="cal-compare"><span class="cal-val-prev" id="calMiePrev">—</span><span class="cal-arrow" id="calMieArr">→</span><span class="cal-val-next" id="calMieNext">—</span></div></div>
-                                <div class="cal-item"><div class="cal-item-label">Jueves</div><div class="cal-compare"><span class="cal-val-prev" id="calJuePrev">—</span><span class="cal-arrow" id="calJueArr">→</span><span class="cal-val-next" id="calJueNext">—</span></div></div>
-                                <div class="cal-item"><div class="cal-item-label">Viernes</div><div class="cal-compare"><span class="cal-val-prev" id="calViePrev">—</span><span class="cal-arrow" id="calVieArr">→</span><span class="cal-val-next" id="calVieNext">—</span></div></div>
-                                <div class="cal-item" style="border-color: #C4B5FD;"><div class="cal-item-label" style="color:#6B21A8;">Sábado</div><div class="cal-compare"><span class="cal-val-prev" id="calSabPrev">—</span><span class="cal-arrow" id="calSabArr">→</span><span class="cal-val-next" id="calSabNext">—</span></div></div>
-                                <div class="cal-item" style="border-color: #FCD34D;"><div class="cal-item-label" style="color:#92400E;">Domingo</div><div class="cal-compare"><span class="cal-val-prev" id="calDomPrev">—</span><span class="cal-arrow" id="calDomArr">→</span><span class="cal-val-next" id="calDomNext">—</span></div></div>
-                                <div class="cal-item" style="border-color: #FCA5A5;"><div class="cal-item-label" style="color:#991B1B;">Feriados</div><div class="cal-compare"><span class="cal-val-prev" id="calFerPrev">—</span><span class="cal-arrow" id="calFerArr">→</span><span class="cal-val-next" id="calFerNext">—</span></div></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Desglose por sucursal -->
-                    <div class="proy-card">
-                        <div class="proy-card-header">
-                            <span class="proy-card-title">Por Sucursal</span>
-                            <span class="proy-card-tag" id="storeBreakTag">—</span>
-                        </div>
-                        <div class="proy-card-body">
-                            <div class="store-list-proy" id="storeBreakList">
-                                <div class="proy-empty" style="padding: 24px;">
-                                    <div class="proy-empty-icon">🏪</div>
-                                    <div class="proy-empty-text">Sin datos</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tabla detalle diario -->
-            <div class="proy-card">
-                <div class="proy-card-header">
-                    <span class="proy-card-title">Detalle Diario Completo</span>
-                    <span class="proy-card-tag" id="tableDetailTag">—</span>
-                </div>
-                <div class="table-scroll">
-                    <table class="proy-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Día</th>
-                                <th>Proyección</th>
-                                <th>Rango Bajo</th>
-                                <th>Rango Alto</th>
-                                <th>Confianza</th>
-                                <th>Nota</th>
-                            </tr>
-                        </thead>
-                        <tbody id="proyTableBody">
-                            <tr>
-                                <td colspan="7">
-                                    <div class="proy-empty">
-                                        <div class="proy-empty-icon">📅</div>
-                                        <div class="proy-empty-text">Ejecutá la proyección para ver el detalle día a día</div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+      <!-- KPIs proyección -->
+      <div class="kpi-grid" id="proyKpis">
+        <div class="kpi k-purple">
+          <div class="kpi-label">Proyección del Mes</div>
+          <div class="kpi-value" id="pkTotal">—</div>
+          <div class="kpi-sub" id="pkTotalSub">Ejecutá la proyección</div>
         </div>
-    </div>
-    <!-- ════════ FIN PROYECCIÓN ════════ -->
+        <div class="kpi k-lime">
+          <div class="kpi-label">Promedio Diario</div>
+          <div class="kpi-value" id="pkAvg">—</div>
+          <div class="kpi-sub" id="pkAvgSub">—</div>
+        </div>
+        <div class="kpi k-amber">
+          <div class="kpi-label">Mejor Día Esperado</div>
+          <div class="kpi-value" id="pkBest">—</div>
+          <div class="kpi-sub" id="pkBestSub">—</div>
+        </div>
+        <div class="kpi k-teal">
+          <div class="kpi-label">Efecto Calendario</div>
+          <div class="kpi-value" id="pkCal" style="font-size:17px">—</div>
+          <div class="kpi-sub" id="pkCalSub">vs mes anterior</div>
+        </div>
+      </div>
 
-</div><!-- end main-content -->
+      <!-- Chart + Calendar -->
+      <div class="grid-2" style="align-items:start">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Proyección día a día</span>
+            <div class="tab-pills">
+              <button class="tab-pill active" onclick="switchProyChart('bar',this)">Barras</button>
+              <button class="tab-pill" onclick="switchProyChart('line',this)">Línea</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap-tall">
+              <canvas id="proyChart"></canvas>
+              <div class="empty-state" id="proyChartEmpty">
+                <div class="empty-icon">📊</div>
+                <div class="empty-txt">Seleccioná opciones y presioná Proyectar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <!-- Efecto calendario -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">⚡ Efecto Calendario</span>
+              <span class="card-tag" id="calTag">—</span>
+            </div>
+            <div class="card-body">
+              <div class="cal-grid">
+                <div class="cal-item"><div class="cal-item-label">Lunes</div><div class="cal-compare"><span class="cal-prev" id="calL1">—</span><span class="cal-arr" id="calA1">→</span><span class="cal-next" id="calN1">—</span></div></div>
+                <div class="cal-item"><div class="cal-item-label">Martes</div><div class="cal-compare"><span class="cal-prev" id="calL2">—</span><span class="cal-arr" id="calA2">→</span><span class="cal-next" id="calN2">—</span></div></div>
+                <div class="cal-item"><div class="cal-item-label">Miércoles</div><div class="cal-compare"><span class="cal-prev" id="calL3">—</span><span class="cal-arr" id="calA3">→</span><span class="cal-next" id="calN3">—</span></div></div>
+                <div class="cal-item"><div class="cal-item-label">Jueves</div><div class="cal-compare"><span class="cal-prev" id="calL4">—</span><span class="cal-arr" id="calA4">→</span><span class="cal-next" id="calN4">—</span></div></div>
+                <div class="cal-item"><div class="cal-item-label">Viernes</div><div class="cal-compare"><span class="cal-prev" id="calL5">—</span><span class="cal-arr" id="calA5">→</span><span class="cal-next" id="calN5">—</span></div></div>
+                <div class="cal-item" style="border-color:rgba(168,85,247,.3)"><div class="cal-item-label" style="color:var(--accent)">Sábado</div><div class="cal-compare"><span class="cal-prev" id="calL6">—</span><span class="cal-arr" id="calA6">→</span><span class="cal-next" id="calN6">—</span></div></div>
+                <div class="cal-item" style="border-color:rgba(245,200,90,.3)"><div class="cal-item-label" style="color:var(--amber)">Domingo</div><div class="cal-compare"><span class="cal-prev" id="calL0">—</span><span class="cal-arr" id="calA0">→</span><span class="cal-next" id="calN0">—</span></div></div>
+                <div class="cal-item" style="border-color:rgba(245,90,90,.25)"><div class="cal-item-label" style="color:var(--red)">Feriados</div><div class="cal-compare"><span class="cal-prev" id="calLH">—</span><span class="cal-arr" id="calAH">→</span><span class="cal-next" id="calNH">—</span></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Store breakdown -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Por Sucursal</span>
+              <span class="card-tag" id="storeBreakTag">—</span>
+            </div>
+            <div class="card-body">
+              <div class="store-list" id="storeBreakList">
+                <div class="empty-state" style="padding:20px"><div class="empty-icon">🏪</div><div class="empty-txt">Sin datos</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla detalle diario -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Detalle Diario</span>
+          <span class="card-tag" id="proyTableTag">—</span>
+        </div>
+        <div class="table-scroll">
+          <table class="proy-table">
+            <thead><tr>
+              <th>Fecha</th><th>Día</th><th>Proyección</th>
+              <th>Rango Bajo</th><th>Rango Alto</th>
+              <th>Confianza</th><th>Nota</th>
+            </tr></thead>
+            <tbody id="proyTableBody">
+              <tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Sin datos</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    <!-- ═══════════ FIN PROYECCIÓN ═══════════ -->
+
+  </div><!-- /content -->
+</div><!-- /main -->
 
 <script>
-// ════════════════════════════════════════════
-//  DASHBOARD ORIGINAL
-// ════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz26uhBqgZLYt5uuCu-VY7P9SwbeNkQbhb3HClift2LBRXokU72JJhHRnlvoteHzaMk/exec';
 
-let datosGlobales = null;
-let cacheConsultas = {};
-let charts = {};
-let datosReporteDiario = null;
-
-function getNumericValue(value, defaultValue = 0) {
-    if (value === null || value === undefined || value === '' || isNaN(value)) return defaultValue;
-    const num = Number(value);
-    return isNaN(num) ? defaultValue : num;
-}
-function formatPercentage(value, decimals = 1) {
-    const num = getNumericValue(value, 0);
-    return `${num > 0 ? '+' : ''}${num.toFixed(decimals)}%`;
-}
-function formatCurrency(value) {
-    return `₡${Math.round(getNumericValue(value, 0)).toLocaleString('es-CR')}`;
-}
-
-function showSection(sectionName, el) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-    document.getElementById('section-' + sectionName).classList.add('active');
-    (el || event.target.closest('.menu-item')).classList.add('active');
-    if (window.innerWidth <= 768) closeSidebar();
-}
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('active');
-    document.getElementById('sidebarOverlay').classList.toggle('active');
-}
-function closeSidebar() {
-    document.getElementById('sidebar').classList.remove('active');
-    document.getElementById('sidebarOverlay').classList.remove('active');
-}
-function toggleTiendasDropdown(event) {
-    event.stopPropagation();
-    const d = document.getElementById('tiendasDropdown');
-    d.style.display = d.style.display === 'none' ? 'block' : 'none';
-}
-function handleTiendaChange(checkbox) {
-    const todas = document.querySelector('.tienda-checkbox[value="todas"]');
-    const ind = document.querySelectorAll('.tienda-individual');
-    if (checkbox.value === 'todas') { if (checkbox.checked) ind.forEach(cb => cb.checked = false); }
-    else {
-        if (checkbox.checked && todas) todas.checked = false;
-        if (!Array.from(ind).some(cb => cb.checked) && todas) todas.checked = true;
-    }
-    actualizarLabelTiendas();
-}
-function actualizarLabelTiendas() {
-    const checked = document.querySelectorAll('.tienda-checkbox:checked');
-    const label = document.getElementById('tiendasLabel');
-    const todas = document.querySelector('.tienda-checkbox[value="todas"]');
-    if (!checked.length) { label.textContent = '📊 Selecciona tiendas'; return; }
-    if (todas && todas.checked) { label.textContent = '📊 Todas las tiendas'; return; }
-    label.textContent = checked.length === 1 ? '🏪 ' + checked[0].dataset.nombre : `🏪 ${checked.length} tiendas`;
-}
-function obtenerTiendasSeleccionadas() {
-    const checked = document.querySelectorAll('.tienda-checkbox:checked');
-    const tiendas = Array.from(checked).map(cb => cb.value);
-    if (tiendas.includes('todas') || !tiendas.length) return 'todas';
-    return tiendas.join(',');
-}
-document.addEventListener('click', function(e) {
-    const d = document.getElementById('tiendasDropdown');
-    if (d && !d.contains(e.target) && !e.target.closest('button')) d.style.display = 'none';
-});
-
-async function cargarDatos() {
-    const fechaFinInput = document.getElementById('fechaFin').value;
-    if (!fechaFinInput) { alert('Por favor selecciona la fecha'); return; }
-    const fechaFin = new Date(fechaFinInput + 'T12:00:00');
-    const seccionActiva = document.querySelector('.section.active');
-    const esReporteDiario = seccionActiva && seccionActiva.id === 'section-reporteDiario';
-    if (esReporteDiario) { await cargarReporteDiario(); return; }
-    const tiendasSeleccionadas = obtenerTiendasSeleccionadas();
-    const day = fechaFin.getDate(), month = fechaFin.getMonth() + 1, year = fechaFin.getFullYear();
-    const claveCache = `${day}-${month}-${year}-${tiendasSeleccionadas}`;
-    const ahora = Date.now();
-    if (cacheConsultas[claveCache] && (ahora - cacheConsultas[claveCache].timestamp) < 5 * 60 * 1000) {
-        datosGlobales = cacheConsultas[claveCache].data;
-        actualizarDashboard(datosGlobales);
-        document.getElementById('ultimaActualizacion').textContent = new Date(cacheConsultas[claveCache].timestamp).toLocaleTimeString('es-ES') + ' (caché)';
-        return;
-    }
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tiendasSeleccionadas}&modoRapido=true`;
-    mostrarLoadingDashboard();
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        if (!data || data.length === 0 || data.error) { ocultarLoadingDashboard(); alert('Error: ' + (data.error || data.message || 'Sin datos')); return; }
-        datosGlobales = data;
-        cacheConsultas[claveCache] = { data, timestamp: ahora };
-        actualizarDashboard(data);
-        ocultarLoadingDashboard();
-    } catch (error) { console.error('❌', error); ocultarLoadingDashboard(); alert('Error de conexión: ' + error.message); }
-}
-function mostrarLoadingDashboard() {
-    const btn = document.getElementById('btnActualizar');
-    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Cargando...'; }
-    const t = document.getElementById('tablaTiendas');
-    if (t) t.innerHTML = `<tr><td colspan="9" style="padding:40px;text-align:center;"><div style="display:inline-block;width:40px;height:40px;border:4px solid #E5E7EB;border-top-color:#6B21A8;border-radius:50%;animation:spin 1s linear infinite;"></div><div style="margin-top:15px;font-size:16px;color:#6B21A8;font-weight:600;">Cargando datos...</div></td></tr>`;
-}
-function ocultarLoadingDashboard() {
-    const btn = document.getElementById('btnActualizar');
-    if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Actualizar'; }
-}
-function actualizarDashboard(data) {
-    if (!data || !data.length) return;
-    const totalRow = data.find(r => r.tienda === 'TODAS') || data[0];
-    if (!totalRow) return;
-    const elems = {
-        kpiVentasDia: totalRow.ventasNetas, kpiForecast: totalRow.forecast,
-        kpiCrecimiento: totalRow.crecimientoDia, kpiVentasAcum: totalRow.ventasAcumuladas,
-        kpiCrecAcum: totalRow.crecimientoAcum, kpiTransacciones: totalRow.transacciones,
-        kpiTransAcum: totalRow.transaccionesAcum, descDia: totalRow.descuentosDia, descAcum: totalRow.descuentosAcum,
-        pagoTarjetaDia: totalRow.tarjeta, pagoTarjetaAcum: totalRow.tarjetaAcum,
-        pagoEfectivoDia: totalRow.efectivo, pagoEfectivoAcum: totalRow.efectivoAcum
-    };
-    Object.keys(elems).forEach(id => {
-        const el = document.getElementById(id); if (!el) return;
-        const v = elems[id];
-        if (id.includes('Crec')) el.textContent = formatPercentage(v);
-        else if (id === 'fechaRef') el.textContent = v;
-        else if (id.includes('Trans')) el.textContent = getNumericValue(v, 0);
-        else el.textContent = formatCurrency(v);
-    });
-    const el = document.getElementById('fechaRef');
-    if (el) el.textContent = (totalRow.fechaRefDia || '--/--').split('/').slice(0,2).join('/');
-    const td = getNumericValue(totalRow.transacciones);
-    const ta = getNumericValue(totalRow.transaccionesAcum);
-    const ed = document.getElementById('ticketPromedioDia');
-    const ea = document.getElementById('ticketPromedioAcum');
-    if (ed) ed.textContent = formatCurrency(td > 0 ? totalRow.ventasNetas / td : 0);
-    if (ea) ea.textContent = formatCurrency(ta > 0 ? totalRow.ventasAcumuladas / ta : 0);
-    document.getElementById('ultimaActualizacion').textContent = new Date().toLocaleTimeString('es-ES');
-    actualizarTablaTiendas(data);
-    actualizarGraficos(totalRow, data);
-}
-function actualizarTablaTiendas(data) {
-    const tbody = document.getElementById('tablaTiendas'); if (!tbody) return;
-    tbody.innerHTML = '';
-    data.forEach(row => {
-        if (!row || !row.tienda) return;
-        const tr = document.createElement('tr');
-        const esTot = row.tienda === 'TODAS';
-        if (esTot) tr.style.background = 'linear-gradient(to right, #F3E8FF, #DBEAFE)';
-        const df = getNumericValue(row.desvForecast), cd = getNumericValue(row.crecimientoDia);
-        const dfa = getNumericValue(row.desvForecastAcum), ca = getNumericValue(row.crecimientoAcum);
-        tr.innerHTML = `
-            <td style="padding:12px;font-weight:${esTot?'800':'600'};border-right:2px solid #E5E7EB;">${row.tienda}</td>
-            <td style="padding:12px;text-align:center;color:#6B21A8;font-weight:700;background:#FEFAFF;">${formatCurrency(row.ventasNetas)}</td>
-            <td style="padding:12px;text-align:center;background:#FEFAFF;">${formatCurrency(row.forecast)}</td>
-            <td style="padding:12px;text-align:center;color:${df>=0?'#10B981':'#EF4444'};font-weight:600;background:#FEFAFF;">${formatPercentage(df)}</td>
-            <td style="padding:12px;text-align:center;color:${cd>=0?'#10B981':'#EF4444'};font-weight:600;background:#FEFAFF;border-right:2px solid #E5E7EB;">${formatPercentage(cd)}</td>
-            <td style="padding:12px;text-align:center;color:#7C3AED;font-weight:700;background:#EFF6FF;">${formatCurrency(row.ventasAcumuladas)}</td>
-            <td style="padding:12px;text-align:center;background:#EFF6FF;">${formatCurrency(row.forecastAcumulado)}</td>
-            <td style="padding:12px;text-align:center;color:${dfa>=0?'#10B981':'#EF4444'};font-weight:600;background:#EFF6FF;">${formatPercentage(dfa)}</td>
-            <td style="padding:12px;text-align:center;color:${ca>=0?'#10B981':'#EF4444'};font-weight:600;background:#EFF6FF;">${formatPercentage(ca)}</td>`;
-        tbody.appendChild(tr);
-    });
-}
-function actualizarGraficos(totalRow, data) {
-    Chart.defaults.set('plugins.datalabels', { display: false });
-    const ctxC = document.getElementById('chartCanales');
-    if (charts.canales) charts.canales.destroy();
-    charts.canales = new Chart(ctxC, {
-        type: 'doughnut',
-        data: { labels: ['Uber Eats','Pedidos Ya','Didi Food','Otros'], datasets: [{ data: [getNumericValue(totalRow.uberEats),getNumericValue(totalRow.pedidosYa),getNumericValue(totalRow.didiFood),getNumericValue(totalRow.otrosCanales)], backgroundColor: ['#10B981','#EF4444','#F97316','#6B7280'] }] },
-        options: { responsive: true, plugins: { legend: { position:'bottom' }, datalabels: { display:true, color:'#fff', font:{weight:'bold'}, formatter:(v,ctx)=>{ const t=ctx.dataset.data.reduce((a,b)=>a+b,0); const p=t>0?((v/t)*100).toFixed(1):0; return p>3?p+'%':''; } } } }
-    });
-    const ctxP = document.getElementById('chartPagos');
-    if (charts.pagos) charts.pagos.destroy();
-    charts.pagos = new Chart(ctxP, {
-        type: 'doughnut',
-        data: { labels: ['Tarjeta','Efectivo','Sinpe','Otros'], datasets: [{ data: [getNumericValue(totalRow.tarjeta),getNumericValue(totalRow.efectivo),getNumericValue(totalRow.sinpeMovil),getNumericValue(totalRow.otrosPagos)], backgroundColor: ['#8B5CF6','#10B981','#3B82F6','#6B7280'] }] },
-        options: { responsive: true, plugins: { legend: { position:'bottom' }, datalabels: { display:true, color:'#fff', font:{weight:'bold'}, formatter:(v,ctx)=>{ const t=ctx.dataset.data.reduce((a,b)=>a+b,0); const p=t>0?((v/t)*100).toFixed(1):0; return p>3?p+'%':''; } } } }
-    });
-}
-async function cargarReporteDiario() {
-    const fi = document.getElementById('fechaInicio').value;
-    const ff = document.getElementById('fechaFin').value;
-    if (!fi || !ff) return;
-    const ts = obtenerTiendasSeleccionadas();
-    const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`;
-    const tbody = document.getElementById('bodyReporteDiario');
-    if (tbody) tbody.innerHTML = `<tr><td colspan="100" style="padding:40px;text-align:center;"><div style="display:inline-block;width:30px;height:30px;border:3px solid #E5E7EB;border-top-color:#6B21A8;border-radius:50%;animation:spin 1s linear infinite;"></div><div style="margin-top:10px;font-weight:600;">Cargando reporte...</div></td></tr>`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data && !data.error && Array.isArray(data) && data.length > 0) { datosReporteDiario = data; generarTablaReporteDiario(data); }
-        else if (tbody) tbody.innerHTML = `<tr><td colspan="100" style="padding:40px;text-align:center;color:#EF4444;">❌ ${data.message||'Error al cargar datos'}</td></tr>`;
-    } catch (e) { if (tbody) tbody.innerHTML = `<tr><td colspan="100" style="padding:40px;text-align:center;color:#EF4444;">❌ Error: ${e.message}</td></tr>`; }
-}
-function generarTablaReporteDiario(datos) {
-    if (!datos || !Array.isArray(datos) || !datos.length) return;
-    const tiendasSet = new Set();
-    datos.forEach(dia => { if (dia.tiendas && Array.isArray(dia.tiendas)) dia.tiendas.forEach(t => { if (t.tienda) tiendasSet.add(t.tienda); }); });
-    const tiendas = Array.from(tiendasSet).sort();
-    const thead = document.getElementById('headerReporteDiario');
-    if (!thead) return;
-    thead.innerHTML = '<th style="padding:12px;text-align:left;font-weight:600;position:sticky;left:0;background:#F3F4F6;z-index:10;border-right:2px solid #D1D5DB;">Local</th>';
-    datos.forEach(dia => {
-        const fecha = new Date(dia.fecha + 'T12:00:00');
-        thead.innerHTML += `<th style="padding:12px;text-align:center;font-weight:600;background:#F3F4F6;border-right:1px solid #E5E7EB;min-width:100px;"><div style="font-size:13px;font-weight:700;">${fecha.toLocaleString('es-ES',{month:'short'}).toUpperCase()}</div><div style="font-size:13px;">${String(fecha.getDate()).padStart(2,'0')}</div></th>`;
-    });
-    const tbody = document.getElementById('bodyReporteDiario');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    const totalesPorDia = {};
-    tiendas.forEach(tienda => {
-        const tr = document.createElement('tr');
-        const tdT = document.createElement('td');
-        tdT.style.cssText = 'padding:12px;font-weight:600;position:sticky;left:0;background:white;z-index:5;border-right:2px solid #D1D5DB;';
-        tdT.textContent = tienda; tr.appendChild(tdT);
-        datos.forEach(dia => {
-            const td_data = dia.tiendas ? dia.tiendas.find(t => t.tienda === tienda) : null;
-            const venta = td_data ? (td_data.ventasNetas || 0) : 0;
-            if (!totalesPorDia[dia.fecha]) totalesPorDia[dia.fecha] = 0;
-            totalesPorDia[dia.fecha] += venta;
-            const td = document.createElement('td');
-            td.style.cssText = 'padding:10px 12px;text-align:right;border-right:1px solid #E5E7EB;';
-            if (venta > 0) { td.style.color = '#111827'; td.style.fontWeight = '500'; td.textContent = formatCurrency(venta); }
-            else { td.style.color = '#9CA3AF'; td.textContent = '-'; }
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-    const trTot = document.createElement('tr');
-    trTot.style.cssText = 'background:#EDE9FE;font-weight:700;';
-    const tdTot = document.createElement('td');
-    tdTot.style.cssText = 'padding:12px;font-weight:700;position:sticky;left:0;z-index:5;border-right:2px solid #D1D5DB;background:#EDE9FE;';
-    tdTot.textContent = 'TOTAL'; trTot.appendChild(tdTot);
-    datos.forEach(dia => {
-        const td = document.createElement('td');
-        td.style.cssText = 'padding:10px 12px;text-align:right;font-weight:700;border-right:1px solid #E5E7EB;background:#EDE9FE;';
-        const total = totalesPorDia[dia.fecha] || 0;
-        td.textContent = total > 0 ? formatCurrency(total) : '-';
-        trTot.appendChild(td);
-    });
-    tbody.appendChild(trTot);
-}
-function exportarReporteDiarioExcel() {
-    if (!datosReporteDiario) { alert('Por favor carga los datos primero'); return; }
-    const tabla = document.getElementById('tablaReporteDiario');
-    let csv = '';
-    tabla.querySelectorAll('thead th').forEach(th => { csv += '"' + th.textContent.trim().replace(/\n/g,' ').replace(/\s+/g,' ') + '",'; });
-    csv = csv.slice(0,-1) + '\n';
-    tabla.querySelectorAll('tbody tr').forEach(tr => {
-        tr.querySelectorAll('td').forEach(td => { csv += '"' + td.textContent.trim().replace(/₡/g,'').replace(/,/g,'') + '",'; });
-        csv = csv.slice(0,-1) + '\n';
-    });
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const link = document.createElement('a');
-    link.setAttribute('href', URL.createObjectURL(blob));
-    link.setAttribute('download', `Oakberry_ReporteDiario_${document.getElementById('fechaInicio').value}_${document.getElementById('fechaFin').value}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-}
-window.addEventListener('load', () => {
-    document.getElementById('fechaInicio').value = '2025-01-01';
-    document.getElementById('fechaFin').value = '2025-01-30';
-    cargarDatos();
-});
-
-// ════════════════════════════════════════════
-//  MÓDULO DE PROYECCIÓN
-// ════════════════════════════════════════════
-const PROY_STORES = {
-    guachipelin: { name: 'Guachipelín',           color: '#6B21A8', xil: '1', xapitoken: 'jgV0tnmFdH1b40NYWaGqnwG17SacdaXx' },
-    escazu:      { name: 'Avenida Escazú',         color: '#10B981', xil: '2', xapitoken: 'tnIkXMr57drgN6adRG8Eoop8C581H1N7' },
-    citymall:    { name: 'City Mall',              color: '#F59E0B', xil: '3', xapitoken: 'mIm5qS0LiYiBscvDmc6xjfPQE74cICmp' },
-    santaana:    { name: 'Santa Ana Town Center',  color: '#EF4444', xil: '5', xapitoken: 'JzBXo1aqdoNKFwab1Xgsiqprwz4Hnuei' },
+const TOTEAT = {
+  baseUrl: 'https://toteatglobal.appspot.com/mw/or/1.0/sales',
+  xir: '4552687124873216',
+  xiu: '1001',
 };
 
-// Feriados CR fijos (MM-DD)
+const STORES = {
+  guachipelin: { name:'Guachipelín',          color:'#a855f7', xil:'1', xapitoken:'jgV0tnmFdH1b40NYWaGqnwG17SacdaXx' },
+  escazu:      { name:'Avenida Escazú',        color:'#5af5c8', xil:'2', xapitoken:'tnIkXMr57drgN6adRG8Eoop8C581H1N7' },
+  citymall:    { name:'City Mall',             color:'#f5c85a', xil:'3', xapitoken:'mIm5qS0LiYiBscvDmc6xjfPQE74cICmp' },
+  santaana:    { name:'Santa Ana TC',          color:'#f55a5a', xil:'5', xapitoken:'JzBXo1aqdoNKFwab1Xgsiqprwz4Hnuei' },
+};
+
 const CR_FERIADOS = {
-    '01-01': 'Año Nuevo', '04-11': 'Juan Santamaría', '05-01': 'Día del Trabajo',
-    '07-25': 'Anexión Guanacaste', '08-02': 'Virgen de los Ángeles', '08-15': 'Día de la Madre',
-    '09-15': 'Independencia', '10-12': 'Día de las Culturas', '12-24': 'Nochebuena', '12-25': 'Navidad',
+  '01-01':'Año Nuevo','04-11':'Juan Santamaría','05-01':'Día del Trabajo',
+  '07-25':'Guanacaste','08-02':'Virgen de los Ángeles','08-15':'Día de la Madre',
+  '09-15':'Independencia','10-12':'Día de las Culturas','12-24':'Nochebuena','12-25':'Navidad',
 };
 
-function getSemanaSanta(year) {
-    const a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4;
-    const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
-    const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
-    const m=Math.floor((a+11*h+22*l)/451),month=Math.floor((h+l-7*m+114)/31),day=((h+l-7*m+114)%31)+1;
-    const easter=new Date(year,month-1,day);
-    return [-3,-2,-1,0].map(offset=>{ const d2=new Date(easter); d2.setDate(d2.getDate()+offset); return `${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`; });
-}
-
-function isFeriado(date) {
-    const mmdd = `${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-    if (CR_FERIADOS[mmdd]) return CR_FERIADOS[mmdd];
-    if (getSemanaSanta(date.getFullYear()).includes(mmdd)) return 'Semana Santa';
-    return null;
-}
-
-function countDowInMonth(year, month) {
-    const counts=[0,0,0,0,0,0,0];
-    const d=new Date(year,month-1,1);
-    while(d.getMonth()===month-1){ counts[d.getDay()]++; d.setDate(d.getDate()+1); }
-    return counts;
-}
-
-let proyChart = null;
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+let datosGlobales = null;
+let datosReporte  = null;
+let proyData      = null;
+let charts        = {};
+let proyChart     = null;
 let proyChartType = 'bar';
-let proyData = null;
+let cacheConsultas = {};
 
-function initProyMonthSelect() {
-    const sel = document.getElementById('proyMonth');
-    const now = new Date();
-    // Mes actual + 6 meses futuros
-    for (let i = 0; i <= 6; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-        const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        const label = d.toLocaleDateString('es-CR', {month:'long', year:'numeric'});
-        const opt = new Option(label.charAt(0).toUpperCase() + label.slice(1) + (i===0 ? ' (actual)' : ''), val);
-        sel.appendChild(opt);
-    }
-}
-initProyMonthSelect();
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const section = item.dataset.section;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('section-' + section).classList.add('active');
+    document.getElementById('pageTitle').textContent = item.querySelector('span:last-of-type').textContent;
+  });
+});
 
-// Fetch historial real desde Toteat via Apps Script
-async function fetchHistorialToteat(storeKey, fromDate, toDate) {
-    const store = PROY_STORES[storeKey];
-    if (!store) return {};
+// ═══════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════
+const num  = (v, d=0) => { const n=Number(v); return isNaN(n)?d:n; };
+const crc  = v => `₡${Math.round(num(v)).toLocaleString('es-CR')}`;
+const pct  = (v,d=1) => { const n=num(v); return `${n>0?'+':''}${n.toFixed(d)}%`; };
+const fmtK = n => { if(n>=1000000) return '₡'+(n/1000000).toFixed(2)+'M'; if(n>=1000) return '₡'+Math.round(n/1000)+'K'; return '₡'+Math.round(n).toLocaleString('es-CR'); };
+const setTxt = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+const showLoader = (show, txt='', step='') => {
+  document.getElementById('globalLoader').style.display = show ? 'flex' : 'none';
+  if(txt) setTxt('loaderTxt', txt);
+  if(step) setTxt('loaderStep', step);
+};
+const setStep = s => setTxt('loaderStep', s);
 
-    // Parsear fechas
-    const from = new Date(fromDate + 'T00:00:00');
-    const to = new Date(toDate + 'T00:00:00');
-    const toDay = to.getDate(), toMonth = to.getMonth()+1, toYear = to.getFullYear();
+function deltaClass(v) { return v>0?'d-pos':v<0?'d-neg':'d-neu'; }
+function colorPct(v) { return v>=0 ? 'var(--teal)' : 'var(--red)'; }
 
-    // Usar el mismo Apps Script endpoint del dashboard
-    const url = `${APPS_SCRIPT_URL}?day=${toDay}&month=${toMonth}&year=${toYear}&tienda=${storeKey}&modoRapido=false`;
+// ═══════════════════════════════════════════════════════════
+//  INIT DATES
+// ═══════════════════════════════════════════════════════════
+function initDates() {
+  const today = new Date();
+  const y = today.getFullYear(), m = today.getMonth()+1, d = today.getDate();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('fechaFin').value   = `${y}-${pad(m)}-${pad(d)}`;
+  document.getElementById('fechaInicio').value = `${y}-${pad(m)}-01`;
+  document.getElementById('pageSub').textContent = `última actualización: ${today.toLocaleTimeString('es-CR')}`;
 
-    try {
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data || data.error || !Array.isArray(data)) throw new Error('Sin datos');
+  // Proyección months
+  const sel = document.getElementById('proyMonth');
+  for(let i=0;i<=6;i++){
+    const dt = new Date(y, today.getMonth()+i, 1);
+    const val = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}`;
+    const lbl = dt.toLocaleDateString('es-CR',{month:'long',year:'numeric'});
+    sel.appendChild(new Option(lbl.charAt(0).toUpperCase()+lbl.slice(1)+(i===0?' (actual)':''), val));
+  }
+  sel.value = `${y}-${pad(m)}`;
 
-        // El API devuelve totales, no día a día → usar datos mock para la proyección
-        // y enriquecer con el total real como factor de escala
-        const storeData = data.find(d => d.tienda !== 'TODAS') || data[0];
-        const escala = storeData && storeData.ventasAcumuladas > 0 ? storeData.ventasAcumuladas : null;
-        return generateMockHistorial(storeKey, fromDate, toDate, escala);
-    } catch(e) {
-        return generateMockHistorial(storeKey, fromDate, toDate, null);
-    }
-}
-
-function generateMockHistorial(storeKey, fromDate, toDate, escalaTotal) {
-    const bases = { guachipelin:{base:380000,trend:0.02}, escazu:{base:420000,trend:0.015}, citymall:{base:310000,trend:0.025}, santaana:{base:290000,trend:0.018} };
-    const cfg = bases[storeKey] || {base:350000,trend:0.02};
-    const dayMult = [1.35, 0.75, 0.82, 0.88, 0.95, 1.10, 1.55]; // Dom...Sab
-    const sales = {};
-    const from = new Date(fromDate+'T00:00:00');
-    const to = new Date(toDate+'T00:00:00');
-    let cur = new Date(from), monthIdx = 0, prevM = cur.getMonth();
-    while(cur <= to) {
-        if(cur.getMonth() !== prevM){ monthIdx++; prevM=cur.getMonth(); }
-        const tf = 1 + cfg.trend * monthIdx;
-        const dow = cur.getDay();
-        const noise = 0.85 + Math.random() * 0.30;
-        const dayKey = cur.toISOString().split('T')[0];
-        sales[dayKey] = Math.round(cfg.base * dayMult[dow] * tf * noise);
-        cur.setDate(cur.getDate()+1);
-    }
-    // Si tenemos escala real, ajustar proporcionalmente
-    if (escalaTotal) {
-        const mockTotal = Object.values(sales).reduce((a,b)=>a+b,0);
-        const factor = escalaTotal / mockTotal;
-        Object.keys(sales).forEach(k => sales[k] = Math.round(sales[k] * factor));
-    }
-    return sales;
+  // Proyección historial dates — default: 3 meses atrás
+  const histEnd   = new Date(y, today.getMonth()-1+1, 0); // último día mes anterior
+  const histStart = new Date(y, today.getMonth()-3, 1);
+  document.getElementById('proyHistTo').value   = histEnd.toISOString().split('T')[0];
+  document.getElementById('proyHistFrom').value = histStart.toISOString().split('T')[0];
 }
 
-function buildProjection(historicalByStore, targetYear, targetMonth, storeKeys) {
-    const prevMonth = targetMonth === 1 ? 12 : targetMonth - 1;
-    const prevYear  = targetMonth === 1 ? targetYear - 1 : targetYear;
-    const targetDow = countDowInMonth(targetYear, targetMonth);
-    const prevDow   = countDowInMonth(prevYear, prevMonth);
-    const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD DATA LOAD
+// ═══════════════════════════════════════════════════════════
+async function cargarDatos() {
+  const fechaFinInput = document.getElementById('fechaFin').value;
+  if(!fechaFinInput){ alert('Seleccioná la fecha'); return; }
 
-    // Promedios ponderados por día de semana por tienda
-    const dowAvg = {};
-    for (const sk of storeKeys) {
-        const sales = historicalByStore[sk] || {};
-        const buckets = [[],[],[],[],[],[],[]];
-        for (const [dateStr, amount] of Object.entries(sales)) {
-            const d = new Date(dateStr+'T00:00:00');
-            if (!isFeriado(d)) buckets[d.getDay()].push(amount);
-        }
-        dowAvg[sk] = buckets.map(b => {
-            if (!b.length) return 0;
-            let sum=0, ws=0;
-            b.forEach((v,i) => { const w=i+1; sum+=v*w; ws+=w; });
-            return sum/ws;
+  const seccion = document.querySelector('.section.active')?.id;
+  if(seccion === 'section-reporteDiario'){ await cargarReporteDiario(); return; }
+
+  const ff = new Date(fechaFinInput+'T12:00:00');
+  const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
+  const tienda = document.getElementById('tiendaSelect').value;
+  const clave = `${day}-${month}-${year}-${tienda}`;
+  const ahora = Date.now();
+
+  if(cacheConsultas[clave] && (ahora-cacheConsultas[clave].ts)<5*60*1000){
+    datosGlobales = cacheConsultas[clave].data;
+    renderDashboard(datosGlobales);
+    return;
+  }
+
+  showLoader(true,'Cargando datos...','Consultando Toteat');
+  document.getElementById('btnActualizar').disabled = true;
+  try{
+    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if(!data||data.error||!data.length){ alert('Sin datos: '+(data?.message||'—')); return; }
+    datosGlobales = data;
+    cacheConsultas[clave] = {data,ts:ahora};
+    renderDashboard(data);
+    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR'));
+  }catch(e){ alert('Error: '+e.message); }
+  finally{ showLoader(false); document.getElementById('btnActualizar').disabled=false; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashboard(data) {
+  const total = data.find(r=>r.tienda==='TODAS')||data[0];
+  if(!total) return;
+
+  // KPIs
+  setTxt('kVentasDia', crc(total.ventasNetas));
+  setTxt('kForecast',  crc(total.forecast));
+  setTxt('kCrec',      pct(total.crecimientoDia));
+  setTxt('kFechaRef',  (total.fechaRefDia||'—').split('/').slice(0,2).join('/'));
+  setTxt('kAcum',      crc(total.ventasAcumuladas));
+  setTxt('kTrans',     num(total.transacciones));
+  setTxt('kTransAcum', num(total.transaccionesAcum));
+  const ticket = total.transacciones>0 ? total.ventasNetas/total.transacciones : 0;
+  setTxt('kTicket', crc(ticket));
+
+  const dF = num(total.desvForecast);
+  const dA = num(total.crecimientoAcum);
+  const elDF = document.getElementById('kDesvForecast');
+  if(elDF){ elDF.textContent=pct(dF)+' vs forecast'; elDF.className='kpi-delta '+deltaClass(dF); }
+  const elDA = document.getElementById('kCrecAcum');
+  if(elDA){ elDA.textContent=pct(dA)+' vs mes anterior'; elDA.className='kpi-delta '+deltaClass(dA); }
+
+  // Descuentos & pagos
+  setTxt('descDia',  crc(total.descuentos));  setTxt('descAcum',      crc(total.descuentosAcum||0));
+  setTxt('ticketDia',crc(ticket));             const ticketA=total.transaccionesAcum>0?total.ventasAcumuladas/total.transaccionesAcum:0;
+  setTxt('ticketAcum',crc(ticketA));
+  setTxt('pTarjetaDia',crc(total.uber||0));    setTxt('pTarjetaAcum',crc(total.uberAcum||0));
+  setTxt('pEfectivoDia',crc(total.didi||0));   setTxt('pEfectivoAcum',crc(total.didiAcum||0));
+  setTxt('pSinpeDia',crc(total.peya||0));      setTxt('pSinpeAcum',crc(total.peyaAcum||0));
+
+  renderTablaTiendas(data);
+  renderChartTiendas(data);
+  renderChartCanales(total);
+  renderChartPagos(total);
+}
+
+function renderTablaTiendas(data) {
+  const tbody = document.getElementById('tablaTiendas');
+  tbody.innerHTML = '';
+  data.forEach(row => {
+    if(!row||!row.tienda) return;
+    const isTotal = row.tienda==='TODAS';
+    const tr = document.createElement('tr');
+    if(isTotal) tr.classList.add('total-row');
+    const df=num(row.desvForecast), cd=num(row.crecimientoDia);
+    const dfa=num(row.desvForecastAcum), ca=num(row.crecimientoAcum);
+    tr.innerHTML = `
+      <td style="padding-left:16px">${row.tienda}</td>
+      <td style="color:var(--accent)">${crc(row.ventasNetas)}</td>
+      <td>${crc(row.forecast)}</td>
+      <td style="color:${colorPct(df)}">${pct(df)}</td>
+      <td style="color:${colorPct(cd)}">${pct(cd)}</td>
+      <td style="border-left:1px solid var(--border);color:var(--lime)">${crc(row.ventasAcumuladas)}</td>
+      <td>${crc(row.forecastAcumulado)}</td>
+      <td style="color:${colorPct(dfa)}">${pct(dfa)}</td>
+      <td style="padding-right:16px;color:${colorPct(ca)}">${pct(ca)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderChartTiendas(data) {
+  const tiendas = data.filter(r=>r.tienda!=='TODAS');
+  const labels  = tiendas.map(r=>r.tienda);
+  const values  = tiendas.map(r=>num(r.ventasNetas));
+  const colors  = [STORES.guachipelin.color, STORES.escazu.color, STORES.citymall.color, STORES.santaana.color];
+
+  if(charts.tiendas) charts.tiendas.destroy();
+  const ctx = document.getElementById('chartTiendas').getContext('2d');
+  charts.tiendas = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Ventas', data:values, backgroundColor:colors.map(c=>c+'99'), borderColor:colors, borderWidth:2, borderRadius:6 }] },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, datalabels:{display:false},
+        tooltip:{ backgroundColor:['var(--surface2)'], titleColor:'#e8e8f0', bodyColor:'#7070a0', callbacks:{label:ctx=>' '+fmtK(ctx.parsed.y)} } },
+      scales:{
+        x:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'var(--muted)',font:{size:11}}},
+        y:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'var(--muted)',font:{size:11},callback:v=>fmtK(v)}}
+      }
+    }
+  });
+}
+
+function renderChartCanales(total) {
+  const data = [num(total.uber),num(total.peya),num(total.didi),num(total.olo),num(total.otros)];
+  if(charts.canales) charts.canales.destroy();
+  const ctx = document.getElementById('chartCanales').getContext('2d');
+  charts.canales = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:['Tarjeta','Sinpe/Trans','Efectivo','OLO','Otros'], datasets:[{ data, backgroundColor:['#a855f7','#5af5c8','#f5c85a','#5af5a8','#7070a0'], borderWidth:0, hoverOffset:6 }] },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{ legend:{position:'bottom',labels:{color:'#7070a0',font:{size:11},padding:12}}, datalabels:{display:false},
+        tooltip:{callbacks:{label:ctx=>' '+fmtK(ctx.raw)}} }
+    }
+  });
+}
+
+function renderChartPagos(total) {
+  const data = [num(total.uberAcum),num(total.peyaAcum),num(total.didiAcum),num(total.otrosAcum)];
+  if(charts.pagos) charts.pagos.destroy();
+  const ctx = document.getElementById('chartPagos').getContext('2d');
+  charts.pagos = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:['Tarjeta','Sinpe','Efectivo','Otros'], datasets:[{ data, backgroundColor:['#a855f7','#5af5c8','#f5c85a','#7070a0'], borderWidth:0 }] },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{ legend:{position:'bottom',labels:{color:'#7070a0',font:{size:10},padding:8}}, datalabels:{display:false} }
+    }
+  });
+}
+
+function switchDashChart(type,btn,chartId){
+  document.querySelectorAll(`#section-dashboard .tab-pill`).forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  // simple toggle between bar and horizontal
+  if(datosGlobales) renderChartTiendas(datosGlobales);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  REPORTE DIARIO
+// ═══════════════════════════════════════════════════════════
+async function cargarReporteDiario() {
+  const fi = document.getElementById('fechaInicio').value;
+  const ff = document.getElementById('fechaFin').value;
+  const ts = document.getElementById('tiendaSelect').value;
+  if(!fi||!ff) return;
+  const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`;
+  const tbody = document.getElementById('bodyReporte');
+  tbody.innerHTML = `<tr><td colspan="100"><div class="empty-state"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Cargando reporte...</div></div></td></tr>`;
+  try{
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if(data&&!data.error&&Array.isArray(data)&&data.length){
+      datosReporte=data; generarTablaReporte(data);
+    } else {
+      tbody.innerHTML=`<tr><td colspan="100"><div class="empty-state"><div class="empty-icon">❌</div><div class="empty-txt">${data?.message||'Error'}</div></div></td></tr>`;
+    }
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="100"><div class="empty-state"><div class="empty-icon">❌</div><div class="empty-txt">${e.message}</div></div></td></tr>`;
+  }
+}
+
+function generarTablaReporte(data) {
+  const tiendasSet = new Set();
+  data.forEach(dia=>{ if(dia.tiendas&&Array.isArray(dia.tiendas)) dia.tiendas.forEach(t=>{ if(t.tienda) tiendasSet.add(t.tienda); }); });
+  const tiendas = [...tiendasSet].sort();
+  const thead = document.getElementById('headerReporte');
+  thead.innerHTML = `<th style="padding:12px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;left:0;background:var(--surface2);z-index:5">Local</th>`;
+  data.forEach(dia=>{
+    const f=new Date(dia.fecha+'T12:00:00');
+    thead.innerHTML+=`<th style="padding:12px 10px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);border-left:1px solid var(--border);min-width:90px;white-space:nowrap">${f.toLocaleString('es-ES',{month:'short'}).toUpperCase()}<br>${String(f.getDate()).padStart(2,'0')}</th>`;
+  });
+  const tbody = document.getElementById('bodyReporte');
+  tbody.innerHTML='';
+  const totPorDia={};
+  tiendas.forEach(tienda=>{
+    const tr=document.createElement('tr');
+    const td0=document.createElement('td');
+    td0.style.cssText='padding:10px 14px;font-weight:700;font-size:13px;position:sticky;left:0;background:var(--surface);z-index:4;border-right:1px solid var(--border)';
+    td0.textContent=tienda; tr.appendChild(td0);
+    data.forEach(dia=>{
+      const td_data=dia.tiendas?dia.tiendas.find(t=>t.tienda===tienda):null;
+      const v=td_data?(td_data.ventasNetas||0):0;
+      if(!totPorDia[dia.fecha]) totPorDia[dia.fecha]=0;
+      totPorDia[dia.fecha]+=v;
+      const td=document.createElement('td');
+      td.style.cssText='padding:10px;text-align:right;font-family:var(--mono);font-size:12px;border-left:1px solid rgba(42,42,58,.4)';
+      if(v>0){td.style.color='var(--text)';td.textContent=crc(v);}
+      else{td.style.color='var(--muted2)';td.textContent='—';}
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  const trTot=document.createElement('tr');
+  trTot.style.cssText='background:rgba(168,85,247,.08);font-weight:700;';
+  const td0=document.createElement('td');
+  td0.style.cssText='padding:10px 14px;font-weight:800;font-size:13px;position:sticky;left:0;z-index:4;border-right:1px solid var(--border);background:rgba(168,85,247,.12);color:var(--accent)';
+  td0.textContent='TOTAL'; trTot.appendChild(td0);
+  data.forEach(dia=>{
+    const td=document.createElement('td');
+    td.style.cssText='padding:10px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:700;border-left:1px solid rgba(42,42,58,.4);color:var(--accent)';
+    const tot=totPorDia[dia.fecha]||0;
+    td.textContent=tot>0?crc(tot):'—';
+    trTot.appendChild(td);
+  });
+  tbody.appendChild(trTot);
+}
+
+function exportarReporteDiario() {
+  if(!datosReporte){ alert('Cargá los datos primero'); return; }
+  const wb = XLSX.utils.book_new();
+  const tiendasSet = new Set();
+  datosReporte.forEach(d=>{ if(d.tiendas) d.tiendas.forEach(t=>{ if(t.tienda) tiendasSet.add(t.tienda); }); });
+  const tiendas=[...tiendasSet].sort();
+  const fechas=datosReporte.map(d=>d.fecha);
+  const headers=['Local',...fechas];
+  const rows=[headers];
+  const totPorDia={};
+  tiendas.forEach(tienda=>{
+    const row=[tienda];
+    datosReporte.forEach(dia=>{
+      const td=dia.tiendas?dia.tiendas.find(t=>t.tienda===tienda):null;
+      const v=td?(td.ventasNetas||0):0;
+      if(!totPorDia[dia.fecha]) totPorDia[dia.fecha]=0;
+      totPorDia[dia.fecha]+=v;
+      row.push(v||'');
+    });
+    rows.push(row);
+  });
+  rows.push(['TOTAL',...datosReporte.map(d=>totPorDia[d.fecha]||0)]);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:22},...fechas.map(()=>({wch:14}))];
+  XLSX.utils.book_append_sheet(wb,ws,'Reporte Diario');
+  XLSX.writeFile(wb,`Oakberry_ReporteDiario_${document.getElementById('fechaInicio').value}_${document.getElementById('fechaFin').value}.xlsx`);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PROYECCIÓN — FETCH REAL TOTEAT
+// ═══════════════════════════════════════════════════════════
+function getSemanaSanta(year){
+  const a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4;
+  const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
+  const m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),dy=((h+l-7*m+114)%31)+1;
+  const easter=new Date(year,mo-1,dy);
+  return [-3,-2,-1,0].map(off=>{const d2=new Date(easter);d2.setDate(d2.getDate()+off);return `${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;});
+}
+function isFeriado(date){
+  const mmdd=`${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  if(CR_FERIADOS[mmdd]) return CR_FERIADOS[mmdd];
+  if(getSemanaSanta(date.getFullYear()).includes(mmdd)) return 'Semana Santa';
+  return null;
+}
+function countDow(year,month){
+  const c=[0,0,0,0,0,0,0];
+  const d=new Date(year,month-1,1);
+  while(d.getMonth()===month-1){c[d.getDay()]++;d.setDate(d.getDate()+1);}
+  return c;
+}
+
+// Fetch directo a Toteat — agrupa ventas por fecha
+async function fetchToteatDiario(storeKey, fromDate, toDate) {
+  const store = STORES[storeKey];
+  const fromD = new Date(fromDate+'T00:00:00');
+  const toD   = new Date(toDate+'T00:00:00');
+
+  // Toteat acepta rangos; usamos bloques de 15 días
+  const salesByDate = {}; // { 'YYYY-MM-DD': totalNeto }
+  let cur = new Date(fromD);
+
+  while(cur <= toD){
+    const blockEnd = new Date(cur);
+    blockEnd.setDate(blockEnd.getDate()+14);
+    if(blockEnd > toD) blockEnd.setTime(toD.getTime());
+
+    const fmt = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    // Un día más al final para que incluya el último día
+    const fmtEnd = new Date(blockEnd); fmtEnd.setDate(fmtEnd.getDate()+1);
+
+    const url = `${TOTEAT.baseUrl}?ini=${fmt(cur)}&end=${fmt(fmtEnd)}&xir=${TOTEAT.xir}&xil=${store.xil}&xiu=${TOTEAT.xiu}&xapitoken=${store.xapitoken}`;
+
+    try{
+      const resp = await fetch(url, {method:'GET'});
+      const data = await resp.json();
+      if(data.ok && data.data && data.data.length){
+        data.data.forEach(orden=>{
+          const f = orden.dateClosed ? new Date(orden.dateClosed) : null;
+          if(!f||isNaN(f)) return;
+          const key=f.toISOString().split('T')[0];
+          const monto=parseFloat(orden.subtotal)||0;
+          salesByDate[key]=(salesByDate[key]||0)+monto;
         });
-        // Tendencia mensual
-        const mt = {};
-        for (const [ds, amt] of Object.entries(sales)) { const mk=ds.slice(0,7); mt[mk]=(mt[mk]||0)+amt; }
-        const months = Object.keys(mt).sort();
-        if (months.length >= 2) {
-            const last=mt[months[months.length-1]], first=mt[months[0]];
-            dowAvg[sk+'_trend'] = (last-first)/((months.length-1)*first);
-        } else { dowAvg[sk+'_trend'] = 0; }
-    }
+      }
+    }catch(e){ console.warn('Toteat error bloque',storeKey,cur,e); }
 
-    const today = new Date().toISOString().split('T')[0];
-    const days = [];
-    for (let day=1; day<=daysInMonth; day++) {
-        const date = new Date(targetYear, targetMonth-1, day);
-        const dow = date.getDay();
-        const dateStr = date.toISOString().split('T')[0];
-        const ferName = isFeriado(date);
-        const isWeekend = dow===0||dow===6;
-        const storeProj = {};
-        let totalProj = 0;
-        for (const sk of storeKeys) {
-            let base = dowAvg[sk][dow] || 0;
-            base *= (1 + (dowAvg[sk+'_trend']||0));
-            const holFactor = ferName ? (isWeekend ? 0.78 : 0.60) : 1;
-            const projected = Math.round(base * holFactor);
-            const variance = isWeekend ? 0.20 : 0.13;
-            storeProj[sk] = { projected, low: Math.round(projected*(1-variance)), high: Math.round(projected*(1+variance)) };
-            totalProj += projected;
-        }
-        const variance = isWeekend ? 0.20 : 0.13;
-        days.push({
-            date: dateStr, dateObj: date, dow,
-            dayName: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dow],
-            projected: totalProj,
-            low:  Math.round(totalProj*(1-variance)),
-            high: Math.round(totalProj*(1+variance)),
-            isWeekend, isFeriado: !!ferName, feriadoName: ferName||'',
-            confidence: ferName ? 55 : (isWeekend ? 72 : 84),
-            storeProj, isToday: dateStr===today,
-        });
-    }
-    return { days, dowAvg, targetDow, prevDow, targetYear, targetMonth, prevYear, prevMonth };
+    cur.setDate(cur.getDate()+15);
+    await new Promise(r=>setTimeout(r,300)); // rate limit
+  }
+  return salesByDate;
 }
 
 async function runProjection() {
-    const storeKey   = document.getElementById('proyStore').value;
-    const monthVal   = document.getElementById('proyMonth').value;
-    const histMonths = parseInt(document.getElementById('proyHistory').value);
-    const [tYear, tMonth] = monthVal.split('-').map(Number);
-    const storeKeys = storeKey === 'all' ? Object.keys(PROY_STORES) : [storeKey];
+  const storeKey   = document.getElementById('proyStore').value;
+  const monthVal   = document.getElementById('proyMonth').value;
+  const histFrom   = document.getElementById('proyHistFrom').value;
+  const histTo     = document.getElementById('proyHistTo').value;
 
-    showProyLoader(true, 'Consultando historial de ventas...');
-    document.getElementById('proyRunBtn').disabled = true;
+  if(!histFrom||!histTo){ alert('Seleccioná el rango de historial'); return; }
+  const [tY,tM] = monthVal.split('-').map(Number);
+  const storeKeys = storeKey==='all' ? Object.keys(STORES) : [storeKey];
 
-    try {
-        const histEnd   = new Date(tYear, tMonth-1, 0);
-        const histStart = new Date(tYear, tMonth-1-histMonths, 1);
-        const fromDate  = histStart.toISOString().split('T')[0];
-        const toDate    = histEnd.toISOString().split('T')[0];
+  showLoader(true,'Calculando proyección...','Iniciando...');
+  document.getElementById('proyRunBtn').disabled=true;
+  document.getElementById('proyExcelBtn').style.display='none';
 
-        const historicalByStore = {};
-        for (const sk of storeKeys) {
-            setProyLoaderStep(`Cargando historial: ${PROY_STORES[sk].name}...`);
-            await new Promise(r => setTimeout(r, 250));
-            historicalByStore[sk] = await fetchHistorialToteat(sk, fromDate, toDate);
-        }
-
-        setProyLoaderStep('Calculando efecto calendario...');
-        await new Promise(r => setTimeout(r, 200));
-
-        proyData = buildProjection(historicalByStore, tYear, tMonth, storeKeys);
-        proyData.storeKey   = storeKey;
-        proyData.storeKeys  = storeKeys;
-
-        setProyLoaderStep('Renderizando resultados...');
-        await new Promise(r => setTimeout(r, 100));
-
-        renderProyeccion(proyData);
-        document.getElementById('proyUltimaActualizacion').textContent = new Date().toLocaleTimeString('es-CR');
-
-    } catch(e) {
-        alert('Error en proyección: ' + e.message);
-        console.error(e);
-    } finally {
-        showProyLoader(false);
-        document.getElementById('proyRunBtn').disabled = false;
+  try{
+    // Fetch historial real de Toteat por tienda
+    const historicalByStore={};
+    for(const sk of storeKeys){
+      setStep(`Consultando Toteat: ${STORES[sk].name}...`);
+      historicalByStore[sk] = await fetchToteatDiario(sk, histFrom, histTo);
     }
+
+    setStep('Calculando promedios y efecto calendario...');
+    await new Promise(r=>setTimeout(r,100));
+
+    proyData = buildProjection(historicalByStore, tY, tM, storeKeys, histFrom, histTo);
+    proyData.storeKey  = storeKey;
+    proyData.storeKeys = storeKeys;
+
+    setStep('Renderizando...');
+    await new Promise(r=>setTimeout(r,80));
+
+    renderProyeccion(proyData);
+    document.getElementById('proyExcelBtn').style.display='flex';
+    setTxt('pageSub','Proyección generada: '+new Date().toLocaleTimeString('es-CR'));
+
+  }catch(e){ alert('Error en proyección: '+e.message); console.error(e); }
+  finally{ showLoader(false); document.getElementById('proyRunBtn').disabled=false; }
 }
 
-function fmtCRC(n) {
-    if (n >= 1000000) return '₡' + (n/1000000).toFixed(2) + 'M';
-    if (n >= 1000)    return '₡' + Math.round(n/1000) + 'K';
-    return '₡' + n.toLocaleString('es-CR');
-}
+// ── MOTOR DE PROYECCIÓN REAL ──
+function buildProjection(historicalByStore, tY, tM, storeKeys, histFrom, histTo){
+  const prevM  = tM===1?12:tM-1;
+  const prevY  = tM===1?tY-1:tY;
+  const tDow   = countDow(tY,tM);
+  const pDow   = countDow(prevY,prevM);
+  const daysInMonth = new Date(tY,tM,0).getDate();
 
-function renderProyeccion(data) {
-    renderProyKPIs(data);
-    renderProyChart(data);
-    renderCalEffect(data);
-    renderStoreBreak(data);
-    renderProyTable(data);
-}
+  // Calcular promedios reales por día de semana y tendencia
+  const dowAvg={};
+  for(const sk of storeKeys){
+    const sales=historicalByStore[sk]||{};
+    const buckets=[[],[],[],[],[],[],[]]; // Dom..Sab
+    const monthTotals={};
 
-function renderProyKPIs(data) {
-    const total = data.days.reduce((s,d) => s+d.projected, 0);
-    const avg   = Math.round(total / data.days.length);
-    const best  = data.days.reduce((b,d) => d.projected > b.projected ? d : b, data.days[0]);
-    const satDiff = data.targetDow[6] - data.prevDow[6];
-    const sunDiff = data.targetDow[0] - data.prevDow[0];
-    const calEff  = satDiff + sunDiff;
-
-    document.getElementById('pkpiTotal').textContent = fmtCRC(total);
-    const ml = new Date(data.targetYear, data.targetMonth-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
-    document.getElementById('pkpiTotalSub').textContent = ml.charAt(0).toUpperCase()+ml.slice(1);
-    document.getElementById('pkpiAvg').textContent = fmtCRC(avg);
-    document.getElementById('pkpiAvgSub').textContent = `${data.days.length} días proyectados`;
-    document.getElementById('pkpiBest').textContent = fmtCRC(best.projected);
-    document.getElementById('pkpiBestSub').textContent = best.dayName + ' ' + best.date.slice(8);
-
-    const calStr = calEff===0 ? '±0 fines de semana' : calEff>0 ? `+${calEff} fin${calEff>1?'es':''} de semana` : `${calEff} fin${calEff<-1?'es':''} de semana`;
-    const calEl = document.getElementById('pkpiCal');
-    calEl.textContent = calStr;
-    calEl.style.color = calEff>0 ? '#059669' : calEff<0 ? '#DC2626' : '#6B7280';
-    document.getElementById('pkpiCalSub').textContent = `Sáb: ${data.prevDow[6]}→${data.targetDow[6]} | Dom: ${data.prevDow[0]}→${data.targetDow[0]}`;
-}
-
-function renderProyChart(data) {
-    document.getElementById('proyChartEmpty').style.display = 'none';
-    const labels  = data.days.map(d => d.date.slice(8)+'\n'+d.dayName.slice(0,3));
-    const values  = data.days.map(d => d.projected);
-    const lows    = data.days.map(d => d.low);
-    const highs   = data.days.map(d => d.high);
-    const colors  = data.days.map(d => d.isFeriado ? 'rgba(239,68,68,0.5)' : d.dow===6 ? 'rgba(107,33,168,0.65)' : d.dow===0 ? 'rgba(245,158,11,0.6)' : 'rgba(107,33,168,0.35)');
-    const borders = data.days.map(d => d.isFeriado ? '#EF4444' : d.dow===6 ? '#6B21A8' : d.dow===0 ? '#F59E0B' : '#8B5CF6');
-    if (proyChart) proyChart.destroy();
-    const ctx = document.getElementById('proyChart').getContext('2d');
-    const baseDatasets = [
-        { label:'Rango alto', data:highs, type:'line', borderColor:'rgba(107,33,168,0.25)', borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false },
-        { label:'Rango bajo', data:lows, type:'line', borderColor:'rgba(107,33,168,0.15)', borderWidth:1, borderDash:[4,4], pointRadius:0, fill:'-1', backgroundColor:'rgba(107,33,168,0.04)' },
-    ];
-    if (proyChartType === 'bar') {
-        proyChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels, datasets: [{ label:'Proyección', data:values, backgroundColor:colors, borderColor:borders, borderWidth:1, borderRadius:4 }, ...baseDatasets] },
-            options: proyChartOptions()
-        });
-    } else {
-        proyChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels, datasets: [{ label:'Proyección', data:values, borderColor:'#6B21A8', borderWidth:2, pointBackgroundColor:borders, pointRadius:4, tension:0.3, fill:false }, ...baseDatasets] },
-            options: proyChartOptions()
-        });
+    for(const [dateStr,amount] of Object.entries(sales)){
+      if(amount<=0) continue;
+      const d=new Date(dateStr+'T00:00:00');
+      if(!isFeriado(d)) buckets[d.getDay()].push(amount);
+      const mk=dateStr.slice(0,7);
+      monthTotals[mk]=(monthTotals[mk]||0)+amount;
     }
-}
 
-function proyChartOptions() {
-    return {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false },
-            datalabels: { display: false },
-            tooltip: {
-                callbacks: { label: ctx => ' ' + fmtCRC(ctx.parsed.y) }
-            }
-        },
-        scales: {
-            x: { grid:{ color:'#F3F4F6' }, ticks:{ color:'#9CA3AF', font:{size:10}, maxRotation:0 } },
-            y: { grid:{ color:'#F3F4F6' }, ticks:{ color:'#9CA3AF', font:{size:10}, callback:v => fmtCRC(v) } }
-        }
-    };
-}
+    // Promedio ponderado — meses más recientes pesan más
+    dowAvg[sk]=buckets.map(b=>{
+      if(!b.length) return 0;
+      let sum=0,ws=0;
+      b.forEach((v,i)=>{ const w=i+1; sum+=v*w; ws+=w; });
+      return sum/ws;
+    });
 
-function switchProyChart(type, btn) {
-    proyChartType = type;
-    document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    if (proyData) renderProyChart(proyData);
-}
+    // Tendencia mensual
+    const months=Object.keys(monthTotals).sort();
+    if(months.length>=2){
+      const last=monthTotals[months[months.length-1]],first=monthTotals[months[0]];
+      dowAvg[sk+'_trend']=(last-first)/((months.length-1)*first);
+    } else { dowAvg[sk+'_trend']=0; }
 
-function renderCalEffect(data) {
-    // Dom=0, Lun=1, Mar=2, Mie=3, Jue=4, Vie=5, Sab=6
-    const mapping = [
-        ['calLun',1],['calMar',2],['calMie',3],['calJue',4],['calVie',5],['calSab',6],['calDom',0]
-    ];
-    for (const [prefix, dowIdx] of mapping) {
-        const prev = data.prevDow[dowIdx];
-        const next = data.targetDow[dowIdx];
-        document.getElementById(prefix+'Prev').textContent = prev;
-        document.getElementById(prefix+'Next').textContent = next;
-        const arr = document.getElementById(prefix+'Arr');
-        if (next > prev)      { arr.textContent='↑'; arr.className='cal-arrow cal-up'; }
-        else if (next < prev) { arr.textContent='↓'; arr.className='cal-arrow cal-down'; }
-        else                  { arr.textContent='='; arr.className='cal-arrow'; }
+    // Log para debug
+    console.log(`[${sk}] Días con datos:`,Object.keys(sales).length,
+      '| Prom Sab:',Math.round(dowAvg[sk][6]),
+      '| Prom Dom:',Math.round(dowAvg[sk][0]),
+      '| Trend/mes:',((dowAvg[sk+'_trend']||0)*100).toFixed(2)+'%');
+  }
+
+  const todayStr=new Date().toISOString().split('T')[0];
+  const days=[];
+  for(let day=1;day<=daysInMonth;day++){
+    const date=new Date(tY,tM-1,day);
+    const dow=date.getDay();
+    const dateStr=date.toISOString().split('T')[0];
+    const ferName=isFeriado(date);
+    const isWeekend=dow===0||dow===6;
+    const storeProj={};
+    let totalProj=0;
+
+    for(const sk of storeKeys){
+      let base=dowAvg[sk][dow]||0;
+      base*=(1+(dowAvg[sk+'_trend']||0)); // aplicar tendencia
+      const holFactor=ferName?(isWeekend?.78:.60):1;
+      const proj=Math.round(base*holFactor);
+      const variance=isWeekend?.20:.13;
+      storeProj[sk]={projected:proj,low:Math.round(proj*(1-variance)),high:Math.round(proj*(1+variance))};
+      totalProj+=proj;
     }
-    const ferCount = data.days.filter(d => d.isFeriado).length;
-    document.getElementById('calFerPrev').textContent = '—';
-    document.getElementById('calFerNext').textContent = ferCount;
-    const ferArr = document.getElementById('calFerArr');
-    if (ferCount > 0) { ferArr.textContent='⚠'; ferArr.className='cal-arrow cal-down'; }
-    else              { ferArr.textContent='✓'; ferArr.className='cal-arrow cal-up'; }
-
-    const prevML = new Date(data.prevYear, data.prevMonth-1).toLocaleDateString('es-CR',{month:'short'});
-    const nextML = new Date(data.targetYear, data.targetMonth-1).toLocaleDateString('es-CR',{month:'short'});
-    document.getElementById('calEffectTag').textContent = `${prevML.charAt(0).toUpperCase()+prevML.slice(1)} → ${nextML.charAt(0).toUpperCase()+nextML.slice(1)}`;
+    const variance=isWeekend?.20:.13;
+    days.push({
+      date:dateStr,dateObj:date,dow,
+      dayName:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dow],
+      projected:totalProj,
+      low:Math.round(totalProj*(1-variance)),
+      high:Math.round(totalProj*(1+variance)),
+      isWeekend,isFeriado:!!ferName,feriadoName:ferName||'',
+      confidence:ferName?55:(isWeekend?72:84),
+      storeProj,isToday:dateStr===todayStr,
+    });
+  }
+  return {days,dowAvg,tDow,pDow,tY,tM,prevY,prevM,histFrom,histTo};
 }
 
-function renderStoreBreak(data) {
-    const ml = new Date(data.targetYear, data.targetMonth-1).toLocaleDateString('es-CR',{month:'long'});
-    document.getElementById('storeBreakTag').textContent = ml.charAt(0).toUpperCase()+ml.slice(1);
+// ═══════════════════════════════════════════════════════════
+//  RENDER PROYECCIÓN
+// ═══════════════════════════════════════════════════════════
+function renderProyeccion(data){
+  renderProyKPIs(data);
+  renderProyChart(data);
+  renderCalEffect(data);
+  renderStoreBreak(data);
+  renderProyTable(data);
+}
 
-    const totals = {};
-    for (const sk of data.storeKeys) {
-        totals[sk] = data.days.reduce((s,d) => s + (d.storeProj[sk]?.projected||0), 0);
+function renderProyKPIs(data){
+  const total=data.days.reduce((s,d)=>s+d.projected,0);
+  const avg=Math.round(total/data.days.length);
+  const best=data.days.reduce((b,d)=>d.projected>b.projected?d:b,data.days[0]);
+  const satD=data.tDow[6]-data.pDow[6], sunD=data.tDow[0]-data.pDow[0];
+  const calEff=satD+sunD;
+
+  setTxt('pkTotal', fmtK(total));
+  const ml=new Date(data.tY,data.tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
+  setTxt('pkTotalSub', ml.charAt(0).toUpperCase()+ml.slice(1));
+  setTxt('pkAvg', fmtK(avg));
+  setTxt('pkAvgSub', `${data.days.length} días · ${data.histFrom} → ${data.histTo}`);
+  setTxt('pkBest', fmtK(best.projected));
+  setTxt('pkBestSub', best.dayName+' '+best.date.slice(8));
+
+  const calStr=calEff===0?'±0 fines de semana':calEff>0?`+${calEff} fin${calEff>1?'es':''} de semana`:`${calEff} fin${calEff<-1?'es':''} de semana`;
+  const calEl=document.getElementById('pkCal');
+  if(calEl){calEl.textContent=calStr;calEl.style.color=calEff>0?'var(--teal)':calEff<0?'var(--red)':'var(--muted)';}
+  setTxt('pkCalSub', `Sáb: ${data.pDow[6]}→${data.tDow[6]} | Dom: ${data.pDow[0]}→${data.tDow[0]}`);
+}
+
+function renderProyChart(data){
+  document.getElementById('proyChartEmpty').style.display='none';
+  const labels=data.days.map(d=>d.date.slice(8)+'\n'+d.dayName.slice(0,3));
+  const values=data.days.map(d=>d.projected);
+  const lows=data.days.map(d=>d.low);
+  const highs=data.days.map(d=>d.high);
+  const colors=data.days.map(d=>d.isFeriado?'rgba(245,90,90,.5)':d.dow===6?'rgba(168,85,247,.7)':d.dow===0?'rgba(245,200,90,.6)':'rgba(168,85,247,.35)');
+  const borders=data.days.map(d=>d.isFeriado?'#f55a5a':d.dow===6?'#a855f7':d.dow===0?'#f5c85a':'#a855f7');
+
+  if(proyChart) proyChart.destroy();
+  const ctx=document.getElementById('proyChart').getContext('2d');
+  const rangeSets=[
+    {label:'Rango alto',data:highs,type:'line',borderColor:'rgba(168,85,247,.2)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+    {label:'Rango bajo',data:lows,type:'line',borderColor:'rgba(168,85,247,.15)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:'-1',backgroundColor:'rgba(168,85,247,.05)'},
+  ];
+  const opts={
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.y)}}},
+    scales:{
+      x:{grid:{color:'rgba(42,42,58,.6)'},ticks:{color:'#7070a0',font:{size:9},maxRotation:0}},
+      y:{grid:{color:'rgba(42,42,58,.6)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}
     }
-    const grand = Object.values(totals).reduce((a,b)=>a+b,0);
-    const sorted = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
-    const list = document.getElementById('storeBreakList');
-    list.innerHTML = '';
-    for (const [sk, total] of sorted) {
-        const pct = grand > 0 ? Math.round(total/grand*100) : 0;
-        const store = PROY_STORES[sk];
-        const el = document.createElement('div');
-        el.className = 'store-proy-item';
-        el.innerHTML = `
-            <div class="store-proy-dot" style="background:${store.color}"></div>
-            <div style="flex:1">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-                    <span class="store-proy-name">${store.name}</span>
-                    <span><span class="store-proy-amount">${fmtCRC(total)}</span><span class="store-proy-pct">${pct}%</span></span>
-                </div>
-                <div class="store-bar-wrap"><div class="store-bar-fill" style="width:${pct}%;background:${store.color}88"></div></div>
-            </div>`;
-        list.appendChild(el);
+  };
+  if(proyChartType==='bar'){
+    proyChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Proyección',data:values,backgroundColor:colors,borderColor:borders,borderWidth:1,borderRadius:4},...rangeSets]},options:opts});
+  } else {
+    proyChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Proyección',data:values,borderColor:'#a855f7',borderWidth:2,pointBackgroundColor:borders,pointRadius:4,tension:.3,fill:false},...rangeSets]},options:opts});
+  }
+}
+
+function switchProyChart(type,btn){
+  proyChartType=type;
+  document.querySelectorAll('#section-proyeccion .tab-pill').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if(proyData) renderProyChart(proyData);
+}
+
+function renderCalEffect(data){
+  const map=[[1,'calL1','calA1','calN1'],[2,'calL2','calA2','calN2'],[3,'calL3','calA3','calN3'],
+             [4,'calL4','calA4','calN4'],[5,'calL5','calA5','calN5'],[6,'calL6','calA6','calN6'],[0,'calL0','calA0','calN0']];
+  for(const [dow,lId,aId,nId] of map){
+    const prev=data.pDow[dow], next=data.tDow[dow];
+    setTxt(lId,prev); setTxt(nId,next);
+    const aEl=document.getElementById(aId);
+    if(aEl){
+      if(next>prev){aEl.textContent='↑';aEl.className='cal-arr arr-up';}
+      else if(next<prev){aEl.textContent='↓';aEl.className='cal-arr arr-dn';}
+      else{aEl.textContent='=';aEl.className='cal-arr';}
     }
+  }
+  const ferCount=data.days.filter(d=>d.isFeriado).length;
+  setTxt('calLH','—'); setTxt('calNH',ferCount);
+  const aH=document.getElementById('calAH');
+  if(aH){aH.textContent=ferCount>0?'⚠':'✓';aH.className='cal-arr '+(ferCount>0?'arr-dn':'arr-up');}
+
+  const pm=new Date(data.prevY,data.prevM-1).toLocaleDateString('es-CR',{month:'short'});
+  const nm=new Date(data.tY,data.tM-1).toLocaleDateString('es-CR',{month:'short'});
+  setTxt('calTag',`${pm.charAt(0).toUpperCase()+pm.slice(1)} → ${nm.charAt(0).toUpperCase()+nm.slice(1)}`);
 }
 
-function renderProyTable(data) {
-    const ml = new Date(data.targetYear, data.targetMonth-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
-    document.getElementById('tableDetailTag').textContent = ml.charAt(0).toUpperCase()+ml.slice(1);
-    const storeLabel = data.storeKey === 'all' ? 'Todas' : (PROY_STORES[data.storeKey]?.name || data.storeKey);
-    const tbody = document.getElementById('proyTableBody');
-    tbody.innerHTML = '';
-    for (const d of data.days) {
-        const tr = document.createElement('tr');
-        if (d.isToday) tr.className = 'row-today';
-        else if (d.isFeriado) tr.className = 'row-holiday';
-        else if (d.isWeekend) tr.className = 'row-weekend';
-
-        let badges = '';
-        if (d.isToday)    badges += '<span class="badge-day badge-hoy">HOY</span>';
-        if (d.dow===6)    badges += '<span class="badge-day badge-sab">Sáb</span>';
-        if (d.dow===0)    badges += '<span class="badge-day badge-dom">Dom</span>';
-        if (d.isFeriado)  badges += '<span class="badge-day badge-hol">Feriado</span>';
-
-        const filled = Math.round(d.confidence / 20);
-        const dots = [1,2,3,4,5].map(i => `<div class="conf-dot" style="background:${i<=filled?'#6B21A8':'#E5E7EB'}"></div>`).join('');
-
-        tr.innerHTML = `
-            <td style="color:#6B7280;font-size:12px;">${d.date}</td>
-            <td style="font-weight:600;">${d.dayName}${badges}</td>
-            <td style="font-weight:800;color:#6B21A8;">${fmtCRC(d.projected)}</td>
-            <td style="color:#9CA3AF;">${fmtCRC(d.low)}</td>
-            <td style="color:#9CA3AF;">${fmtCRC(d.high)}</td>
-            <td><div class="conf-dots">${dots}<span style="font-size:10px;color:#9CA3AF;margin-left:4px;">${d.confidence}%</span></div></td>
-            <td style="font-size:11px;color:#9CA3AF;">${d.feriadoName || '—'}</td>`;
-        tbody.appendChild(tr);
-    }
+function renderStoreBreak(data){
+  const ml=new Date(data.tY,data.tM-1).toLocaleDateString('es-CR',{month:'long'});
+  setTxt('storeBreakTag',ml.charAt(0).toUpperCase()+ml.slice(1));
+  const totals={};
+  for(const sk of data.storeKeys) totals[sk]=data.days.reduce((s,d)=>s+(d.storeProj[sk]?.projected||0),0);
+  const grand=Object.values(totals).reduce((a,b)=>a+b,0);
+  const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const list=document.getElementById('storeBreakList');
+  list.innerHTML='';
+  for(const [sk,tot] of sorted){
+    const pct=grand>0?Math.round(tot/grand*100):0;
+    const s=STORES[sk];
+    const el=document.createElement('div');
+    el.className='store-bar-item';
+    el.innerHTML=`<div class="store-bar-row"><span class="store-bar-name" style="color:${s.color}">${s.name}</span><span><span class="store-bar-amt">${fmtK(tot)}</span><span class="store-bar-pct">${pct}%</span></span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${s.color}99"></div></div>`;
+    list.appendChild(el);
+  }
 }
 
-function showProyLoader(show, text) {
-    const el = document.getElementById('proyLoader');
-    el.style.display = show ? 'flex' : 'none';
-    if (text) el.querySelector('.proy-loader-text').textContent = text;
+function renderProyTable(data){
+  const ml=new Date(data.tY,data.tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
+  setTxt('proyTableTag',ml.charAt(0).toUpperCase()+ml.slice(1));
+  const tbody=document.getElementById('proyTableBody');
+  tbody.innerHTML='';
+  for(const d of data.days){
+    const tr=document.createElement('tr');
+    if(d.isToday) tr.className='row-today';
+    else if(d.isFeriado) tr.className='row-holiday';
+    else if(d.isWeekend) tr.className='row-weekend';
+    let badges='';
+    if(d.isToday)  badges+=`<span class="badge-sm b-hoy">HOY</span>`;
+    if(d.dow===6)  badges+=`<span class="badge-sm b-sat">Sáb</span>`;
+    if(d.dow===0)  badges+=`<span class="badge-sm b-sun">Dom</span>`;
+    if(d.isFeriado)badges+=`<span class="badge-sm b-hol">Feriado</span>`;
+    const filled=Math.round(d.confidence/20);
+    const dots=[1,2,3,4,5].map(i=>`<div class="conf-seg" style="background:${i<=filled?'var(--accent)':'var(--border2)'}"></div>`).join('');
+    tr.innerHTML=`
+      <td style="color:var(--muted);font-family:var(--mono);font-size:11px">${d.date}</td>
+      <td style="font-weight:700">${d.dayName}${badges}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--accent)">${fmtK(d.projected)}</td>
+      <td style="font-family:var(--mono);color:var(--muted)">${fmtK(d.low)}</td>
+      <td style="font-family:var(--mono);color:var(--muted)">${fmtK(d.high)}</td>
+      <td><div class="conf-row">${dots}<span style="font-size:10px;color:var(--muted);margin-left:4px">${d.confidence}%</span></div></td>
+      <td style="font-size:11px;color:var(--muted)">${d.feriadoName||'—'}</td>`;
+    tbody.appendChild(tr);
+  }
 }
-function setProyLoaderStep(text) {
-    document.getElementById('proyLoaderStep').textContent = text;
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORTAR PROYECCIÓN A EXCEL
+// ═══════════════════════════════════════════════════════════
+function exportProyExcel(){
+  if(!proyData){ alert('Generá la proyección primero'); return; }
+  const wb=XLSX.utils.book_new();
+
+  // Hoja 1: Resumen
+  const resumen=[
+    ['OAKBERRY — PROYECCIÓN DE VENTAS'],
+    [`Mes proyectado: ${new Date(proyData.tY,proyData.tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'})}`],
+    [`Historial base: ${proyData.histFrom} → ${proyData.histTo}`],
+    [`Generado: ${new Date().toLocaleString('es-CR')}`],
+    [],
+    ['Fecha','Día semana','Proyección (₡)','Rango Bajo (₡)','Rango Alto (₡)','Confianza %','Feriado',
+     ...proyData.storeKeys.map(sk=>STORES[sk].name+' (₡)')],
+  ];
+  proyData.days.forEach(d=>{
+    resumen.push([
+      d.date, d.dayName, d.projected, d.low, d.high, d.confidence+'%', d.feriadoName||'',
+      ...proyData.storeKeys.map(sk=>d.storeProj[sk]?.projected||0),
+    ]);
+  });
+  // Total row
+  const total=proyData.days.reduce((s,d)=>s+d.projected,0);
+  resumen.push(['TOTAL','',total,'','','','',
+    ...proyData.storeKeys.map(sk=>proyData.days.reduce((s,d)=>s+(d.storeProj[sk]?.projected||0),0))]);
+
+  const ws=XLSX.utils.aoa_to_sheet(resumen);
+  ws['!cols']=[{wch:12},{wch:12},{wch:18},{wch:16},{wch:16},{wch:12},{wch:18},...proyData.storeKeys.map(()=>({wch:20}))];
+  XLSX.utils.book_append_sheet(wb,ws,'Proyección');
+
+  // Hoja 2: Resumen por tienda
+  const wsT_data=[['Sucursal','Total Proyectado (₡)','Participación %']];
+  const grand=proyData.storeKeys.reduce((s,sk)=>s+proyData.days.reduce((ss,d)=>ss+(d.storeProj[sk]?.projected||0),0),0);
+  proyData.storeKeys.forEach(sk=>{
+    const tot=proyData.days.reduce((s,d)=>s+(d.storeProj[sk]?.projected||0),0);
+    wsT_data.push([STORES[sk].name, tot, grand>0?Math.round(tot/grand*100)+'%':'']);
+  });
+  wsT_data.push(['TOTAL',grand,'100%']);
+  const wsT=XLSX.utils.aoa_to_sheet(wsT_data);
+  wsT['!cols']=[{wch:22},{wch:20},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,wsT,'Por Sucursal');
+
+  const fname=`Oakberry_Proyeccion_${proyData.tY}-${String(proyData.tM).padStart(2,'0')}.xlsx`;
+  XLSX.writeFile(wb,fname);
 }
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  initDates();
+  cargarDatos();
+});
 </script>
 </body>
 </html>
