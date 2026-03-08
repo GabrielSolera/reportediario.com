@@ -288,6 +288,53 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .date-range-group{display:flex;align-items:center;gap:6px;}
 .date-sep{font-size:11px;color:var(--muted);font-family:var(--mono);}
 
+/* ── ANÁLISIS: Ranking cards ── */
+.rank-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;
+  position:relative;overflow:hidden;
+  transition:border-color .2s, transform .2s;
+}
+.rank-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.rank-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+}
+.rank-1::after{background:linear-gradient(90deg,#f5c85a,#f5a85a);}
+.rank-2::after{background:linear-gradient(90deg,#c8c8d0,#a8a8b8);}
+.rank-3::after{background:linear-gradient(90deg,#c87040,#b06030);}
+.rank-4::after{background:linear-gradient(90deg,var(--border2),transparent);}
+.rank-medal{font-size:22px;margin-bottom:8px;}
+.rank-name{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em;}
+.rank-value{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.rank-delta{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;}
+.rank-bar-wrap{height:2px;background:var(--border);border-radius:1px;margin-top:10px;}
+.rank-bar{height:100%;border-radius:1px;transition:width .9s ease;}
+
+/* ── Canal pills ── */
+.canal-kpi{
+  padding:16px 18px;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;gap:4px;
+}
+.canal-kpi:last-child{border-right:none;}
+.canal-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;}
+.canal-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);display:flex;align-items:center;}
+.canal-value{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--text);}
+.canal-pct{font-family:var(--mono);font-size:20px;font-weight:800;margin-bottom:2px;}
+.canal-sub{font-size:10px;color:var(--muted);}
+.canal-delta{font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:2px;display:inline-block;}
+
+/* ── Métrica mini row ── */
+.metrica-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(42,42,58,.4);}
+.metrica-row:last-child{border-bottom:none;}
+.metrica-label{font-size:11px;color:var(--muted);font-weight:600;}
+.metrica-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);}
+.metrica-delta{font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
+
+/* ── Trend legend ── */
+.trend-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+.trend-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);}
+.trend-leg-line{width:18px;height:2px;border-radius:1px;}
+
 /* RESPONSIVE */
 @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:900px){
@@ -479,8 +526,135 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     <!-- ═══════════ ANÁLISIS ═══════════ -->
     <div class="section" id="section-analisis">
-      <div style="font-size:18px;font-weight:800;margin-bottom:20px">Análisis</div>
-      <div class="card"><div class="card-body"><div class="empty-state"><div class="empty-icon">📈</div><div class="empty-txt">Análisis avanzado — próximamente</div></div></div></div>
+
+      <!-- Controls bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:18px;font-weight:800">Análisis de Desempeño</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px" id="anlSubtitle">Cargá datos desde el topbar para ver el análisis</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="ctrl-label">Comparar vs</span>
+          <div class="tab-pills" id="anlPeriodTabs">
+            <button class="tab-pill active" onclick="setAnlPeriod(-7,this)">−7 días</button>
+            <button class="tab-pill" onclick="setAnlPeriod(-15,this)">−15 días</button>
+            <button class="tab-pill" onclick="setAnlPeriod('mes',this)">Mes anterior</button>
+          </div>
+          <button class="btn btn-lime" onclick="cargarAnalisis()" id="btnAnalisis">↻ Analizar</button>
+        </div>
+      </div>
+
+      <!-- Estado vacío -->
+      <div id="anlEmpty" class="card">
+        <div class="card-body">
+          <div class="empty-state" style="padding:56px">
+            <div class="empty-icon">📈</div>
+            <div class="empty-txt">Seleccioná una fecha en el topbar y presioná <strong>Analizar</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenido análisis (oculto hasta cargar) -->
+      <div id="anlContent" style="display:none">
+
+        <!-- ① RANKING TIENDAS -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">🏆 Ranking de Tiendas</div>
+          <div id="anlRanking" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"></div>
+        </div>
+
+        <!-- ② COMPARATIVO POR PERÍODO -->
+        <div class="grid-2" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Ventas por Tienda vs Período</span>
+              <span class="card-tag" id="anlPeriodTag">—</span>
+            </div>
+            <div class="card-body"><div class="chart-wrap-tall"><canvas id="anlChartComp"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Tendencia del Mes</span>
+              <span class="card-tag" id="anlTrendTag">días transcurridos + proyección</span>
+            </div>
+            <div class="card-body"><div class="chart-wrap-tall"><canvas id="anlChartTrend"></canvas></div></div>
+          </div>
+        </div>
+
+        <!-- ③ CANALES DE VENTA -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <span class="card-title">Canales de Venta — Peso en la Venta Total</span>
+            <span class="card-tag" id="anlCanalesTag">Acumulado del mes</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div id="anlCanalesGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)"></div>
+            <div style="display:grid;grid-template-columns:1fr 360px;gap:0">
+              <div style="padding:18px;border-right:1px solid var(--border)">
+                <div class="chart-wrap" style="height:220px"><canvas id="anlChartCanales"></canvas></div>
+              </div>
+              <div style="padding:18px">
+                <div id="anlCanalesDetalle"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ④ MÉTRICAS PROFUNDAS -->
+        <div class="grid-3" style="margin-bottom:20px">
+          <!-- Descuentos -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">💰 Descuentos</span></div>
+            <div class="card-body">
+              <div id="anlDescGrid"></div>
+              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartDesc"></canvas></div></div>
+            </div>
+          </div>
+          <!-- Transacciones -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">🔢 Transacciones</span></div>
+            <div class="card-body">
+              <div id="anlTransGrid"></div>
+              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartTrans"></canvas></div></div>
+            </div>
+          </div>
+          <!-- Ticket Medio -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">🎫 Ticket Medio</span></div>
+            <div class="card-body">
+              <div id="anlTicketGrid"></div>
+              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartTicket"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑤ TABLA COMPARATIVA COMPLETA -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Tabla Comparativa Completa</span>
+            <span class="card-tag" id="anlTablaTag">—</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="scroll-box">
+              <table class="store-table" id="anlTablaComp">
+                <thead>
+                  <tr>
+                    <th style="padding-left:16px;min-width:160px">Tienda</th>
+                    <th>Ventas período</th><th>Ref. anterior</th><th>Δ %</th>
+                    <th style="border-left:1px solid var(--border)">Transacc.</th><th>Ticket medio</th>
+                    <th style="border-left:1px solid var(--border)">Descuentos</th><th>% sobre venta</th>
+                    <th style="border-left:1px solid var(--border)">Canal top</th>
+                  </tr>
+                </thead>
+                <tbody id="anlTablaBody">
+                  <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-txt">Sin datos</div></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /anlContent -->
     </div>
 
     <!-- ═══════════ DESCUENTOS ═══════════ -->
@@ -1018,44 +1192,22 @@ function countDow(year,month){
   return c;
 }
 
-// Fetch directo a Toteat — agrupa ventas por fecha
+// Fetch historial via Apps Script (evita CORS de Toteat)
+// Retorna { 'YYYY-MM-DD': totalNeto }
 async function fetchToteatDiario(storeKey, fromDate, toDate) {
-  const store = STORES[storeKey];
-  const fromD = new Date(fromDate+'T00:00:00');
-  const toD   = new Date(toDate+'T00:00:00');
-
-  // Toteat acepta rangos; usamos bloques de 15 días
-  const salesByDate = {}; // { 'YYYY-MM-DD': totalNeto }
-  let cur = new Date(fromD);
-
-  while(cur <= toD){
-    const blockEnd = new Date(cur);
-    blockEnd.setDate(blockEnd.getDate()+14);
-    if(blockEnd > toD) blockEnd.setTime(toD.getTime());
-
-    const fmt = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-    // Un día más al final para que incluya el último día
-    const fmtEnd = new Date(blockEnd); fmtEnd.setDate(fmtEnd.getDate()+1);
-
-    const url = `${TOTEAT.baseUrl}?ini=${fmt(cur)}&end=${fmt(fmtEnd)}&xir=${TOTEAT.xir}&xil=${store.xil}&xiu=${TOTEAT.xiu}&xapitoken=${store.xapitoken}`;
-
-    try{
-      const resp = await fetch(url, {method:'GET'});
-      const data = await resp.json();
-      if(data.ok && data.data && data.data.length){
-        data.data.forEach(orden=>{
-          const f = orden.dateClosed ? new Date(orden.dateClosed) : null;
-          if(!f||isNaN(f)) return;
-          const key=f.toISOString().split('T')[0];
-          const monto=parseFloat(orden.subtotal)||0;
-          salesByDate[key]=(salesByDate[key]||0)+monto;
-        });
-      }
-    }catch(e){ console.warn('Toteat error bloque',storeKey,cur,e); }
-
-    cur.setDate(cur.getDate()+15);
-    await new Promise(r=>setTimeout(r,300)); // rate limit
+  const clave = `historial-${storeKey}-${fromDate}-${toDate}`;
+  if(cacheConsultas[clave] && (Date.now()-cacheConsultas[clave].ts)<10*60*1000){
+    return cacheConsultas[clave].data;
   }
+  const url = `${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKey}&fechaInicio=${fromDate}&fechaFin=${toDate}`;
+  const resp = await fetch(url);
+  const data = await resp.json();
+  if(!data || data.error) throw new Error(data?.message || `Sin historial para ${storeKey}`);
+  const salesByDate = {};
+  (Array.isArray(data) ? data : (data.data||[])).forEach(row => {
+    if(row.fecha && row.ventasNetas) salesByDate[row.fecha] = Number(row.ventasNetas)||0;
+  });
+  cacheConsultas[clave] = { data: salesByDate, ts: Date.now() };
   return salesByDate;
 }
 
@@ -1368,8 +1520,431 @@ function exportProyExcel(){
 }
 
 // ═══════════════════════════════════════════════════════════
-//  INIT
+//  MÓDULO ANÁLISIS
 // ═══════════════════════════════════════════════════════════
+let anlPeriod   = -7;          // -7, -15, or 'mes'
+let anlCharts   = {};          // chart instances
+let anlDataRef  = null;        // datos del período de referencia
+let anlDataCurr = null;        // datos del período actual (=datosGlobales)
+
+const CANAL_CFG = [
+  { key:'uber',    label:'Uber Eats',   color:'#06C167', keyAcum:'uberAcum'  },
+  { key:'peya',    label:'Pedidos Ya',  color:'#FF6244', keyAcum:'peyaAcum'  },
+  { key:'didi',    label:'Didi Food',   color:'#FF6600', keyAcum:'didiAcum'  },
+  { key:'olo',     label:'Mercat/OLO',  color:'#5af5c8', keyAcum:'oloAcum'   },
+  { key:'otros',   label:'Mostrador',   color:'#a855f7', keyAcum:'otrosAcum' },
+];
+
+const STORE_COLORS = {
+  'Oakberry Guachipelin':'#a855f7','Oakberry Avenida Escazu':'#5af5c8',
+  'Oakberry City Mall':'#f5c85a','Santa Ana Town Center':'#f55a5a',
+};
+function storeColor(name){
+  for(const k of Object.keys(STORE_COLORS)) if(name.toLowerCase().includes(k.toLowerCase().split(' ').pop())) return STORE_COLORS[k];
+  return '#7070a0';
+}
+
+function setAnlPeriod(p, btn){
+  anlPeriod = p;
+  document.querySelectorAll('#anlPeriodTabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function anlPeriodLabel(){
+  if(anlPeriod==='mes') return 'vs mes anterior';
+  return `vs ${Math.abs(anlPeriod)} días atrás`;
+}
+
+// Llama al Apps Script para obtener datos de un período de referencia
+async function fetchRefData(fechaRef){
+  const ff = new Date(fechaRef+'T12:00:00');
+  const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
+  const tienda = document.getElementById('tiendaSelect').value;
+  const clave  = `anl-${day}-${month}-${year}-${tienda}`;
+  if(cacheConsultas[clave]) return cacheConsultas[clave].data;
+  const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+  const resp = await fetch(url);
+  const data = await resp.json();
+  if(!data||!data.length) return null;
+  cacheConsultas[clave]={data,ts:Date.now()};
+  return data;
+}
+
+async function cargarAnalisis(){
+  const fechaFinInput = document.getElementById('fechaFin').value;
+  if(!fechaFinInput){ alert('Seleccioná una fecha en el topbar'); return; }
+
+  showLoader(true,'Cargando análisis...','');
+  document.getElementById('btnAnalisis').disabled = true;
+
+  try{
+    // Datos actuales (reusar si ya están en caché)
+    if(!datosGlobales){ await cargarDatos(); }
+    anlDataCurr = datosGlobales;
+    if(!anlDataCurr){ throw new Error('Sin datos actuales'); }
+
+    // Calcular fecha de referencia
+    const ff = new Date(fechaFinInput+'T12:00:00');
+    let fechaRef;
+    if(anlPeriod === 'mes'){
+      const prevM = ff.getMonth()===0 ? new Date(ff.getFullYear()-1,11,ff.getDate()) : new Date(ff.getFullYear(),ff.getMonth()-1,ff.getDate());
+      fechaRef = prevM.toISOString().split('T')[0];
+    } else {
+      const refD = new Date(ff); refD.setDate(refD.getDate()+anlPeriod);
+      fechaRef = refD.toISOString().split('T')[0];
+    }
+
+    setStep(`Cargando referencia: ${fechaRef}...`);
+    anlDataRef = await fetchRefData(fechaRef);
+
+    // También fetch de ventas diarias del mes para tendencia
+    setStep('Calculando tendencia del mes...');
+    const month=ff.getMonth()+1, year=ff.getFullYear();
+    const trendData = await fetchMonthDailyData(month, year);
+
+    renderAnalisis(anlDataCurr, anlDataRef, trendData, fechaFinInput, fechaRef);
+
+    document.getElementById('anlEmpty').style.display   = 'none';
+    document.getElementById('anlContent').style.display = 'block';
+    setTxt('anlSubtitle', `Fecha: ${fechaFinInput} · Comparando ${anlPeriodLabel()}`);
+
+  }catch(e){ alert('Error en análisis: '+e.message); console.error(e); }
+  finally{ showLoader(false); document.getElementById('btnAnalisis').disabled=false; }
+}
+
+// Fetch ventas diarias del mes actual vía Apps Script (un día a la vez en caché)
+async function fetchMonthDailyData(month, year){
+  const today = new Date();
+  const isCurrentMonth = today.getMonth()+1===month && today.getFullYear()===year;
+  const lastDay = isCurrentMonth ? today.getDate() : new Date(year,month,0).getDate();
+  const results = [];
+  const tienda = document.getElementById('tiendaSelect').value;
+
+  // Fetch solo días con posible data (hasta hoy si mes actual)
+  for(let d=1; d<=lastDay; d++){
+    const clave = `daily-${d}-${month}-${year}-${tienda}`;
+    let data;
+    if(cacheConsultas[clave]){
+      data = cacheConsultas[clave].data;
+    } else {
+      try{
+        const url=`${APPS_SCRIPT_URL}?day=${d}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+        const resp=await fetch(url);
+        data=await resp.json();
+        if(data&&data.length&&!data[0]?.error) cacheConsultas[clave]={data,ts:Date.now()};
+        await new Promise(r=>setTimeout(r,120));
+      }catch(e){ data=null; }
+    }
+    if(data&&data.length){
+      const tot=data.find(r=>r.tienda==='TODAS')||data[0];
+      results.push({ day:d, ventas: num(tot?.ventasNetas||0), trans: num(tot?.transacciones||0) });
+    }
+  }
+  return results;
+}
+
+// ── RENDER CENTRAL ──
+function renderAnalisis(curr, ref, trendData, fechaCurr, fechaRef){
+  const totCurr = curr.find(r=>r.tienda==='TODAS')||curr[0];
+  const totRef  = ref ? (ref.find(r=>r.tienda==='TODAS')||ref[0]) : null;
+  const tiendas = curr.filter(r=>r.tienda!=='TODAS');
+
+  // Period tag
+  const pl = anlPeriodLabel();
+  setTxt('anlPeriodTag', pl);
+  setTxt('anlTablaTag',  pl);
+  setTxt('anlCanalesTag', `Acumulado · ${pl}`);
+  setTxt('anlTrendTag',   `${trendData.length} días con datos + proyección`);
+
+  renderRanking(tiendas, ref);
+  renderCompChart(tiendas, ref);
+  renderTrendChart(trendData, fechaCurr);
+  renderCanales(totCurr, totRef);
+  renderMetricas(totCurr, totRef, tiendas);
+  renderTablaCompleta(tiendas, ref);
+}
+
+// ① RANKING
+function renderRanking(tiendas, ref){
+  const sorted = [...tiendas].sort((a,b)=>num(b.ventasNetas)-num(a.ventasNetas));
+  const maxV   = num(sorted[0]?.ventasNetas||1);
+  const medals = ['🥇','🥈','🥉','4️⃣'];
+  const container = document.getElementById('anlRanking');
+  container.innerHTML='';
+
+  sorted.forEach((t,i)=>{
+    const v = num(t.ventasNetas);
+    const refRow = ref ? ref.find(r=>r.tienda===t.tienda) : null;
+    const refV = refRow ? num(refRow.ventasNetas) : 0;
+    const delta = refV>0 ? ((v-refV)/refV)*100 : 0;
+    const hasRef = refV>0;
+    const color = storeColor(t.tienda);
+    const pct = maxV>0 ? Math.round(v/maxV*100) : 0;
+
+    const card = document.createElement('div');
+    card.className=`rank-card rank-${i+1}`;
+    card.innerHTML=`
+      <div class="rank-medal">${medals[i]||'·'}</div>
+      <div class="rank-name">${t.tienda.replace('Oakberry ','')}</div>
+      <div class="rank-value">${fmtK(v)}</div>
+      ${hasRef?`<div class="rank-delta ${delta>=0?'d-pos':'d-neg'}">${delta>=0?'+':''}${delta.toFixed(1)}% ${pl2(delta)}</div>`:'<div class="rank-delta d-neu">sin ref.</div>'}
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${pct}%;background:${color}"></div></div>`;
+    container.appendChild(card);
+  });
+}
+
+function pl2(v){ return v>=0?'↑':'↓'; }
+
+// ② COMPARATIVO CHART
+function renderCompChart(tiendas, ref){
+  const labels = tiendas.map(t=>t.tienda.replace('Oakberry ','').replace(' Town Center',''));
+  const curr   = tiendas.map(t=>num(t.ventasNetas));
+  const refVals= tiendas.map(t=>{ const r=ref?ref.find(r2=>r2.tienda===t.tienda):null; return r?num(r.ventasNetas):0; });
+
+  if(anlCharts.comp) anlCharts.comp.destroy();
+  const ctx = document.getElementById('anlChartComp').getContext('2d');
+  anlCharts.comp = new Chart(ctx,{
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Período actual', data:curr,   backgroundColor:labels.map((_,i)=>['#a855f799','#5af5c899','#f5c85a99','#f55a5a99'][i]||'#a855f799'), borderColor:['#a855f7','#5af5c8','#f5c85a','#f55a5a'], borderWidth:2, borderRadius:6 },
+      { label:'Referencia',     data:refVals, backgroundColor:'rgba(112,112,160,.18)', borderColor:'rgba(112,112,160,.5)', borderWidth:1, borderRadius:4, borderDash:[4,4] },
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#7070a0',font:{size:11},boxWidth:12}},
+        datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.y)}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(42,42,58,.5)'},ticks:{color:'#7070a0',font:{size:10}}},
+        y:{grid:{color:'rgba(42,42,58,.5)'},ticks:{color:'#7070a0',font:{size:10},callback:v=>fmtK(v)}}
+      }
+    }
+  });
+}
+
+// ③ TENDENCIA DEL MES
+function renderTrendChart(dailyData, fechaCurr){
+  if(!dailyData||!dailyData.length) return;
+
+  const ff=new Date(fechaCurr+'T12:00:00');
+  const daysInMonth=new Date(ff.getFullYear(),ff.getMonth()+1,0).getDate();
+
+  // Datos reales
+  const labels      = Array.from({length:daysInMonth},(_,i)=>String(i+1));
+  const realValues  = Array(daysInMonth).fill(null);
+  dailyData.forEach(d=>{ if(d.day>=1&&d.day<=daysInMonth) realValues[d.day-1]=d.ventas||null; });
+
+  // Regresión lineal simple sobre días con data
+  const pts = dailyData.filter(d=>d.ventas>0).map(d=>({x:d.day,y:d.ventas}));
+  let slope=0, intercept=0;
+  if(pts.length>=2){
+    const n=pts.length;
+    const sumX=pts.reduce((s,p)=>s+p.x,0), sumY=pts.reduce((s,p)=>s+p.y,0);
+    const sumXX=pts.reduce((s,p)=>s+p.x*p.x,0), sumXY=pts.reduce((s,p)=>s+p.x*p.y,0);
+    slope=(n*sumXY-sumX*sumY)/(n*sumXX-sumX*sumX);
+    intercept=(sumY-slope*sumX)/n;
+  }
+
+  // Varianza para banda de confianza
+  const residuals = pts.map(p=>p.y-(slope*p.x+intercept));
+  const sigma = pts.length>2 ? Math.sqrt(residuals.reduce((s,r)=>s+r*r,0)/pts.length) : 0;
+
+  // Proyección para días futuros
+  const lastDataDay = dailyData.length>0 ? Math.max(...dailyData.map(d=>d.day)) : 0;
+  const projValues  = Array(daysInMonth).fill(null);
+  const bandHigh    = Array(daysInMonth).fill(null);
+  const bandLow     = Array(daysInMonth).fill(null);
+
+  for(let d=lastDataDay+1;d<=daysInMonth;d++){
+    const p = slope*d+intercept;
+    projValues[d-1]  = Math.max(0, Math.round(p));
+    bandHigh[d-1]    = Math.max(0, Math.round(p+sigma));
+    bandLow[d-1]     = Math.max(0, Math.round(p-sigma));
+  }
+  // Conectar la proyección desde el último día real
+  if(lastDataDay>0 && lastDataDay<=daysInMonth){
+    projValues[lastDataDay-1]  = realValues[lastDataDay-1];
+    bandHigh[lastDataDay-1]    = realValues[lastDataDay-1];
+    bandLow[lastDataDay-1]     = realValues[lastDataDay-1];
+  }
+
+  // Promedio histórico como línea base (promedio de los días con data)
+  const avgVenta = pts.length>0 ? pts.reduce((s,p)=>s+p.y,0)/pts.length : 0;
+  const avgLine  = Array(daysInMonth).fill(Math.round(avgVenta));
+
+  if(anlCharts.trend) anlCharts.trend.destroy();
+  const ctx = document.getElementById('anlChartTrend').getContext('2d');
+  anlCharts.trend = new Chart(ctx,{
+    type:'line',
+    data:{labels, datasets:[
+      { label:'Ventas reales',data:realValues,borderColor:'#a855f7',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#a855f7',tension:.3,fill:false,spanGaps:false },
+      { label:'Proyección',data:projValues,borderColor:'#a855f777',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:.3,fill:false,spanGaps:false },
+      { label:'Banda alta',data:bandHigh,borderColor:'rgba(168,85,247,.12)',borderWidth:0,pointRadius:0,fill:'+1',backgroundColor:'rgba(168,85,247,.07)',spanGaps:false },
+      { label:'Banda baja',data:bandLow,borderColor:'rgba(168,85,247,.12)',borderWidth:0,pointRadius:0,fill:false,spanGaps:false },
+      { label:'Promedio base',data:avgLine,borderColor:'rgba(200,245,90,.3)',borderWidth:1,borderDash:[3,6],pointRadius:0,fill:false },
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>ctx.dataset.label+': '+fmtK(ctx.parsed.y)}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(42,42,58,.5)'},ticks:{color:'#7070a0',font:{size:9}}},
+        y:{grid:{color:'rgba(42,42,58,.5)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}
+      }
+    }
+  });
+
+  // Legend manual
+  const tag=document.getElementById('anlTrendTag');
+  if(tag) tag.innerHTML=`${lastDataDay} días · proy. regresión lineal`;
+}
+
+// ④ CANALES
+function renderCanales(totCurr, totRef){
+  const totalAcum = CANAL_CFG.reduce((s,c)=>s+num(totCurr[c.keyAcum]),0)||1;
+  const totalRef  = totRef ? CANAL_CFG.reduce((s,c)=>s+num(totRef[c.keyAcum]),0)||1 : 1;
+
+  // KPI pills row
+  const grid=document.getElementById('anlCanalesGrid');
+  grid.innerHTML='';
+  CANAL_CFG.forEach(c=>{
+    const v=num(totCurr[c.keyAcum]), pct=totalAcum>0?v/totalAcum*100:0;
+    const refV=totRef?num(totRef[c.keyAcum]):0;
+    const delta=refV>0?((v-refV)/refV)*100:null;
+    const div=document.createElement('div'); div.className='canal-kpi';
+    div.innerHTML=`
+      <div class="canal-name"><span class="canal-dot" style="background:${c.color}"></span>${c.label}</div>
+      <div class="canal-pct" style="color:${c.color}">${pct.toFixed(1)}%</div>
+      <div class="canal-value">${fmtK(v)}</div>
+      ${delta!==null?`<div class="canal-delta ${delta>=0?'d-pos':'d-neg'}">${delta>=0?'+':''}${delta.toFixed(1)}%</div>`:''}`;
+    grid.appendChild(div);
+  });
+
+  // Donut chart
+  if(anlCharts.canales) anlCharts.canales.destroy();
+  const ctx=document.getElementById('anlChartCanales').getContext('2d');
+  anlCharts.canales=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:CANAL_CFG.map(c=>c.label),
+      datasets:[{
+        data:CANAL_CFG.map(c=>num(totCurr[c.keyAcum])),
+        backgroundColor:CANAL_CFG.map(c=>c.color+'cc'),
+        borderColor:CANAL_CFG.map(c=>c.color),
+        borderWidth:2,hoverOffset:8,
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{display:false},datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',callbacks:{label:ctx=>`${ctx.label}: ${fmtK(ctx.raw)} (${totalAcum>0?(ctx.raw/totalAcum*100).toFixed(1):0}%)`}}}}
+  });
+
+  // Detalle lista
+  const det=document.getElementById('anlCanalesDetalle');
+  det.innerHTML='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">Detalle por canal</div>';
+  const sortedC=[...CANAL_CFG].sort((a,b)=>num(totCurr[b.keyAcum])-num(totCurr[a.keyAcum]));
+  sortedC.forEach(c=>{
+    const v=num(totCurr[c.keyAcum]), p=totalAcum>0?v/totalAcum*100:0;
+    const refV=totRef?num(totRef[c.keyAcum]):0;
+    const delta=refV>0?((v-refV)/refV)*100:null;
+    det.innerHTML+=`
+      <div class="metrica-row">
+        <span class="metrica-label"><span class="canal-dot" style="background:${c.color}"></span>${c.label}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="metrica-val">${fmtK(v)}</span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${p.toFixed(1)}%</span>
+          ${delta!==null?`<span class="metrica-delta ${delta>=0?'d-pos':'d-neg'}">${delta>=0?'+':''}${delta.toFixed(1)}%</span>`:''}
+        </span>
+      </div>`;
+  });
+}
+
+// ⑤ MÉTRICAS
+function renderMetricas(totCurr, totRef, tiendas){
+  // Descuentos
+  const descCurr  = num(totCurr.descuentos||0);
+  const descAcum  = num(totCurr.descuentosAcum||0);
+  const descRefD  = totRef?num(totRef.descuentos||0):0;
+  const descRefA  = totRef?num(totRef.descuentosAcum||0):0;
+  const descPctV  = num(totCurr.ventasBrutas||totCurr.ventasNetas)>0 ? descAcum/(num(totCurr.ventasBrutasAcum||totCurr.ventasAcumuladas))*100 : 0;
+
+  const dg=document.getElementById('anlDescGrid');
+  dg.innerHTML=metricaRow('Desc. día',  fmtK(descCurr), descRefD>0?((descCurr-descRefD)/descRefD)*100:null)+
+               metricaRow('Desc. acum.', fmtK(descAcum),  descRefA>0?((descAcum-descRefA)/descRefA)*100:null)+
+               metricaRow('% sobre venta', descPctV.toFixed(1)+'%', null);
+  renderMiniBarChart('anlChartDesc',tiendas.map(t=>t.tienda.replace('Oakberry ','')),tiendas.map(t=>num(t.descuentos||0)),CANAL_CFG[0].color);
+
+  // Transacciones
+  const transCurr = num(totCurr.transacciones||0);
+  const transAcum = num(totCurr.transaccionesAcum||0);
+  const transRefD = totRef?num(totRef.transacciones||0):0;
+  const transRefA = totRef?num(totRef.transaccionesAcum||0):0;
+  const tg=document.getElementById('anlTransGrid');
+  tg.innerHTML=metricaRow('Trans. día',  transCurr, transRefD>0?((transCurr-transRefD)/transRefD)*100:null)+
+               metricaRow('Trans. acum.', transAcum, transRefA>0?((transAcum-transRefA)/transRefA)*100:null);
+  renderMiniBarChart('anlChartTrans',tiendas.map(t=>t.tienda.replace('Oakberry ','')),tiendas.map(t=>num(t.transacciones||0)),'#5af5c8');
+
+  // Ticket medio
+  const ticketD = transCurr>0 ? num(totCurr.ventasNetas)/transCurr : 0;
+  const ticketA = transAcum>0 ? num(totCurr.ventasAcumuladas)/transAcum : 0;
+  const ticketRefD = totRef&&num(totRef.transacciones)>0 ? num(totRef.ventasNetas)/num(totRef.transacciones) : 0;
+  const ticketRefA = totRef&&num(totRef.transaccionesAcum)>0 ? num(totRef.ventasAcumuladas)/num(totRef.transaccionesAcum) : 0;
+  const tkg=document.getElementById('anlTicketGrid');
+  tkg.innerHTML=metricaRow('Ticket día',  fmtK(ticketD), ticketRefD>0?((ticketD-ticketRefD)/ticketRefD)*100:null)+
+                metricaRow('Ticket acum.', fmtK(ticketA), ticketRefA>0?((ticketA-ticketRefA)/ticketRefA)*100:null);
+  renderMiniBarChart('anlChartTicket',tiendas.map(t=>t.tienda.replace('Oakberry ','')),tiendas.map(t=>{const tn=num(t.transacciones);return tn>0?num(t.ventasNetas)/tn:0;}),'#f5c85a');
+}
+
+function metricaRow(label, val, delta){
+  const dc = delta!==null ? (delta>=0?'d-pos':'d-neg') : 'd-neu';
+  const ds = delta!==null ? `<span class="metrica-delta ${dc}">${delta>=0?'+':''}${typeof delta==='number'?delta.toFixed(1)+'%':delta}</span>` : '';
+  return `<div class="metrica-row"><span class="metrica-label">${label}</span><span style="display:flex;align-items:center;gap:6px"><span class="metrica-val">${val}</span>${ds}</span></div>`;
+}
+
+function renderMiniBarChart(id, labels, data, color){
+  if(anlCharts[id]) anlCharts[id].destroy();
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  anlCharts[id]=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:color+'88',borderColor:color,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a1a24',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.y)}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#7070a0',font:{size:9}}},y:{grid:{color:'rgba(42,42,58,.4)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}}}
+  });
+}
+
+// ⑥ TABLA COMPLETA
+function renderTablaCompleta(tiendas, ref){
+  const tbody=document.getElementById('anlTablaBody');
+  tbody.innerHTML='';
+  const sorted=[...tiendas].sort((a,b)=>num(b.ventasNetas)-num(a.ventasNetas));
+  sorted.forEach(t=>{
+    const refRow=ref?ref.find(r=>r.tienda===t.tienda):null;
+    const refV=refRow?num(refRow.ventasNetas):0;
+    const delta=refV>0?((num(t.ventasNetas)-refV)/refV)*100:null;
+    const trans=num(t.transacciones); const ticket=trans>0?num(t.ventasNetas)/trans:0;
+    const desc=num(t.descuentos||0); const descPct=num(t.ventasNetas)>0?desc/num(t.ventasNetas)*100:0;
+    // Canal top
+    const canalTop=CANAL_CFG.reduce((top,c)=>num(t[c.key])>num(t[top.key])?c:top,CANAL_CFG[0]);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="padding-left:16px;font-weight:700">${t.tienda.replace('Oakberry ','')}</td>
+      <td style="color:var(--accent)">${fmtK(t.ventasNetas)}</td>
+      <td style="color:var(--muted)">${refV>0?fmtK(refV):'—'}</td>
+      <td style="color:${delta!==null?(delta>=0?'var(--teal)':'var(--red)'):'var(--muted)'}">${delta!==null?(delta>=0?'+':'')+delta.toFixed(1)+'%':'—'}</td>
+      <td style="border-left:1px solid var(--border)">${trans}</td>
+      <td style="color:var(--lime)">${fmtK(ticket)}</td>
+      <td style="border-left:1px solid var(--border)">${fmtK(desc)}</td>
+      <td style="color:${descPct>10?'var(--red)':'var(--muted)'}">${descPct.toFixed(1)}%</td>
+      <td><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px"><span class="canal-dot" style="background:${canalTop.color}"></span>${canalTop.label}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
 window.addEventListener('load', () => {
   initDates();
   cargarDatos();
