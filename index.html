@@ -1212,10 +1212,10 @@ async function fetchToteatDiario(storeKey, fromDate, toDate) {
 }
 
 async function runProjection() {
-  const storeKey   = document.getElementById('proyStore').value;
-  const monthVal   = document.getElementById('proyMonth').value;
-  const histFrom   = document.getElementById('proyHistFrom').value;
-  const histTo     = document.getElementById('proyHistTo').value;
+  const storeKey = document.getElementById('proyStore').value;
+  const monthVal = document.getElementById('proyMonth').value;
+  const histFrom = document.getElementById('proyHistFrom').value;
+  const histTo   = document.getElementById('proyHistTo').value;
 
   if(!histFrom||!histTo){ alert('Seleccioná el rango de historial'); return; }
   const [tY,tM] = monthVal.split('-').map(Number);
@@ -1226,109 +1226,158 @@ async function runProjection() {
   document.getElementById('proyExcelBtn').style.display='none';
 
   try{
-    // Fetch historial real de Toteat por tienda
     const historicalByStore={};
     for(const sk of storeKeys){
-      setStep(`Consultando Toteat: ${STORES[sk].name}...`);
+      setStep(`Cargando historial: ${STORES[sk].name}...`);
       historicalByStore[sk] = await fetchToteatDiario(sk, histFrom, histTo);
     }
 
-    setStep('Calculando promedios y efecto calendario...');
-    await new Promise(r=>setTimeout(r,100));
+    // Validar que el historial tiene datos suficientes
+    const resumen = storeKeys.map(sk=>{
+      const n = Object.keys(historicalByStore[sk]||{}).length;
+      return `${STORES[sk].name}: ${n} días`;
+    }).join(' | ');
+    setStep(`Datos recibidos → ${resumen}`);
+
+    const totalDias = storeKeys.reduce((s,sk)=>s+Object.keys(historicalByStore[sk]||{}).length,0);
+    if(totalDias === 0){
+      throw new Error('El historial llegó vacío desde el Apps Script.\n\nVerificá:\n1. El nuevo .gs fue deployado correctamente\n2. La URL del Apps Script es la nueva\n3. Ejecutá testHistorialDiario() en el editor para probar');
+    }
+    if(totalDias < storeKeys.length * 7){
+      const ok = confirm(`⚠️ Pocos datos de historial (${totalDias} días en total).\n\nLa proyección puede ser poco confiable.\n¿Querés continuar de todas formas?`);
+      if(!ok){ showLoader(false); document.getElementById('proyRunBtn').disabled=false; return; }
+    }
+
+    await new Promise(r=>setTimeout(r,80));
+    setStep('Calculando promedios y tendencia...');
 
     proyData = buildProjection(historicalByStore, tY, tM, storeKeys, histFrom, histTo);
     proyData.storeKey  = storeKey;
     proyData.storeKeys = storeKeys;
+    proyData.resumenHistorial = resumen;
 
     setStep('Renderizando...');
-    await new Promise(r=>setTimeout(r,80));
+    await new Promise(r=>setTimeout(r,60));
 
     renderProyeccion(proyData);
     document.getElementById('proyExcelBtn').style.display='flex';
-    setTxt('pageSub','Proyección generada: '+new Date().toLocaleTimeString('es-CR'));
+    setTxt('pageSub','Proyección generada: '+new Date().toLocaleTimeString('es-CR')+' · '+resumen);
 
-  }catch(e){ alert('Error en proyección: '+e.message); console.error(e); }
+  }catch(e){ alert('Error en proyección:\n\n'+e.message); console.error(e); }
   finally{ showLoader(false); document.getElementById('proyRunBtn').disabled=false; }
 }
 
-// ── MOTOR DE PROYECCIÓN REAL ──
+// ── MOTOR DE PROYECCIÓN ──────────────────────────────────────────────────────
+// Algoritmo:
+//   1. Promedio simple por día de semana (excluyendo feriados)
+//   2. Regresión lineal sobre los totales diarios → pendiente de tendencia
+//   3. La tendencia se aplica proporcional a cuántos días hay entre el
+//      último día del historial y el día proyectado
+//   4. Feriados reducen al 60% (75% si caen en fin de semana)
 function buildProjection(historicalByStore, tY, tM, storeKeys, histFrom, histTo){
-  const prevM  = tM===1?12:tM-1;
-  const prevY  = tM===1?tY-1:tY;
-  const tDow   = countDow(tY,tM);
-  const pDow   = countDow(prevY,prevM);
+  const prevM = tM===1?12:tM-1;
+  const prevY = tM===1?tY-1:tY;
+  const tDow  = countDow(tY,tM);
+  const pDow  = countDow(prevY,prevM);
   const daysInMonth = new Date(tY,tM,0).getDate();
 
-  // Calcular promedios reales por día de semana y tendencia
-  const dowAvg={};
+  // Fecha de referencia: último día del historial
+  const histToDate = new Date(histTo+'T00:00:00');
+
+  const dowAvg = {};
+
   for(const sk of storeKeys){
-    const sales=historicalByStore[sk]||{};
-    const buckets=[[],[],[],[],[],[],[]]; // Dom..Sab
-    const monthTotals={};
+    const sales = historicalByStore[sk] || {};
+    // Ordenar fechas cronológicamente
+    const entries = Object.entries(sales)
+      .filter(([,v])=>v>0)
+      .sort((a,b)=>a[0].localeCompare(b[0]));
 
-    for(const [dateStr,amount] of Object.entries(sales)){
-      if(amount<=0) continue;
-      const d=new Date(dateStr+'T00:00:00');
+    // Buckets por día de semana (solo días no feriados)
+    const buckets = [[],[],[],[],[],[],[]];
+    entries.forEach(([dateStr, amount])=>{
+      const d = new Date(dateStr+'T00:00:00');
       if(!isFeriado(d)) buckets[d.getDay()].push(amount);
-      const mk=dateStr.slice(0,7);
-      monthTotals[mk]=(monthTotals[mk]||0)+amount;
-    }
-
-    // Promedio ponderado — meses más recientes pesan más
-    dowAvg[sk]=buckets.map(b=>{
-      if(!b.length) return 0;
-      let sum=0,ws=0;
-      b.forEach((v,i)=>{ const w=i+1; sum+=v*w; ws+=w; });
-      return sum/ws;
     });
 
-    // Tendencia mensual
-    const months=Object.keys(monthTotals).sort();
-    if(months.length>=2){
-      const last=monthTotals[months[months.length-1]],first=monthTotals[months[0]];
-      dowAvg[sk+'_trend']=(last-first)/((months.length-1)*first);
-    } else { dowAvg[sk+'_trend']=0; }
+    // Promedio simple por dow
+    dowAvg[sk] = buckets.map(b => b.length ? b.reduce((s,v)=>s+v,0)/b.length : 0);
 
-    // Log para debug
-    console.log(`[${sk}] Días con datos:`,Object.keys(sales).length,
-      '| Prom Sab:',Math.round(dowAvg[sk][6]),
-      '| Prom Dom:',Math.round(dowAvg[sk][0]),
-      '| Trend/mes:',((dowAvg[sk+'_trend']||0)*100).toFixed(2)+'%');
+    // Regresión lineal sobre los totales diarios para detectar tendencia
+    // x = índice del día (0,1,2,...), y = ventasNetas de ese día
+    const pts = entries.map(([,v],i)=>({x:i,y:v}));
+    let trendPerDay = 0;
+    if(pts.length >= 5){
+      const n   = pts.length;
+      const sx  = pts.reduce((s,p)=>s+p.x,0);
+      const sy  = pts.reduce((s,p)=>s+p.y,0);
+      const sxy = pts.reduce((s,p)=>s+p.x*p.y,0);
+      const sxx = pts.reduce((s,p)=>s+p.x*p.x,0);
+      const denom = n*sxx - sx*sx;
+      if(denom !== 0){
+        const slope = (n*sxy - sx*sy) / denom;
+        const avgY  = sy/n;
+        // Tendencia relativa por día (%/día), capped a ±2%/día para evitar explosiones
+        trendPerDay = avgY > 0 ? Math.max(-0.02, Math.min(0.02, slope/avgY)) : 0;
+      }
+    }
+    dowAvg[sk+'_trendPerDay'] = trendPerDay;
+
+    console.log(`[${sk}] ${entries.length} días | Prom Dom:₡${Math.round(dowAvg[sk][0]).toLocaleString()} Sab:₡${Math.round(dowAvg[sk][6]).toLocaleString()} Lun:₡${Math.round(dowAvg[sk][1]).toLocaleString()} | Trend: ${(trendPerDay*100).toFixed(3)}%/día`);
   }
 
-  const todayStr=new Date().toISOString().split('T')[0];
-  const days=[];
-  for(let day=1;day<=daysInMonth;day++){
-    const date=new Date(tY,tM-1,day);
-    const dow=date.getDay();
-    const dateStr=date.toISOString().split('T')[0];
-    const ferName=isFeriado(date);
-    const isWeekend=dow===0||dow===6;
-    const storeProj={};
-    let totalProj=0;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const days = [];
+
+  for(let day=1; day<=daysInMonth; day++){
+    const date    = new Date(tY, tM-1, day);
+    const dow     = date.getDay();
+    const dateStr = date.toISOString().split('T')[0];
+    const ferName = isFeriado(date);
+    const isWeekend = dow===0 || dow===6;
+
+    // Distancia en días desde el último día del historial
+    const daysAhead = Math.round((date - histToDate) / 86400000);
+
+    const storeProj = {};
+    let totalProj   = 0;
 
     for(const sk of storeKeys){
-      let base=dowAvg[sk][dow]||0;
-      base*=(1+(dowAvg[sk+'_trend']||0)); // aplicar tendencia
-      const holFactor=ferName?(isWeekend?.78:.60):1;
-      const proj=Math.round(base*holFactor);
-      const variance=isWeekend?.20:.13;
-      storeProj[sk]={projected:proj,low:Math.round(proj*(1-variance)),high:Math.round(proj*(1+variance))};
-      totalProj+=proj;
+      const base       = dowAvg[sk][dow] || 0;
+      const trend      = dowAvg[sk+'_trendPerDay'] || 0;
+      // Proyección base ajustada por tendencia lineal
+      const projected  = base * Math.max(0.5, 1 + trend * daysAhead);
+      const holFactor  = ferName ? (isWeekend ? 0.75 : 0.60) : 1;
+      const proj       = Math.round(projected * holFactor);
+      const variance   = ferName ? 0.28 : (isWeekend ? 0.20 : 0.13);
+      storeProj[sk] = {
+        projected: proj,
+        low:       Math.round(proj * (1-variance)),
+        high:      Math.round(proj * (1+variance))
+      };
+      totalProj += proj;
     }
-    const variance=isWeekend?.20:.13;
+
+    const variance = ferName ? 0.28 : (isWeekend ? 0.20 : 0.13);
+    // Confianza: baja si hay pocos datos, baja más lejos en el futuro
+    const baseDias = Object.keys(historicalByStore[storeKeys[0]]||{}).length;
+    const confBase = ferName ? 50 : (isWeekend ? 68 : 80);
+    const confData = Math.min(20, Math.floor(baseDias / 4));
+    const confTime = Math.min(15, Math.floor(Math.max(0, daysAhead) / 5));
+    const confidence = Math.max(30, confBase + confData - confTime);
+
     days.push({
-      date:dateStr,dateObj:date,dow,
-      dayName:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dow],
-      projected:totalProj,
-      low:Math.round(totalProj*(1-variance)),
-      high:Math.round(totalProj*(1+variance)),
-      isWeekend,isFeriado:!!ferName,feriadoName:ferName||'',
-      confidence:ferName?55:(isWeekend?72:84),
-      storeProj,isToday:dateStr===todayStr,
+      date: dateStr, dateObj: date, dow,
+      dayName: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dow],
+      projected: totalProj,
+      low:  Math.round(totalProj*(1-variance)),
+      high: Math.round(totalProj*(1+variance)),
+      isWeekend, isFeriado: !!ferName, feriadoName: ferName||'',
+      confidence, storeProj, isToday: dateStr===todayStr,
     });
   }
-  return {days,dowAvg,tDow,pDow,tY,tM,prevY,prevM,histFrom,histTo};
+
+  return {days, dowAvg, tDow, pDow, tY, tM, prevY, prevM, histFrom, histTo};
 }
 
 // ═══════════════════════════════════════════════════════════
