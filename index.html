@@ -742,7 +742,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
                 <th style="text-align:right;color:var(--accent)">Ventas Netas</th>
                 <th style="text-align:right">% vs Ppto Acum.</th>
                 <th style="text-align:right">Pedidos</th>
-                <th style="text-align:right;color:var(--muted)">Año Anterior</th>
+                <th style="text-align:right;color:var(--muted)" title="Mismo día de semana, misma semana del mes — año anterior">Año Ant. (≡dow)</th>
                 <th style="text-align:right;color:var(--muted)">Pedidos A.A.</th>
                 <th style="text-align:right">Crec. %</th>
                 <th style="text-align:right">Crec. Pedidos %</th>
@@ -2258,7 +2258,7 @@ async function cargarSeguimiento() {
       const pptoRow = Array.isArray(pptoData)
         ? pptoData.find(r => store==='todas' ? r.tienda==='TODAS' : r.tienda===STORES[store]?.name)
         : null;
-      if(pptoRow) pptoMensualTotal = pptoRow.forecastAcumulado || 0;
+      if(pptoRow) pptoMensualTotal = pptoRow.forecastMensual || pptoRow.forecastAcumulado || 0;
     }catch(e){ console.warn('Ppto no disponible',e); }
 
     setStep('Construyendo tabla...');
@@ -2281,8 +2281,21 @@ async function cargarSeguimiento() {
         transacciones += obj.trans ||0;
       }
 
-      // Año anterior
-      const aaDateStr = `${aaPY}-${pad(tM)}-${pad(Math.min(d,aaLastDay))}`;
+      // Año anterior — mismo día de semana, misma semana ordinal del mes
+      // Ej: Dom 8 mar 2026 → Dom 9 mar 2025 (semana 2 de marzo en ambos años)
+      const aaDate = (() => {
+        const dow      = dateObj.getDay();           // 0=Dom..6=Sáb
+        const weekNum  = Math.floor((d - 1) / 7);   // 0=primera semana, 1=segunda...
+        const firstDay = new Date(aaPY, tM-1, 1);
+        const firstDow = firstDay.getDay();
+        const diff     = (dow - firstDow + 7) % 7;
+        const firstOcc = new Date(aaPY, tM-1, 1 + diff);
+        let target     = new Date(aaPY, tM-1, firstOcc.getDate() + weekNum * 7);
+        // Si desbordó el mes, retroceder una semana
+        if(target.getMonth() !== tM-1) target = new Date(target.getFullYear(), target.getMonth(), target.getDate() - 7);
+        return target;
+      })();
+      const aaDateStr = `${aaDate.getFullYear()}-${pad(aaDate.getMonth()+1)}-${pad(aaDate.getDate())}`;
       let aaVentas=0, aaTrans=0;
       for(const sk of storeKeys){
         const obj = (aaByStore[sk]||{})[aaDateStr] || {};
@@ -2293,6 +2306,7 @@ async function cargarSeguimiento() {
       rows.push({ d, dateStr, dateObj,
                   dayName: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][dateObj.getDay()],
                   ventasNetas, transacciones, aaVentas, aaTrans, hasData,
+                  aaDateLabel: `${aaDate.getDate()}/${aaDate.getMonth()+1}/${aaDate.getFullYear()}`,
                   dowWeight: DOW_WEIGHTS[dateObj.getDay()] });
     }
 
@@ -2395,7 +2409,7 @@ function renderSeguimiento(data){
       <td style="text-align:right">${r.hasData?'<span style="font-family:var(--mono);color:var(--accent);font-weight:700">₡'+fmtFull(r.ventasNetas)+'</span>':'<span style="color:var(--muted)">—</span>'}</td>
       <td style="text-align:right">${fmtPctColor(varPpto)}</td>
       <td style="text-align:right">${r.hasData?num(r.transacciones):'<span style="color:var(--muted)">—</span>'}</td>
-      <td style="text-align:right">${crc(r.aaVentas)}</td>
+      <td style="text-align:right" title="${r.aaDateLabel||''}">${r.aaVentas>0?crc(r.aaVentas):'<span style="color:var(--muted)">—</span>'}</td>
       <td style="text-align:right">${r.aaTrans>0?num(r.aaTrans):'<span style="color:var(--muted)">—</span>'}</td>
       <td style="text-align:right">${fmtPctColor(crec)}</td>
       <td style="text-align:right">${fmtPctColor(crecT)}</td>
