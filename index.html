@@ -737,11 +737,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
               <tr id="segThead">
                 <th style="width:42px;text-align:center">Día</th>
                 <th style="width:80px">Día semana</th>
-                <th style="text-align:right">Diarización</th>
-                <th style="text-align:right">Presupuesto</th>
-                <th style="text-align:right">Budget Acum.</th>
+                <th style="text-align:right">Budget</th>
                 <th style="text-align:right;color:var(--accent)">Ventas Netas</th>
-                <th style="text-align:right">% vs Ppto</th>
+                <th style="text-align:right">% vs Ppto Acum.</th>
                 <th style="text-align:right">Pedidos</th>
                 <th style="text-align:right;color:var(--muted)">Año Anterior</th>
                 <th style="text-align:right;color:var(--muted)">Pedidos A.A.</th>
@@ -2363,8 +2361,9 @@ function renderSeguimiento(data){
     if(!r.hasData) tr.style.opacity = '0.35';
     if(r.d === lastDay && r.hasData) tr.classList.add('row-today');
 
-    const varPpto = r.diarizacion>0 && r.hasData
-      ? ((r.ventasNetas-r.diarizacion)/r.diarizacion)*100 : null;
+    // % vs Ppto Acum: desviación de ventas netas acumuladas vs presupuesto acumulado hasta ese día
+    const varPpto = r.pptoAcum>0 && r.hasData
+      ? ((r.acumVentas - r.pptoAcum) / r.pptoAcum)*100 : null;
     const crec    = r.aaVentas>0 && r.hasData
       ? ((r.ventasNetas-r.aaVentas)/r.aaVentas)*100 : null;
     const crecT   = r.aaTrans>0 && r.hasData
@@ -2379,8 +2378,6 @@ function renderSeguimiento(data){
       <td style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--muted);font-size:12px">${r.d}</td>
       <td style="font-size:12px;color:var(--muted)">${r.dayName}</td>
       <td style="text-align:right">${r.diarizacion>0?crc(r.diarizacion):'<span style="color:var(--muted)">—</span>'}</td>
-      <td style="text-align:right">${r.pptoAcum>0?crc(r.pptoAcum):'<span style="color:var(--muted)">—</span>'}</td>
-      <td style="text-align:right">${r.hasData?crc(r.acumVentas):'<span style="color:var(--muted)">—</span>'}</td>
       <td style="text-align:right">${r.hasData?'<span style="font-family:var(--mono);color:var(--accent);font-weight:700">₡'+fmtFull(r.ventasNetas)+'</span>':'<span style="color:var(--muted)">—</span>'}</td>
       <td style="text-align:right">${fmtPctColor(varPpto)}</td>
       <td style="text-align:right">${r.hasData?num(r.transacciones):'<span style="color:var(--muted)">—</span>'}</td>
@@ -2395,20 +2392,17 @@ function renderSeguimiento(data){
   // ── Fila de totales ──
   const totalAA       = rows.reduce((s,r)=>s+r.aaVentas,0);
   const totalAATrans  = rows.reduce((s,r)=>s+r.aaTrans,0);
-  const totalDiarz    = rows.reduce((s,r)=>s+r.diarizacion,0);
-  const totalCrecPct  = totalAA>0 ? ((acumVentas-totalAA)/totalAA)*100 : null;
-  const totalCrecTrans= totalAATrans>0 ? ((acumTrans-totalAATrans)/acumTrans)*100 : null;
+  // % vs ppto acum: ventas acumuladas vs presupuesto prorrateado al último día con data
   const desvFinal     = pptoProrrateado>0 ? ((acumVentas-pptoProrrateado)/pptoProrrateado)*100 : null;
+  const totalCrecPct  = totalAA>0 ? ((acumVentas-totalAA)/totalAA)*100 : null;
+  const totalCrecTrans= acumAATrans>0 ? ((acumTrans-acumAATrans)/acumAATrans)*100 : null;
   const ticketTotal   = acumTrans>0 ? acumVentas/acumTrans : null;
   const aaTicketTotal = acumAATrans>0 ? acumAA/acumAATrans : null;
-
-  const pptoProrrateado2 = pptoMensualTotal>0 ? Math.round(pptoMensualTotal*lastDay/daysInMonth) : 0;
+  const totalDiarz    = rows.reduce((s,r)=>s+r.diarizacion,0);
 
   tfoot.innerHTML = `<tr class="total-row">
     <td colspan="2" style="padding-left:14px;font-weight:800;font-size:13px">TOTAL / ACUM.</td>
-    <td style="text-align:right;font-family:var(--mono)">₡${fmtFull(totalDiarz)}</td>
-    <td style="text-align:right;font-family:var(--mono)">₡${fmtFull(pptoProrrateado2)}</td>
-    <td style="text-align:right;font-family:var(--mono)">₡${fmtFull(acumVentas)}</td>
+    <td style="text-align:right;font-family:var(--mono)">${totalDiarz>0?'₡'+fmtFull(totalDiarz):'—'}</td>
     <td style="text-align:right;font-family:var(--mono);color:var(--accent);font-weight:800">₡${fmtFull(acumVentas)}</td>
     <td style="text-align:right">${fmtPctColor(desvFinal)}</td>
     <td style="text-align:right;font-family:var(--mono)">${acumTrans>0?acumTrans.toLocaleString('es-CR'):'—'}</td>
@@ -2420,13 +2414,11 @@ function renderSeguimiento(data){
   </tr>
   <tr style="background:rgba(90,245,200,.04)">
     <td colspan="2" style="padding:8px 14px;font-size:11px;color:var(--muted)">Proyección cierre mes</td>
-    <td colspan="3" style="font-family:var(--mono);font-weight:700;color:var(--lime);font-size:13px">
-      ${lastDay>0?'₡'+fmtFull(Math.round(acumVentas/lastDay*daysInMonth)):'—'}
-    </td>
-    <td style="font-size:11px;color:var(--muted)" colspan="2">al ritmo actual</td>
-    <td colspan="2" style="font-size:11px;color:var(--muted)">PR. Crecimiento vs AA:</td>
-    <td colspan="2">${fmtPctColor(totalCrecPct)}</td>
-    <td style="font-size:11px;color:var(--muted)" colspan="2">Ticket AA: ${aaTicketTotal?'₡'+fmtFull(aaTicketTotal):'—'}</td>
+    <td colspan="2" style="font-family:var(--mono);font-weight:700;color:var(--lime);font-size:13px">${lastDay>0?'₡'+fmtFull(Math.round(acumVentas/lastDay*daysInMonth)):'—'}</td>
+    <td style="font-size:11px;color:var(--muted)">al ritmo actual</td>
+    <td style="font-size:11px;color:var(--muted)" colspan="2">PR. Crecimiento vs AA:</td>
+    <td>${fmtPctColor(totalCrecPct)}</td>
+    <td style="font-size:11px;color:var(--muted)" colspan="3">Ticket AA: ${aaTicketTotal?'₡'+fmtFull(aaTicketTotal):'—'}</td>
   </tr>`;
 }
 
@@ -2435,8 +2427,7 @@ function exportSeguimientoExcel(){
   const {rows,tY,tM,lastDay,daysInMonth,pptoMensualTotal,acumVentas,acumTrans,acumAA,acumAATrans} = segData;
   const ML = new Date(tY,tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
 
-  const header = ['Día','Día semana','Diarización (₡)','Budget Acum. (₡)',
-                  'Ventas Acum. (₡)','Ventas Netas (₡)','% vs Ppto',
+  const header = ['Día','Día semana','Budget (₡)','Ventas Netas (₡)','% vs Ppto Acum.',
                   'Pedidos','Ventas AA (₡)','Pedidos AA','Crec. %','Crec. Pedidos %','Ticket Medio (₡)'];
 
   const wsData = [
@@ -2447,13 +2438,12 @@ function exportSeguimientoExcel(){
     [],
     header,
     ...rows.map(r=>{
-      const varPpto = r.diarizacion>0&&r.hasData ? +((r.ventasNetas-r.diarizacion)/r.diarizacion*100).toFixed(2) : '';
+      const varPpto = r.pptoAcum>0&&r.hasData ? +((r.acumVentas-r.pptoAcum)/r.pptoAcum*100).toFixed(2) : '';
       const crec    = r.aaVentas>0&&r.hasData ? +((r.ventasNetas-r.aaVentas)/r.aaVentas*100).toFixed(2) : '';
       const crecT   = r.aaTrans>0&&r.hasData ? +((r.transacciones-r.aaTrans)/r.aaTrans*100).toFixed(2) : '';
       const ticket  = r.transacciones>0 ? Math.round(r.ventasNetas/r.transacciones) : '';
       return [r.d, r.dayName,
-              r.diarizacion||'', r.pptoAcum||'',
-              r.hasData?Math.round(r.acumVentas):'',
+              r.diarizacion||'',
               r.hasData?Math.round(r.ventasNetas):'',
               varPpto,
               r.hasData&&r.transacciones>0?r.transacciones:'',
@@ -2463,8 +2453,7 @@ function exportSeguimientoExcel(){
     [],
     ['TOTAL','',
       Math.round(rows.reduce((s,r)=>s+r.diarizacion,0)),
-      Math.round(pptoMensualTotal*lastDay/daysInMonth)||'',
-      Math.round(acumVentas), Math.round(acumVentas),
+      Math.round(acumVentas),
       pptoMensualTotal>0?+((acumVentas-(pptoMensualTotal*lastDay/daysInMonth))/(pptoMensualTotal*lastDay/daysInMonth)*100).toFixed(2):'',
       acumTrans||'',
       Math.round(acumAA)||'', acumAATrans||'',
