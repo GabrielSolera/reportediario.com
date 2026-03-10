@@ -900,7 +900,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcRqXAmQF6Yr3b
 
 // ── Forecast/Budget desde Google Sheets publicado como CSV ──
 // Hoja BD: Col A=Fecha, B=MesNombre, C=Tienda, D=Forecast
-const FORECAST_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQhHoqcZFb0EuXz2tk0ENtotMLg-RQQGP4C001RMyi00uBgQjv7MuJI1EFDRiHTsJK8uMJdebH5H-PX/pub?output=csv&gid=0';
+const FORECAST_CSV_URL = 'https://docs.google.com/spreadsheets/d/1Fk7ERtxjGSiXu2CmqrXKg88LAKHxysom-oUy-VA_UAI/export?format=csv&gid=2072621287';
 
 // Cache del CSV de forecast (se recarga una vez por sesión)
 let _forecastCSV = null;
@@ -935,14 +935,19 @@ async function cargarForecastCSV() {
   }
 }
 
+function normStr(s){
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+
 async function getForecastMensual(tiendaNombre, mes, anio) {
   const rows = await cargarForecastCSV();
-  // Filtrar por mes/año/tienda
-  let filas = rows.filter(r => r.m === mes && r.y === anio && r.tienda === tiendaNombre);
-  // Fallback: match parcial por última palabra del nombre
+  const normNombre = normStr(tiendaNombre);
+  // 1. Match exacto normalizado (sin tildes, lowercase)
+  let filas = rows.filter(r => r.m === mes && r.y === anio && normStr(r.tienda) === normNombre);
+  // 2. Fallback: match parcial por última palabra significativa
   if (filas.length === 0) {
-    const key = tiendaNombre.split(' ').pop().toLowerCase();
-    filas = rows.filter(r => r.m === mes && r.y === anio && r.tienda.toLowerCase().includes(key));
+    const key = normNombre.split(' ').filter(w => w.length > 3).pop() || normNombre.split(' ').pop();
+    filas = rows.filter(r => r.m === mes && r.y === anio && normStr(r.tienda).includes(key));
   }
   if (filas.length === 0) {
     console.warn('Sin forecast para:', tiendaNombre, mes, anio);
