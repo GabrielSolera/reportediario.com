@@ -898,6 +898,62 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 // ═══════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcRqXAmQF6Yr3bFTQGlJPdj8Jq8PGkLiK6X-sZVz8ufVrk-FHq8wvcAezSViUOtY-j/exec';
 
+// ── Forecast/Budget desde Google Sheets publicado como CSV ──
+// Hoja BD: Col A=Fecha, B=MesNombre, C=Tienda, D=Forecast
+const FORECAST_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQhHoqcZFb0EuXz2tk0ENtotMLg-RQQGP4C001RMyi00uBgQjv7MuJI1EFDRiHTsJK8uMJdebH5H-PX/pub?output=csv&gid=0';
+
+// Cache del CSV de forecast (se recarga una vez por sesión)
+let _forecastCSV = null;
+
+async function cargarForecastCSV() {
+  if (_forecastCSV) return _forecastCSV;
+  try {
+    const resp = await fetch(FORECAST_CSV_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    // Parsear CSV manualmente (Col A=Fecha, B=MesNombre, C=Tienda, D=Forecast)
+    const rows = text.trim().split('\n').slice(1); // skip header row
+    _forecastCSV = rows
+      .map(line => {
+        // Handle quoted fields
+        const cols = line.split(',').map(s => s.replace(/^"|"$/g,'').trim());
+        if (cols.length < 4 || !cols[0] || !cols[2] || !cols[3]) return null;
+        // Parse date: "1/10/2025" or "01/10/2025"
+        const parts = cols[0].split('/');
+        if (parts.length < 3) return null;
+        const d = parseInt(parts[0]), m = parseInt(parts[1]), y = parseInt(parts[2]);
+        const valor = parseFloat(String(cols[3]).replace(/,/g,'')) || 0;
+        return { d, m, y, tienda: cols[2].trim(), valor };
+      })
+      .filter(Boolean);
+    console.log('📊 Forecast CSV cargado:', _forecastCSV.length, 'filas');
+    return _forecastCSV;
+  } catch(e) {
+    console.warn('⚠️ Error cargando forecast CSV:', e);
+    _forecastCSV = [];
+    return _forecastCSV;
+  }
+}
+
+async function getForecastMensual(tiendaNombre, mes, anio) {
+  const rows = await cargarForecastCSV();
+  // Filtrar por mes/año/tienda
+  let filas = rows.filter(r => r.m === mes && r.y === anio && r.tienda === tiendaNombre);
+  // Fallback: match parcial por última palabra del nombre
+  if (filas.length === 0) {
+    const key = tiendaNombre.split(' ').pop().toLowerCase();
+    filas = rows.filter(r => r.m === mes && r.y === anio && r.tienda.toLowerCase().includes(key));
+  }
+  if (filas.length === 0) {
+    console.warn('Sin forecast para:', tiendaNombre, mes, anio);
+    return { mensual: 0, porDia: {} };
+  }
+  const mensual = filas.reduce((s,r) => s + r.valor, 0);
+  const porDia  = {};
+  filas.forEach(r => { porDia[r.d] = r.valor; });
+  return { mensual, porDia };
+}
+
 // ── Chart.js global defaults — override browser black ──
 Chart.defaults.color          = '#7070a0';
 Chart.defaults.borderColor    = 'rgba(42,42,58,.5)';
@@ -2248,18 +2304,29 @@ async function cargarSeguimiento() {
       catch(e){ aaByStore[sk] = {}; }
     }
 
-    // ── Presupuesto mensual total desde el endpoint principal ──
+    // ── Presupuesto mensual desde Google Sheets CSV (directo, sin pasar por Apps Script) ──
     setStep('Cargando presupuesto...');
     let pptoMensualTotal = 0;
+    const pptoPorDia = {}; // { dia: forecast_dia }
     try{
-      const pptoUrl = `${APPS_SCRIPT_URL}?day=${lastDay}&month=${tM}&year=${tY}&tienda=${store==='todas'?'todas':store}`;
-      const pptoResp = await fetch(pptoUrl);
-      const pptoData = await pptoResp.json();
-      const pptoRow = Array.isArray(pptoData)
-        ? pptoData.find(r => store==='todas' ? r.tienda==='TODAS' : r.tienda===STORES[store]?.name)
-        : null;
-      if(pptoRow) pptoMensualTotal = pptoRow.forecastMensual || pptoRow.forecastAcumulado || 0;
-    }catch(e){ console.warn('Ppto no disponible',e); }
+      if(store === 'todas'){
+        // Sumar todas las tiendas
+        for(const sk of storeKeys){
+          const nombre = STORES[sk].name;
+          const fc = await getForecastMensual(nombre, tM, tY);
+          pptoMensualTotal += fc.mensual;
+          Object.entries(fc.porDia).forEach(([d,v]) => {
+            pptoPorDia[Number(d)] = (pptoPorDia[Number(d)] || 0) + v;
+          });
+        }
+      } else {
+        const nombre = STORES[store].name;
+        const fc = await getForecastMensual(nombre, tM, tY);
+        pptoMensualTotal = fc.mensual;
+        Object.entries(fc.porDia).forEach(([d,v]) => { pptoPorDia[Number(d)] = v; });
+      }
+      console.log('💰 Ppto mensual:', pptoMensualTotal, '| Días con data:', Object.keys(pptoPorDia).length);
+    }catch(e){ console.warn('Ppto no disponible', e); }
 
     setStep('Construyendo tabla...');
     await new Promise(r=>setTimeout(r,60));
@@ -2310,12 +2377,18 @@ async function cargarSeguimiento() {
                   dowWeight: DOW_WEIGHTS[dateObj.getDay()] });
     }
 
-    // Diarización del presupuesto
+    // Budget por día: usar valor exacto del sheet; fallback a diarización por peso DOW
     const totalWeight = rows.reduce((s,r)=>s+r.dowWeight, 0);
     let pptoAcum=0, acumVentas=0, acumTrans=0, acumAA=0, acumAATrans=0;
     rows.forEach(r=>{
-      r.diarizacion = pptoMensualTotal>0
-        ? Math.round(pptoMensualTotal * r.dowWeight / totalWeight) : 0;
+      if(pptoPorDia[r.d] != null){
+        r.diarizacion = Math.round(pptoPorDia[r.d]);
+      } else if(pptoMensualTotal > 0){
+        // Fallback: distribuir por peso del día de semana
+        r.diarizacion = Math.round(pptoMensualTotal * r.dowWeight / totalWeight);
+      } else {
+        r.diarizacion = 0;
+      }
       pptoAcum   += r.diarizacion;
       r.pptoAcum  = pptoAcum;
       if(r.hasData){
