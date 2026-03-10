@@ -898,65 +898,45 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 // ═══════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcRqXAmQF6Yr3bFTQGlJPdj8Jq8PGkLiK6X-sZVz8ufVrk-FHq8wvcAezSViUOtY-j/exec';
 
-// ── Forecast/Budget desde Google Sheets publicado como CSV ──
-// Hoja BD: Col A=Fecha, B=MesNombre, C=Tienda, D=Forecast
-const FORECAST_CSV_URL = 'https://docs.google.com/spreadsheets/d/1Fk7ERtxjGSiXu2CmqrXKg88LAKHxysom-oUy-VA_UAI/export?format=csv&gid=2072621287';
-
-// Cache del CSV de forecast (se recarga una vez por sesión)
-let _forecastCSV = null;
-
-async function cargarForecastCSV() {
-  if (_forecastCSV) return _forecastCSV;
-  try {
-    const resp = await fetch(FORECAST_CSV_URL);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const text = await resp.text();
-    // Parsear CSV manualmente (Col A=Fecha, B=MesNombre, C=Tienda, D=Forecast)
-    const rows = text.trim().split('\n').slice(1); // skip header row
-    _forecastCSV = rows
-      .map(line => {
-        // Handle quoted fields
-        const cols = line.split(',').map(s => s.replace(/^"|"$/g,'').trim());
-        if (cols.length < 4 || !cols[0] || !cols[2] || !cols[3]) return null;
-        // Parse date: "1/10/2025" or "01/10/2025"
-        const parts = cols[0].split('/');
-        if (parts.length < 3) return null;
-        const d = parseInt(parts[0]), m = parseInt(parts[1]), y = parseInt(parts[2]);
-        const valor = parseFloat(String(cols[3]).replace(/,/g,'')) || 0;
-        return { d, m, y, tienda: cols[2].trim(), valor };
-      })
-      .filter(Boolean);
-    console.log('📊 Forecast CSV cargado:', _forecastCSV.length, 'filas');
-    return _forecastCSV;
-  } catch(e) {
-    console.warn('⚠️ Error cargando forecast CSV:', e);
-    _forecastCSV = [];
-    return _forecastCSV;
-  }
-}
-
-function normStr(s){
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-}
+// ── Forecast/Budget desde Apps Script (lee Google Sheets en el servidor) ──
+// Cache por mes/tienda para no repetir llamadas en la misma sesión
+const _forecastCache = {};
 
 async function getForecastMensual(tiendaNombre, mes, anio) {
-  const rows = await cargarForecastCSV();
-  const normNombre = normStr(tiendaNombre);
-  // 1. Match exacto normalizado (sin tildes, lowercase)
-  let filas = rows.filter(r => r.m === mes && r.y === anio && normStr(r.tienda) === normNombre);
-  // 2. Fallback: match parcial por última palabra significativa
-  if (filas.length === 0) {
-    const key = normNombre.split(' ').filter(w => w.length > 3).pop() || normNombre.split(' ').pop();
-    filas = rows.filter(r => r.m === mes && r.y === anio && normStr(r.tienda).includes(key));
+  const cacheKey = `${mes}-${anio}-${tiendaNombre}`;
+  if (_forecastCache[cacheKey]) return _forecastCache[cacheKey];
+
+  // Si ya cargamos el mes completo (todas las tiendas), usar ese resultado
+  const cacheKeyTodas = `${mes}-${anio}-__todas__`;
+  if (_forecastCache[cacheKeyTodas]) {
+    const data = _forecastCache[cacheKeyTodas];
+    const result = data[tiendaNombre] || { mensual: 0, porDia: {} };
+    _forecastCache[cacheKey] = result;
+    return result;
   }
-  if (filas.length === 0) {
-    console.warn('Sin forecast para:', tiendaNombre, mes, anio);
-    return { mensual: 0, porDia: {} };
+
+  try {
+    // Llamar al endpoint action=forecast para obtener todas las tiendas de una vez
+    const url = `${APPS_SCRIPT_URL}?action=forecast&month=${mes}&year=${anio}&tienda=todas`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.message);
+
+    // Guardar en cache todas las tiendas
+    _forecastCache[cacheKeyTodas] = data;
+    console.log('📊 Forecast cargado:', mes + '/' + anio,
+      '| Total mensual: ₡' + Math.round((data.TODAS||{}).mensual||0).toLocaleString('es-CR'));
+
+    const result = data[tiendaNombre] || { mensual: 0, porDia: {} };
+    _forecastCache[cacheKey] = result;
+    return result;
+  } catch(e) {
+    console.warn('⚠️ Error cargando forecast:', e);
+    const empty = { mensual: 0, porDia: {} };
+    _forecastCache[cacheKey] = empty;
+    return empty;
   }
-  const mensual = filas.reduce((s,r) => s + r.valor, 0);
-  const porDia  = {};
-  filas.forEach(r => { porDia[r.d] = r.valor; });
-  return { mensual, porDia };
 }
 
 // ── Chart.js global defaults — override browser black ──
@@ -2309,28 +2289,25 @@ async function cargarSeguimiento() {
       catch(e){ aaByStore[sk] = {}; }
     }
 
-    // ── Presupuesto mensual desde Google Sheets CSV (directo, sin pasar por Apps Script) ──
+    // ── Presupuesto mensual desde Apps Script (action=forecast) ──
     setStep('Cargando presupuesto...');
     let pptoMensualTotal = 0;
     const pptoPorDia = {}; // { dia: forecast_dia }
     try{
+      // getForecastMensual hace UNA sola llamada al GS y cachea todas las tiendas
       if(store === 'todas'){
-        // Sumar todas las tiendas
-        for(const sk of storeKeys){
-          const nombre = STORES[sk].name;
-          const fc = await getForecastMensual(nombre, tM, tY);
-          pptoMensualTotal += fc.mensual;
-          Object.entries(fc.porDia).forEach(([d,v]) => {
-            pptoPorDia[Number(d)] = (pptoPorDia[Number(d)] || 0) + v;
-          });
-        }
+        // Sumar el consolidado TODAS directamente
+        const fc = await getForecastMensual('TODAS', tM, tY);
+        pptoMensualTotal = fc.mensual || 0;
+        Object.entries(fc.porDia).forEach(([d,v]) => { pptoPorDia[Number(d)] = v; });
       } else {
         const nombre = STORES[store].name;
         const fc = await getForecastMensual(nombre, tM, tY);
-        pptoMensualTotal = fc.mensual;
+        pptoMensualTotal = fc.mensual || 0;
         Object.entries(fc.porDia).forEach(([d,v]) => { pptoPorDia[Number(d)] = v; });
       }
-      console.log('💰 Ppto mensual:', pptoMensualTotal, '| Días con data:', Object.keys(pptoPorDia).length);
+      console.log('💰 Ppto mensual: ₡' + Math.round(pptoMensualTotal).toLocaleString('es-CR'),
+                  '| Días:', Object.keys(pptoPorDia).length);
     }catch(e){ console.warn('Ppto no disponible', e); }
 
     setStep('Construyendo tabla...');
