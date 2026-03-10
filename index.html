@@ -898,46 +898,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 // ═══════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcRqXAmQF6Yr3bFTQGlJPdj8Jq8PGkLiK6X-sZVz8ufVrk-FHq8wvcAezSViUOtY-j/exec';
 
-// ── Forecast/Budget desde Apps Script (lee Google Sheets en el servidor) ──
-// Cache por mes/tienda para no repetir llamadas en la misma sesión
-const _forecastCache = {};
-
-async function getForecastMensual(tiendaNombre, mes, anio) {
-  const cacheKey = `${mes}-${anio}-${tiendaNombre}`;
-  if (_forecastCache[cacheKey]) return _forecastCache[cacheKey];
-
-  // Si ya cargamos el mes completo (todas las tiendas), usar ese resultado
-  const cacheKeyTodas = `${mes}-${anio}-__todas__`;
-  if (_forecastCache[cacheKeyTodas]) {
-    const data = _forecastCache[cacheKeyTodas];
-    const result = data[tiendaNombre] || { mensual: 0, porDia: {} };
-    _forecastCache[cacheKey] = result;
-    return result;
-  }
-
-  try {
-    // Llamar al endpoint action=forecast para obtener todas las tiendas de una vez
-    const url = `${APPS_SCRIPT_URL}?action=forecast&month=${mes}&year=${anio}&tienda=todas`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    if (data.error) throw new Error(data.message);
-
-    // Guardar en cache todas las tiendas
-    _forecastCache[cacheKeyTodas] = data;
-    console.log('📊 Forecast cargado:', mes + '/' + anio,
-      '| Total mensual: ₡' + Math.round((data.TODAS||{}).mensual||0).toLocaleString('es-CR'));
-
-    const result = data[tiendaNombre] || { mensual: 0, porDia: {} };
-    _forecastCache[cacheKey] = result;
-    return result;
-  } catch(e) {
-    console.warn('⚠️ Error cargando forecast:', e);
-    const empty = { mensual: 0, porDia: {} };
-    _forecastCache[cacheKey] = empty;
-    return empty;
-  }
-}
+// ── Forecast/Budget: igual que el dashboard, usa el endpoint principal ──
+// Llama ?day=lastDay&month=X&year=X&tienda=X y lee forecastMensual de la respuesta
 
 // ── Chart.js global defaults — override browser black ──
 Chart.defaults.color          = '#7070a0';
@@ -2289,25 +2251,29 @@ async function cargarSeguimiento() {
       catch(e){ aaByStore[sk] = {}; }
     }
 
-    // ── Presupuesto mensual desde Apps Script (action=forecast) ──
+    // ── Presupuesto mensual — mismo endpoint que el dashboard ──
+    // Llama con day=lastDayDelMes para obtener forecastMensual y forecastPorDia
     setStep('Cargando presupuesto...');
     let pptoMensualTotal = 0;
     const pptoPorDia = {}; // { dia: forecast_dia }
     try{
-      // getForecastMensual hace UNA sola llamada al GS y cachea todas las tiendas
-      if(store === 'todas'){
-        // Sumar el consolidado TODAS directamente
-        const fc = await getForecastMensual('TODAS', tM, tY);
-        pptoMensualTotal = fc.mensual || 0;
-        Object.entries(fc.porDia).forEach(([d,v]) => { pptoPorDia[Number(d)] = v; });
-      } else {
-        const nombre = STORES[store].name;
-        const fc = await getForecastMensual(nombre, tM, tY);
-        pptoMensualTotal = fc.mensual || 0;
-        Object.entries(fc.porDia).forEach(([d,v]) => { pptoPorDia[Number(d)] = v; });
+      const lastDayOfMonth = new Date(tY, tM, 0).getDate();
+      const pptoTienda = store === 'todas' ? 'todas' : store;
+      const pptoUrl = `${APPS_SCRIPT_URL}?day=${lastDayOfMonth}&month=${tM}&year=${tY}&tienda=${pptoTienda}`;
+      const pptoResp = await fetch(pptoUrl);
+      const pptoData = await pptoResp.json();
+      if(Array.isArray(pptoData) && pptoData.length > 0){
+        const row = store === 'todas'
+          ? (pptoData.find(r => r.tienda === 'TODAS') || pptoData[0])
+          : (pptoData.find(r => r.tienda === STORES[store]?.name) || pptoData[0]);
+        pptoMensualTotal = row.forecastMensual || row.forecastAcumulado || 0;
+        // forecastPorDia viene del .gs: { "1": valor, "2": valor, ... }
+        if(row.forecastPorDia){
+          Object.entries(row.forecastPorDia).forEach(([d,v]) => { pptoPorDia[Number(d)] = v; });
+        }
+        console.log('💰 Ppto mensual: ₡' + Math.round(pptoMensualTotal).toLocaleString('es-CR'),
+                    '| Días con ppto:', Object.keys(pptoPorDia).length);
       }
-      console.log('💰 Ppto mensual: ₡' + Math.round(pptoMensualTotal).toLocaleString('es-CR'),
-                  '| Días:', Object.keys(pptoPorDia).length);
     }catch(e){ console.warn('Ppto no disponible', e); }
 
     setStep('Construyendo tabla...');
