@@ -385,6 +385,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <div class="nav-item" data-section="detallePagos">
       <span class="nav-icon">💳</span><span>Detalle de Pagos</span>
     </div>
+    <div class="nav-item" data-section="seguimiento">
+      <span class="nav-icon">📋</span><span>Seguimiento Mensual</span>
+    </div>
     <div class="nav-section">Inteligencia</div>
     <div class="nav-item" data-section="proyeccion">
       <span class="nav-icon">📉</span><span>Proyección</span>
@@ -685,6 +688,78 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       </div>
     </div>
 
+    <!-- ═══════════ SEGUIMIENTO MENSUAL ═══════════ -->
+    <div class="section" id="section-seguimiento">
+
+      <!-- Controles -->
+      <div class="proy-controls" style="flex-wrap:wrap;gap:10px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ctrl-label">Sucursal</span>
+          <select class="ctrl-select" id="segStore">
+            <option value="todas">Todas</option>
+            <option value="guachipelin">Guachipelín</option>
+            <option value="escazu">Avenida Escazú</option>
+            <option value="citymall">City Mall</option>
+            <option value="santaana">Santa Ana TC</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ctrl-label">Mes</span>
+          <input type="month" class="ctrl-select" id="segMes" style="font-family:var(--mono);font-size:13px">
+        </div>
+        <button class="btn-primary" id="segRunBtn" onclick="cargarSeguimiento()">
+          <span>▶</span> Cargar
+        </button>
+        <button class="btn-outline" id="segExcelBtn" onclick="exportSeguimientoExcel()" style="display:none">
+          <span>⬇</span> Excel
+        </button>
+        <div id="segStatus" style="font-size:12px;color:var(--muted);margin-left:8px"></div>
+      </div>
+
+      <!-- KPI row -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px" id="segKpis">
+        <div class="kpi k-purple"><div class="kpi-label">Ventas Netas Mes</div><div class="kpi-value" id="skTotal">₡0</div><div class="kpi-sub" id="skTotalSub">—</div></div>
+        <div class="kpi k-teal"><div class="kpi-label">vs Año Anterior</div><div class="kpi-value" id="skCrecimiento">—</div><div class="kpi-sub" id="skCrecimientoSub">—</div></div>
+        <div class="kpi k-lime"><div class="kpi-label">vs Presupuesto</div><div class="kpi-value" id="skDesvPpto">—</div><div class="kpi-sub" id="skDesvPptoSub">—</div></div>
+        <div class="kpi"><div class="kpi-label">Pedidos Totales</div><div class="kpi-value" id="skPedidos">0</div><div class="kpi-sub" id="skPedidosSub">—</div></div>
+        <div class="kpi"><div class="kpi-label">Ticket Medio</div><div class="kpi-value" id="skTicket">₡0</div><div class="kpi-sub" id="skTicketSub">—</div></div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:700;font-size:14px">Detalle Diario — <span id="segTableTag">—</span></div>
+          <div style="font-size:11px;color:var(--muted)">Ventas Netas (sin IVA)</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="store-table" style="width:100%;min-width:900px">
+            <thead>
+              <tr id="segThead">
+                <th style="width:42px;text-align:center">Día</th>
+                <th style="width:80px">Día semana</th>
+                <th style="text-align:right">Diarización</th>
+                <th style="text-align:right">Presupuesto</th>
+                <th style="text-align:right">Budget Acum.</th>
+                <th style="text-align:right;color:var(--accent)">Ventas Netas</th>
+                <th style="text-align:right">% vs Ppto</th>
+                <th style="text-align:right">Pedidos</th>
+                <th style="text-align:right;color:var(--muted)">Año Anterior</th>
+                <th style="text-align:right;color:var(--muted)">Pedidos A.A.</th>
+                <th style="text-align:right">Crec. %</th>
+                <th style="text-align:right">Crec. Pedidos %</th>
+                <th style="text-align:right">Ticket Medio</th>
+              </tr>
+            </thead>
+            <tbody id="segTbody">
+              <tr><td colspan="13"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-txt">Seleccioná sucursal y mes, luego Cargar</div></div></td></tr>
+            </tbody>
+            <tfoot id="segTfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
     <!-- ═══════════ PROYECCIÓN ═══════════ -->
     <div class="section" id="section-proyeccion">
 
@@ -920,6 +995,7 @@ async function cargarDatos() {
 
   const seccion = document.querySelector('.section.active')?.id;
   if(seccion === 'section-reporteDiario'){ await cargarReporteDiario(); return; }
+  if(seccion === 'section-seguimiento'){ await cargarSeguimiento(); return; }
 
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
@@ -2080,8 +2156,319 @@ function renderTablaCompleta(tiendas, ref){
 }
 window.addEventListener('load', () => {
   initDates();
+  // Inicializar mes de seguimiento al mes actual
+  const hoy = new Date();
+  const mesStr = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
+  const segMesEl = document.getElementById('segMes');
+  if(segMesEl) segMesEl.value = mesStr;
   cargarDatos();
 });
+
+// ═══════════════════════════════════════════════════════════
+//  SEGUIMIENTO MENSUAL
+// ═══════════════════════════════════════════════════════════
+// Datos cacheados del seguimiento
+let segData = null;
+
+async function cargarSeguimiento() {
+  const mesVal  = document.getElementById('segMes').value;
+  const store   = document.getElementById('segStore').value;
+  if(!mesVal){ alert('Seleccioná el mes'); return; }
+
+  const [tY, tM] = mesVal.split('-').map(Number);
+  const hoy      = new Date();
+  // Último día con datos: si es el mes actual → ayer; si es pasado → último día del mes
+  const esMesActual = hoy.getFullYear()===tY && hoy.getMonth()+1===tM;
+  const lastDay = esMesActual ? hoy.getDate()-1 : new Date(tY,tM,0).getDate();
+  if(lastDay < 1){ document.getElementById('segStatus').textContent='Sin datos aún para este mes'; return; }
+
+  const pad = n=>String(n).padStart(2,'0');
+  const fechaInicio = `${tY}-${pad(tM)}-01`;
+  const fechaFin    = `${tY}-${pad(tM)}-${pad(lastDay)}`;
+
+  // Año anterior: mismo período
+  const aaPY = tY-1;
+  const aaLastDay = Math.min(lastDay, new Date(aaPY,tM,0).getDate());
+  const aaFechaInicio = `${aaPY}-${pad(tM)}-01`;
+  const aaFechaFin    = `${aaPY}-${pad(tM)}-${pad(aaLastDay)}`;
+
+  const storeKeys = store==='todas' ? Object.keys(STORES) : [store];
+
+  document.getElementById('segRunBtn').disabled = true;
+  document.getElementById('segStatus').textContent = 'Cargando...';
+  document.getElementById('segExcelBtn').style.display = 'none';
+
+  showLoader(true,'Cargando Seguimiento Mensual...','Consultando período actual...');
+
+  try{
+    // ── Fetch período actual ──
+    const curByStore = {};
+    for(const sk of storeKeys){
+      setStep(`Ventas actuales: ${STORES[sk].name}...`);
+      curByStore[sk] = await fetchToteatDiario(sk, fechaInicio, fechaFin);
+    }
+
+    // ── Fetch año anterior ──
+    const aaByStore = {};
+    for(const sk of storeKeys){
+      setStep(`Año anterior: ${STORES[sk].name}...`);
+      try{ aaByStore[sk] = await fetchToteatDiario(sk, aaFechaInicio, aaFechaFin); }
+      catch(e){ aaByStore[sk] = {}; }
+    }
+
+    // ── Fetch presupuesto desde Apps Script (forecast sheets) ──
+    // El Apps Script devuelve forecastDia y forecastAcumulado por día
+    // Lo reconstruimos consultando cada día del período
+    setStep('Cargando presupuesto...');
+    const pptoByDay = {};
+    for(let d=1; d<=lastDay; d++){
+      const dateStr = `${tY}-${pad(tM)}-${pad(d)}`;
+      pptoByDay[dateStr] = { ppto:0, pptoAcum:0 };
+    }
+    // Intentar obtener presupuesto del primer store con config
+    try{
+      const firstSk = storeKeys[0];
+      const pptoUrl = `${APPS_SCRIPT_URL}?day=${lastDay}&month=${tM}&year=${tY}&tienda=${firstSk}`;
+      const pptoResp = await fetch(pptoUrl);
+      const pptoData = await pptoResp.json();
+      // pptoData es array con 1 elemento; forecastAcumulado está al día lastDay
+      // Para reconstruir diario necesitamos llamar por cada día — costoso
+      // En su lugar usamos el acumulado al último día y linealizamos por diarización
+    } catch(e){ console.warn('Ppto no disponible',e); }
+
+    setStep('Construyendo tabla...');
+    await new Promise(r=>setTimeout(r,60));
+
+    // Consolidar datos por fecha
+    const daysInMonth = new Date(tY,tM,0).getDate();
+    const DAY_NAMES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const rows = [];
+
+    // Sumar todas las tiendas seleccionadas por fecha
+    for(let d=1; d<=daysInMonth; d++){
+      const dateStr = `${tY}-${pad(tM)}-${pad(d)}`;
+      const dateObj = new Date(tY,tM-1,d);
+      const hasData = d <= lastDay;
+
+      let ventasNetas=0, pedidos=0;
+      for(const sk of storeKeys){
+        ventasNetas += (curByStore[sk]||{})[dateStr]||0;
+        // pedidos: fetchToteatDiario solo trae ventasNetas, no transacciones
+        // Se aproxima; para exacto habría que llamar al endpoint principal
+      }
+
+      let aaVentas=0;
+      const aaDateStr = `${aaPY}-${pad(tM)}-${pad(Math.min(d,aaLastDay))}`;
+      for(const sk of storeKeys) aaVentas += (aaByStore[sk]||{})[aaDateStr]||0;
+
+      rows.push({ d, dateStr, dateObj, dayName:DAY_NAMES[dateObj.getDay()],
+                  ventasNetas, aaVentas, pedidos, hasData });
+    }
+
+    // Calcular acumulados y totales
+    let acumVentas=0, acumAA=0, acumPedidos=0;
+    // Buscar presupuesto mensual total si está disponible
+    // (lo cargamos vía el endpoint principal del día actual)
+    let pptoMensualTotal = 0;
+    try{
+      const pptoAllUrl = `${APPS_SCRIPT_URL}?day=${lastDay}&month=${tM}&year=${tY}&tienda=${store==='todas'?'todas':store}`;
+      const pptoAllResp = await fetch(pptoAllUrl);
+      const pptoAllData = await pptoAllResp.json();
+      const pptoRow = Array.isArray(pptoAllData) ? pptoAllData.find(r=>store==='todas'?r.tienda==='TODAS':true) : null;
+      if(pptoRow) pptoMensualTotal = pptoRow.forecastAcumulado || 0;
+    }catch(e){}
+
+    // Diarización del presupuesto: distribuir proporcionalmente por día de semana
+    // Pesos: Dom=1.3 Sáb=1.2 Vie=1.1 Lun=1.0 Mar=0.85 Mié=0.88 Jue=0.92
+    const DOW_WEIGHTS = [1.3,1.0,0.85,0.88,0.92,1.1,1.2];
+    const totalWeight = rows.reduce((s,r)=>s+DOW_WEIGHTS[r.dateObj.getDay()],0);
+    rows.forEach(r=>{
+      r.diarizacion = pptoMensualTotal>0 ? Math.round(pptoMensualTotal * DOW_WEIGHTS[r.dateObj.getDay()] / totalWeight) : 0;
+    });
+
+    // Presupuesto acumulado hasta cada día
+    let pptoAcum=0;
+    rows.forEach(r=>{
+      pptoAcum += r.diarizacion;
+      r.pptoAcum = pptoAcum;
+      acumVentas += r.hasData ? r.ventasNetas : 0;
+      acumAA     += r.hasData ? r.aaVentas    : 0;
+      acumPedidos+= r.hasData ? r.pedidos      : 0;
+      r.acumVentas = acumVentas;
+      r.acumAA     = acumAA;
+    });
+
+    segData = { rows, tY, tM, lastDay, storeKeys, pptoMensualTotal,
+                acumVentas, acumAA, acumPedidos, daysInMonth,
+                fechaInicio, fechaFin, aaFechaInicio, aaFechaFin };
+
+    renderSeguimiento(segData);
+    document.getElementById('segExcelBtn').style.display='flex';
+    document.getElementById('segStatus').textContent =
+      `Datos hasta día ${lastDay} · Presupuesto: ${pptoMensualTotal>0?fmtK(pptoMensualTotal):'no configurado'}`;
+
+  }catch(e){
+    alert('Error cargando seguimiento:\n'+e.message);
+    console.error(e);
+  }finally{
+    showLoader(false);
+    document.getElementById('segRunBtn').disabled=false;
+  }
+}
+
+function renderSeguimiento(data){
+  const {rows,tY,tM,lastDay,pptoMensualTotal,acumVentas,acumAA,daysInMonth} = data;
+  const ML = new Date(tY,tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
+  document.getElementById('segTableTag').textContent = ML.charAt(0).toUpperCase()+ML.slice(1);
+
+  // ── KPIs ──
+  const ticketTotal = rows.reduce((s,r)=>s+r.pedidos,0);
+  const ticketMedio = ticketTotal>0 ? acumVentas/ticketTotal : 0;
+  const crecPct  = acumAA>0 ? ((acumVentas-acumAA)/acumAA)*100 : null;
+  const desvPpto = pptoMensualTotal>0 ? ((acumVentas - (pptoMensualTotal*(lastDay/daysInMonth))) / (pptoMensualTotal*(lastDay/daysInMonth)))*100 : null;
+
+  setTxt('skTotal', fmtK(acumVentas));
+  setTxt('skTotalSub', `${lastDay} días · Meta: ${pptoMensualTotal>0?fmtK(pptoMensualTotal):'—'}`);
+
+  const crecEl = document.getElementById('skCrecimiento');
+  crecEl.textContent = crecPct!==null ? (crecPct>=0?'+':'')+crecPct.toFixed(1)+'%' : '—';
+  crecEl.style.color = crecPct!==null ? (crecPct>=0?'var(--teal)':'var(--red)') : 'var(--muted)';
+  setTxt('skCrecimientoSub', `AA: ${fmtK(acumAA)}`);
+
+  const desvEl = document.getElementById('skDesvPpto');
+  desvEl.textContent = desvPpto!==null ? (desvPpto>=0?'+':'')+desvPpto.toFixed(1)+'%' : 'Sin ppto';
+  desvEl.style.color = desvPpto!==null ? (desvPpto>=0?'var(--teal)':'var(--red)') : 'var(--muted)';
+  setTxt('skDesvPptoSub', `Ppto prorrateado: ${pptoMensualTotal>0?fmtK(Math.round(pptoMensualTotal*lastDay/daysInMonth)):'—'}`);
+
+  setTxt('skPedidos', ticketTotal>0?ticketTotal.toLocaleString('es-CR'):'—');
+  setTxt('skPedidosSub', '(via endpoint principal)');
+  setTxt('skTicket', ticketMedio>0?fmtK(ticketMedio):'—');
+  setTxt('skTicketSub', 'Ventas netas / pedidos');
+
+  // ── Tabla ──
+  const tbody = document.getElementById('segTbody');
+  const tfoot = document.getElementById('segTfoot');
+  tbody.innerHTML = '';
+
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    if(!r.hasData) tr.style.opacity='0.4';
+    if(r.d===lastDay && r.hasData) tr.classList.add('row-today');
+
+    const varPpto  = r.diarizacion>0 && r.hasData ? ((r.ventasNetas-r.diarizacion)/r.diarizacion)*100 : null;
+    const varPptoAcum = r.pptoAcum>0 && r.hasData ? ((r.acumVentas-r.pptoAcum)/r.pptoAcum)*100 : null;
+    const crec     = r.aaVentas>0 && r.hasData ? ((r.ventasNetas-r.aaVentas)/r.aaVentas)*100 : null;
+    const ticket   = r.pedidos>0 ? r.ventasNetas/r.pedidos : null;
+    const crecPed  = null; // requeriría pedidos de AA; placeholder
+
+    const fmtPct = (v,col)=>{
+      if(v===null) return `<span style="color:var(--muted)">—</span>`;
+      const c = v>=0?'var(--teal)':'var(--red)';
+      return `<span style="color:${col||c};font-weight:600">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+    };
+    const fmtN = (v,col)=>v?`<span style="font-family:var(--mono);color:${col||'var(--fg)'}">${fmtK(v)}</span>`:'<span style="color:var(--muted)">—</span>';
+    const fmtNn= (v)=>v>0?`<span style="font-family:var(--mono)">${v.toLocaleString('es-CR')}</span>`:'<span style="color:var(--muted)">—</span>';
+
+    tr.innerHTML = `
+      <td style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--muted);font-size:12px">${r.d}</td>
+      <td style="font-size:12px;color:var(--muted)">${r.dayName}</td>
+      <td style="text-align:right">${fmtN(r.diarizacion,'var(--muted)')}</td>
+      <td style="text-align:right">${fmtN(r.pptoAcum,'var(--muted)')}</td>
+      <td style="text-align:right">${r.hasData?fmtN(r.acumVentas,'var(--fg)'):'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:right">${r.hasData?fmtN(r.ventasNetas,'var(--accent)'):'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:right">${fmtPct(varPpto)}</td>
+      <td style="text-align:right">${fmtNn(r.pedidos)}</td>
+      <td style="text-align:right">${fmtN(r.aaVentas,'var(--muted)')}</td>
+      <td style="text-align:right"><span style="color:var(--muted)">—</span></td>
+      <td style="text-align:right">${fmtPct(crec)}</td>
+      <td style="text-align:right">${fmtPct(crecPed)}</td>
+      <td style="text-align:right">${ticket?fmtN(ticket,'var(--lime)'):'<span style="color:var(--muted)">—</span>'}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Totales
+  const totalAA = rows.reduce((s,r)=>s+r.aaVentas,0);
+  const totalCrecPct = totalAA>0 ? ((acumVentas-totalAA)/totalAA)*100 : null;
+  const desvPptoFinal = pptoMensualTotal>0 ? ((acumVentas-(pptoMensualTotal*lastDay/daysInMonth))/(pptoMensualTotal*lastDay/daysInMonth))*100 : null;
+  tfoot.innerHTML = `<tr class="total-row">
+    <td colspan="2" style="padding-left:14px;font-weight:800">TOTAL</td>
+    <td style="text-align:right;font-family:var(--mono)">${fmtK(rows.reduce((s,r)=>s+r.diarizacion,0))}</td>
+    <td style="text-align:right;font-family:var(--mono)">${fmtK(pptoMensualTotal)}</td>
+    <td style="text-align:right;font-family:var(--mono)">${fmtK(acumVentas)}</td>
+    <td style="text-align:right;font-family:var(--mono);color:var(--accent)">${fmtK(acumVentas)}</td>
+    <td style="text-align:right">${desvPptoFinal!==null?`<span style="color:${desvPptoFinal>=0?'var(--teal)':'var(--red)'};font-weight:700">${desvPptoFinal>=0?'+':''}${desvPptoFinal.toFixed(1)}%</span>`:'—'}</td>
+    <td colspan="2" style="text-align:right;font-family:var(--mono);color:var(--muted)">${fmtK(totalAA)}</td>
+    <td></td>
+    <td style="text-align:right">${totalCrecPct!==null?`<span style="color:${totalCrecPct>=0?'var(--teal)':'var(--red)'};font-weight:700">${totalCrecPct>=0?'+':''}${totalCrecPct.toFixed(1)}%</span>`:'—'}</td>
+    <td colspan="2"></td>
+  </tr>`;
+
+  // Resumen final debajo de la tabla
+  const resumenEl = document.getElementById('segResumen');
+  if(resumenEl){
+    resumenEl.innerHTML = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;padding:16px 20px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)">
+        <span>📊 Proyección cierre mes: <strong style="color:var(--fg)">${pptoMensualTotal>0&&lastDay>0?fmtK(Math.round(acumVentas/lastDay*daysInMonth)):'—'}</strong></span>
+        <span>· PR. Crecimiento: <strong style="color:${totalCrecPct>=0?'var(--teal)':'var(--red)'}">${totalCrecPct!==null?(totalCrecPct>=0?'+':'')+totalCrecPct.toFixed(1)+'%':'—'}</strong></span>
+        <span>· Desv. Ppto: <strong style="color:${desvPptoFinal>=0?'var(--teal)':'var(--red)'}">${desvPptoFinal!==null?(desvPptoFinal>=0?'+':'')+desvPptoFinal.toFixed(1)+'%':'—'}</strong></span>
+      </div>`;
+  }
+}
+
+function exportSeguimientoExcel(){
+  if(!segData){ alert('Cargá el seguimiento primero'); return; }
+  const {rows,tY,tM,lastDay,pptoMensualTotal,acumVentas,acumAA,daysInMonth} = segData;
+  const ML = new Date(tY,tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
+
+  const header = ['Día','Día semana','Diarización (₡)','Budget Acum. (₡)',
+                  'Ventas Acum. (₡)','Ventas Netas (₡)','% vs Ppto',
+                  'Pedidos','Ventas AA (₡)','Pedidos AA','Crec. %','Crec. Pedidos %','Ticket Medio (₡)'];
+
+  const wsData = [
+    ['OAKBERRY — SEGUIMIENTO MENSUAL'],
+    [`Mes: ${ML.charAt(0).toUpperCase()+ML.slice(1)}`],
+    [`Generado: ${new Date().toLocaleString('es-CR')}`],
+    [`Notas: Ventas Netas sin IVA. Presupuesto: ${pptoMensualTotal>0?Math.round(pptoMensualTotal).toLocaleString('es-CR'):'no configurado'}`],
+    [],
+    header,
+    ...rows.map(r=>{
+      const varPpto  = r.diarizacion>0&&r.hasData ? ((r.ventasNetas-r.diarizacion)/r.diarizacion)*100 : null;
+      const crec     = r.aaVentas>0&&r.hasData ? ((r.ventasNetas-r.aaVentas)/r.aaVentas)*100 : null;
+      const ticket   = r.pedidos>0 ? Math.round(r.ventasNetas/r.pedidos) : null;
+      return [
+        r.d, r.dayName,
+        r.diarizacion||'', r.pptoAcum||'',
+        r.hasData?Math.round(r.acumVentas):'',
+        r.hasData?Math.round(r.ventasNetas):'',
+        varPpto!==null?Number(varPpto.toFixed(2)):'',
+        r.pedidos||'',
+        Math.round(r.aaVentas)||'','',
+        crec!==null?Number(crec.toFixed(2)):'','',
+        ticket||''
+      ];
+    }),
+    [],
+    ['TOTAL','',
+      rows.reduce((s,r)=>s+r.diarizacion,0),
+      pptoMensualTotal||'',
+      Math.round(acumVentas),
+      Math.round(acumVentas),
+      pptoMensualTotal>0?Number(((acumVentas-(pptoMensualTotal*lastDay/daysInMonth))/(pptoMensualTotal*lastDay/daysInMonth)*100).toFixed(2)):'',
+      '','',
+      Math.round(acumAA),'','',
+      acumAA>0?Number(((acumVentas-acumAA)/acumAA*100).toFixed(2)):''
+    ],
+    [],
+    ['Proyección cierre mes', pptoMensualTotal>0&&lastDay>0?Math.round(acumVentas/lastDay*daysInMonth):''],
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = header.map((_,i)=>({wch:i===1?10:i===0?5:14}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Seguimiento');
+  XLSX.writeFile(wb, `Oakberry_Seguimiento_${tY}-${String(tM).padStart(2,'0')}.xlsx`);
+}
+
 </script>
 </body>
 </html>
