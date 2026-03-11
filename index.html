@@ -336,10 +336,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .trend-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);}
 .trend-leg-line{width:18px;height:2px;border-radius:1px;}
 
-/* RESPONSIVE */
-/* ─────────────────────────────────────────
-   RESPONSIVE — hamburger + overlay
-───────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+
+/* ── Hamburger button ── */
 .hamburger{
   display:none;
   flex-direction:column;justify-content:center;align-items:center;
@@ -358,63 +359,181 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
 .hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 
+/* ── Sidebar overlay ── */
 .sidebar-overlay{
   display:none;position:fixed;inset:0;
   background:rgba(0,0,0,.6);backdrop-filter:blur(2px);
   z-index:150;opacity:0;transition:opacity .3s;
+  pointer-events:none;
 }
-.sidebar-overlay.visible{opacity:1;}
+.sidebar-overlay.visible{opacity:1;pointer-events:all;}
 
-/* ── 1200px: shrink KPIs to 2 cols ── */
+/* ─────────────────────────────────────────
+   1200px — tablet landscape
+───────────────────────────────────────── */
 @media(max-width:1200px){
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  :root{--sidebar-w:200px;}
 }
 
-/* ── 900px: sidebar off-canvas ── */
+/* ─────────────────────────────────────────
+   900px — tablet portrait / large phone
+───────────────────────────────────────── */
 @media(max-width:900px){
+  /* Sidebar off-canvas */
   .hamburger{display:flex;}
   .sidebar{
     position:fixed;left:-260px;top:0;
     transition:left .28s cubic-bezier(.4,0,.2,1);
-    z-index:200;height:100dvh;
+    z-index:200;height:100dvh;width:240px;
   }
   .sidebar.open{left:0;}
   .sidebar-overlay{display:block;}
   .main{margin-left:0;}
-  .topbar{padding:10px 14px;flex-wrap:wrap;gap:8px;}
+
+  /* Topbar — two rows */
+  .topbar{
+    padding:10px 14px;height:auto;
+    flex-wrap:wrap;gap:6px;
+  }
   .topbar-left{flex:1;min-width:0;}
   .topbar-controls{
     width:100%;order:3;
-    flex-wrap:wrap;gap:6px;
-    padding:8px 0 2px;
+    display:flex;flex-wrap:wrap;gap:6px;
+    padding:8px 0 4px;
     border-top:1px solid var(--border);
   }
   .ctrl-label{display:none;}
-  .ctrl-input,.ctrl-select{font-size:12px;padding:6px 8px;height:32px;}
-  #fechaInicio,#fechaFin{width:120px;}
+  .ctrl-input,.ctrl-select{font-size:12px;padding:6px 10px;height:34px;}
+  #fechaInicio,#fechaFin{width:118px;}
   .ctrl-divider{display:none;}
   #btnActualizar{margin-left:auto;}
-  .content{padding:14px;}
+  #tiendaSelect{flex:1;min-width:120px;}
+
+  /* Content */
+  .content{padding:14px 12px;}
+
+  /* KPIs */
   .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
-  .kpi-value{font-size:18px;}
+  .kpi{padding:14px;}
+  .kpi-value{font-size:20px;}
+  .kpi-sub{font-size:10px;}
+
+  /* Grids */
   .grid-2,.grid-3{grid-template-columns:1fr;gap:10px;}
   .card-body{padding:12px;}
-  /* Seguimiento KPIs: 2 cols on mobile */
-  #segKpis{grid-template-columns:repeat(2,1fr) !important;}
+
+  /* Charts — slightly smaller */
+  .chart-wrap{height:200px;}
+  .chart-wrap-tall{height:240px;}
+
+  /* All tables need horizontal scroll */
+  .scroll-box{-webkit-overflow-scrolling:touch;}
+  .store-table{font-size:12px;}
+  .store-table th,.store-table td{padding:9px 10px;}
+
+  /* Canal pills — wrap */
+  .canal-kpi{border-right:none;border-bottom:1px solid var(--border);padding:10px 14px;}
+  .canal-kpi:last-child{border-bottom:none;}
+  [style*="display:flex"][style*="canal"]{flex-wrap:wrap;}
+
+  /* Proyección calendar */
+  .cal-grid{grid-template-columns:1fr;}
+
+  /* Proyección controls */
+  .proy-controls{gap:8px;}
+  .proy-controls .ctrl-select{flex:1;}
+
+  /* Seguimiento */
+  #segKpis{grid-template-columns:repeat(2,1fr) !important;gap:8px !important;}
+  .seg-controls{flex-wrap:wrap;gap:6px;}
+  #segStore,#segMes{flex:1;min-width:120px;}
+
+  /* Rank cards */
+  .rank-cards-grid{grid-template-columns:repeat(2,1fr) !important;}
 }
 
-/* ── 600px: single col KPIs, tighter everything ── */
+/* ─────────────────────────────────────────
+   600px — phone
+───────────────────────────────────────── */
 @media(max-width:600px){
-  .kpi-grid{grid-template-columns:1fr 1fr;}
-  .kpi-value{font-size:16px;}
-  .kpi-label{font-size:9px;}
-  #fechaInicio,#fechaFin{width:105px;}
+  /* Topbar tighter */
+  .topbar{padding:8px 10px;gap:4px;}
+  .page-title{font-size:14px;}
+  .page-sub{font-size:10px;}
+  #fechaInicio,#fechaFin{width:102px;font-size:11px;}
   .topbar-controls{gap:4px;}
-  /* Seguimiento KPIs: single col on very small */
-  #segKpis{grid-template-columns:1fr 1fr !important;}
-  /* Shrink table font */
+  .btn{padding:7px 12px;font-size:11px;}
+
+  /* Content */
+  .content{padding:10px 8px;}
+
+  /* KPIs — 2 cols tight */
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+  .kpi{padding:12px 10px;}
+  .kpi-value{font-size:16px;}
+  .kpi-label{font-size:9px;letter-spacing:.06em;}
+  .kpi-sub{font-size:9px;}
+  .kpi-delta{font-size:9px;padding:2px 6px;}
+
+  /* Cards */
+  .card-header{padding:10px 12px;}
+  .card-title{font-size:10px;}
+  .card-body{padding:8px;}
+
+  /* Charts */
+  .chart-wrap{height:180px;}
+  .chart-wrap-tall{height:200px;}
+
+  /* Tables */
   .store-table{font-size:11px;}
-  .store-table th,.store-table td{padding:7px 8px;}
+  .store-table th{padding:8px 7px;font-size:9px;}
+  .store-table td{padding:8px 7px;}
+
+  /* Seguimiento: 2x2 KPIs */
+  #segKpis{grid-template-columns:1fr 1fr !important;gap:6px !important;}
+  #segKpis .kpi{padding:10px;}
+
+  /* Seguimiento table — hide less important cols on very small */
+  #segTable th:nth-child(8),
+  #segTable td:nth-child(8),
+  #segTable th:nth-child(9),
+  #segTable td:nth-child(9){ display:none; }
+
+  /* Proyección */
+  .proy-table{font-size:11px;}
+  .proy-table th,.proy-table td{padding:7px 8px;}
+  .badge-sm{display:none;}
+
+  /* Rank cards — 1 col */
+  .rank-cards-grid{grid-template-columns:1fr !important;}
+  .rank-value{font-size:16px;}
+
+  /* Hide trend legend labels */
+  .trend-legend{gap:8px;}
+  .trend-leg-item{font-size:9px;}
+
+  /* Análisis section KPIs */
+  .metrica-label{font-size:10px;}
+  .metrica-val{font-size:12px;}
+}
+
+/* ─────────────────────────────────────────
+   400px — small phone
+───────────────────────────────────────── */
+@media(max-width:400px){
+  #fechaInicio,#fechaFin{width:88px;font-size:10px;}
+  .kpi-value{font-size:14px;}
+  .chart-wrap{height:160px;}
+  .topbar-controls .ctrl-select{font-size:11px;}
+
+  /* Seguimiento table — show only essential cols */
+  #segTable th:nth-child(5),
+  #segTable td:nth-child(5),
+  #segTable th:nth-child(10),
+  #segTable td:nth-child(10),
+  #segTable th:nth-child(11),
+  #segTable td:nth-child(11){ display:none; }
 }
 </style>
 </head>
@@ -595,12 +714,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       </div>
       <div class="card">
         <div class="scroll-box">
-          <table id="tablaReporteDiario" style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
+          <div class="scroll-box" style="-webkit-overflow-scrolling:touch"><table id="tablaReporteDiario" style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
             <thead><tr id="headerReporte" style="background:var(--surface2)">
               <th style="padding:12px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;left:0;background:var(--surface2);z-index:5">Local</th>
             </tr></thead>
             <tbody id="bodyReporte"><tr><td colspan="100"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Seleccioná un rango y presioná Actualizar</div></div></td></tr></tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     </div>
@@ -770,10 +889,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <div class="section" id="section-seguimiento">
 
       <!-- Controles -->
-      <div class="proy-controls" style="flex-wrap:wrap;gap:10px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:8px">
+      <div class="proy-controls seg-controls" style="flex-wrap:wrap;gap:10px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
           <span class="ctrl-label">Sucursal</span>
-          <select class="ctrl-select" id="segStore">
+          <select class="ctrl-select" id="segStore" style="flex:1">
             <option value="todas">Todas</option>
             <option value="guachipelin">Guachipelín</option>
             <option value="escazu">Avenida Escazú</option>
@@ -781,9 +900,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
             <option value="santaana">Santa Ana TC</option>
           </select>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
           <span class="ctrl-label">Mes</span>
-          <input type="month" class="ctrl-select" id="segMes" style="font-family:var(--mono);font-size:13px">
+          <input type="month" class="ctrl-select" id="segMes" style="font-family:var(--mono);font-size:13px;flex:1">
         </div>
         <button class="btn-primary" id="segRunBtn" onclick="cargarSeguimiento()">
           <span>▶</span> Cargar
@@ -809,8 +928,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div style="font-weight:700;font-size:14px">Detalle Diario — <span id="segTableTag">—</span></div>
           <div style="font-size:11px;color:var(--muted)">Ventas Netas (sin IVA)</div>
         </div>
-        <div style="overflow-x:auto">
-          <table class="store-table" style="width:100%;min-width:900px">
+        <div class="scroll-box" style="-webkit-overflow-scrolling:touch">
+          <table id="segTable" class="store-table" style="width:100%;min-width:760px">
             <thead>
               <tr id="segThead">
                 <th style="width:42px;text-align:center">Día</th>
