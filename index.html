@@ -337,13 +337,84 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .trend-leg-line{width:18px;height:2px;border-radius:1px;}
 
 /* RESPONSIVE */
-@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:900px){
-  .sidebar{position:fixed;left:-260px;transition:left .3s;z-index:200;}
-  .sidebar.open{left:0;}
-  .main{margin-left:0;}
+/* ─────────────────────────────────────────
+   RESPONSIVE — hamburger + overlay
+───────────────────────────────────────── */
+.hamburger{
+  display:none;
+  flex-direction:column;justify-content:center;align-items:center;
+  width:38px;height:38px;cursor:pointer;gap:5px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;flex-shrink:0;
+  transition:background .15s;
+}
+.hamburger:hover{background:var(--surface3);}
+.hamburger span{
+  display:block;width:16px;height:2px;
+  background:var(--text);border-radius:2px;
+  transition:all .25s;
+}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+.sidebar-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(2px);
+  z-index:150;opacity:0;transition:opacity .3s;
+}
+.sidebar-overlay.visible{opacity:1;}
+
+/* ── 1200px: shrink KPIs to 2 cols ── */
+@media(max-width:1200px){
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
-  .grid-2,.grid-3{grid-template-columns:1fr;}
+}
+
+/* ── 900px: sidebar off-canvas ── */
+@media(max-width:900px){
+  .hamburger{display:flex;}
+  .sidebar{
+    position:fixed;left:-260px;top:0;
+    transition:left .28s cubic-bezier(.4,0,.2,1);
+    z-index:200;height:100dvh;
+  }
+  .sidebar.open{left:0;}
+  .sidebar-overlay{display:block;}
+  .main{margin-left:0;}
+  .topbar{padding:10px 14px;flex-wrap:wrap;gap:8px;}
+  .topbar-left{flex:1;min-width:0;}
+  .topbar-controls{
+    width:100%;order:3;
+    flex-wrap:wrap;gap:6px;
+    padding:8px 0 2px;
+    border-top:1px solid var(--border);
+  }
+  .ctrl-label{display:none;}
+  .ctrl-input,.ctrl-select{font-size:12px;padding:6px 8px;height:32px;}
+  #fechaInicio,#fechaFin{width:120px;}
+  .ctrl-divider{display:none;}
+  #btnActualizar{margin-left:auto;}
+  .content{padding:14px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+  .kpi-value{font-size:18px;}
+  .grid-2,.grid-3{grid-template-columns:1fr;gap:10px;}
+  .card-body{padding:12px;}
+  /* Seguimiento KPIs: 2 cols on mobile */
+  #segKpis{grid-template-columns:repeat(2,1fr) !important;}
+}
+
+/* ── 600px: single col KPIs, tighter everything ── */
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .kpi-value{font-size:16px;}
+  .kpi-label{font-size:9px;}
+  #fechaInicio,#fechaFin{width:105px;}
+  .topbar-controls{gap:4px;}
+  /* Seguimiento KPIs: single col on very small */
+  #segKpis{grid-template-columns:1fr 1fr !important;}
+  /* Shrink table font */
+  .store-table{font-size:11px;}
+  .store-table th,.store-table td{padding:7px 8px;}
 }
 </style>
 </head>
@@ -355,6 +426,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   <div class="loader-txt" id="loaderTxt">Cargando...</div>
   <div class="loader-step" id="loaderStep"></div>
 </div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
@@ -402,6 +476,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
       <div>
         <div class="page-title" id="pageTitle">Dashboard</div>
         <div class="page-sub" id="pageSub">última actualización: —</div>
@@ -944,6 +1021,21 @@ let proyChart     = null;
 let proyChartType = 'bar';
 let cacheConsultas = {};
 
+// ── Sidebar toggle (mobile) ──────────────────────────
+function toggleSidebar(){
+  const sb  = document.getElementById('sidebar');
+  const hb  = document.getElementById('hamburger');
+  const ov  = document.getElementById('sidebarOverlay');
+  const open = sb.classList.toggle('open');
+  hb.classList.toggle('open', open);
+  ov.classList.toggle('visible', open);
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
     const section = item.dataset.section;
@@ -952,6 +1044,8 @@ document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.add('active');
     document.getElementById('section-' + section).classList.add('active');
     document.getElementById('pageTitle').textContent = item.querySelector('span:last-of-type').textContent;
+    // Cerrar sidebar en mobile al navegar
+    if(window.innerWidth <= 900) closeSidebar();
   });
 });
 
@@ -2263,9 +2357,10 @@ async function cargarSeguimiento() {
       const pptoResp = await fetch(pptoUrl);
       const pptoData = await pptoResp.json();
       if(Array.isArray(pptoData) && pptoData.length > 0){
+        // Para 'todas' buscar fila TODAS; para tienda individual el array tiene solo 1 fila
         const row = store === 'todas'
           ? (pptoData.find(r => r.tienda === 'TODAS') || pptoData[0])
-          : (pptoData.find(r => r.tienda === STORES[store]?.name) || pptoData[0]);
+          : pptoData[0];
         pptoMensualTotal = row.forecastMensual || row.forecastAcumulado || 0;
         // forecastPorDia viene del .gs: { "1": valor, "2": valor, ... }
         if(row.forecastPorDia){
