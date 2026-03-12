@@ -535,9 +535,157 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   #segTable th:nth-child(11),
   #segTable td:nth-child(11){ display:none; }
 }
+
+/* ══════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════ */
+#loginScreen {
+  position:fixed;inset:0;z-index:10000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:0;
+}
+#loginScreen.hidden { display:none; }
+
+.login-wrap {
+  width:100%;max-width:380px;
+  padding:0 20px;
+  animation:fadeUp .35s ease;
+}
+.login-logo {
+  text-align:center;margin-bottom:32px;
+}
+.login-logo-mark {
+  display:inline-flex;align-items:center;gap:10px;margin-bottom:6px;
+}
+.login-logo-dot {
+  width:10px;height:10px;border-radius:50%;
+  background:var(--lime);box-shadow:0 0 14px var(--lime);
+  animation:pulse 2.5s ease-in-out infinite;
+}
+.login-logo-text {
+  font-size:22px;font-weight:900;letter-spacing:.06em;color:var(--text);
+}
+.login-logo-sub {
+  font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.15em;text-transform:uppercase;
+}
+.login-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px 28px;
+}
+.login-title {
+  font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;
+}
+.login-sub {
+  font-size:12px;color:var(--muted);margin-bottom:28px;
+}
+.login-field {
+  margin-bottom:16px;
+}
+.login-label {
+  display:block;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--muted);margin-bottom:6px;
+}
+.login-input {
+  width:100%;font-family:var(--font);font-size:14px;font-weight:600;
+  background:var(--surface2);color:var(--text);
+  border:1px solid var(--border2);
+  padding:11px 14px;border-radius:10px;
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.login-input:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(168,85,247,.12);
+}
+.login-input.error { border-color:var(--red); }
+.login-btn {
+  width:100%;margin-top:8px;
+  font-family:var(--font);font-size:14px;font-weight:800;
+  padding:12px;border-radius:10px;border:none;cursor:pointer;
+  background:var(--accent);color:#fff;
+  transition:all .18s;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.login-btn:hover { background:#b56ef8;box-shadow:0 0 22px rgba(168,85,247,.4); }
+.login-btn:disabled { opacity:.5;cursor:not-allowed;box-shadow:none; }
+.login-error {
+  margin-top:14px;padding:10px 14px;
+  background:rgba(245,90,90,.08);border:1px solid rgba(245,90,90,.25);
+  border-radius:8px;font-size:12px;color:var(--red);
+  display:none;
+}
+.login-error.visible { display:block; }
+.login-footer {
+  text-align:center;margin-top:20px;
+  font-size:11px;color:var(--muted2);
+}
+
+/* User chip en topbar */
+.user-chip {
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:20px;padding:5px 12px 5px 8px;
+  cursor:pointer;transition:border-color .15s;
+  flex-shrink:0;
+}
+.user-chip:hover { border-color:var(--border2); }
+.user-avatar {
+  width:24px;height:24px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.user-name {
+  font-size:12px;font-weight:700;color:var(--text);
+}
+.logout-btn {
+  font-size:10px;color:var(--muted);margin-left:2px;
+  border:none;background:none;cursor:pointer;padding:0;
+  font-family:var(--font);font-weight:700;
+  transition:color .15s;
+}
+.logout-btn:hover { color:var(--red); }
 </style>
 </head>
 <body>
+
+<!-- ══════════════ LOGIN SCREEN ══════════════ -->
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <div class="login-logo-mark">
+        <div class="login-logo-dot"></div>
+        <div class="login-logo-text">OAKBERRY</div>
+      </div>
+      <div class="login-logo-sub">Costa Rica · Dashboard</div>
+    </div>
+    <div class="login-card">
+      <div class="login-title">Bienvenido</div>
+      <div class="login-sub">Ingresá tus credenciales para continuar</div>
+
+      <div class="login-field">
+        <label class="login-label" for="loginUser">Usuario</label>
+        <input class="login-input" id="loginUser" type="text"
+          placeholder="tu.usuario" autocomplete="username" autocapitalize="off" />
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="loginPass">Contraseña</label>
+        <input class="login-input" id="loginPass" type="password"
+          placeholder="••••••••" autocomplete="current-password" />
+      </div>
+
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">
+        <span id="loginBtnTxt">Ingresar</span>
+      </button>
+
+      <div class="login-error" id="loginError"></div>
+    </div>
+    <div class="login-footer">Oakberry · Sistema interno · v2.0</div>
+  </div>
+</div>
+
 
 <!-- LOADER -->
 <div class="global-loader" id="globalLoader">
@@ -582,6 +730,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <div class="nav-item" data-section="seguimiento">
       <span class="nav-icon">📋</span><span>Seguimiento Mensual</span>
     </div>
+    <div class="nav-item" data-section="productos">
+      <span class="nav-icon">🥣</span><span>Ventas Producto</span>
+    </div>
     <div class="nav-section">Inteligencia</div>
     <div class="nav-item" data-section="proyeccion">
       <span class="nav-icon">📉</span><span>Proyección</span>
@@ -617,7 +768,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         <option value="santaana">Santa Ana TC</option>
       </select>
       <div class="ctrl-divider"></div>
-      <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos()">↻ Actualizar</button>
+      <div class="user-chip" id="userChip" onclick="doLogout()" title="Cerrar sesión">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <span class="user-name" id="userNameChip">—</span>
+          <button class="logout-btn" tabindex="-1">✕</button>
+        </div>
+        <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos()">↻ Actualizar</button>
     </div>
   </div>
 
@@ -1085,6 +1241,62 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     </div>
     <!-- ═══════════ FIN PROYECCIÓN ═══════════ -->
 
+    <!-- ═══════════ VENTAS POR PRODUCTO ═══════════ -->
+    <div class="section" id="section-productos">
+
+      <!-- KPIs rápidos -->
+      <div class="kpi-grid" id="prodKpis" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi k-purple"><div class="kpi-label">Total Bowls</div><div class="kpi-value" id="pkBowls">—</div><div class="kpi-sub" id="pkBowlsSub">—</div></div>
+        <div class="kpi k-teal"><div class="kpi-label">Producto #1</div><div class="kpi-value" id="pkTop1">—</div><div class="kpi-sub" id="pkTop1Sub">—</div></div>
+        <div class="kpi k-amber"><div class="kpi-label">Extra más pedido</div><div class="kpi-value" id="pkTopExtra">—</div><div class="kpi-sub" id="pkTopExtraSub">—</div></div>
+      </div>
+
+      <!-- Tabla principal -->
+      <div class="card">
+        <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-weight:700;font-size:14px">Ventas por Producto</div>
+            <div style="font-size:11px;color:var(--muted)" id="prodSubtitle">Seleccioná rango y cargá</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-lime" id="prodExcelBtn" onclick="exportProductosExcel()" style="display:none">⬇ Excel</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+
+          <!-- Bowls -->
+          <div style="padding:14px 18px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)">
+            🥣 Bowls
+          </div>
+          <div class="scroll-box">
+            <table class="store-table" id="prodBowlsTable" style="min-width:600px">
+              <thead id="prodBowlsThead"></thead>
+              <tbody id="prodBowlsTbody">
+                <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🥣</div><div class="empty-txt">Cargá datos para ver ventas por producto</div></div></td></tr>
+              </tbody>
+              <tfoot id="prodBowlsTfoot"></tfoot>
+            </table>
+          </div>
+
+          <!-- Extras / Toppings -->
+          <div style="padding:18px 18px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--teal);border-top:1px solid var(--border);margin-top:8px">
+            ✨ Extras &amp; Toppings
+          </div>
+          <div class="scroll-box">
+            <table class="store-table" id="prodExtrasTable" style="min-width:600px">
+              <thead id="prodExtrasThead"></thead>
+              <tbody id="prodExtrasTbody">
+                <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">✨</div><div class="empty-txt">—</div></div></td></tr>
+              </tbody>
+              <tfoot id="prodExtrasTfoot"></tfoot>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- ═══════════ FIN VENTAS POR PRODUCTO ═══════════ -->
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -1218,12 +1430,14 @@ function initDates() {
 //  DASHBOARD DATA LOAD
 // ═══════════════════════════════════════════════════════════
 async function cargarDatos() {
+  if (!getSession()) { doLogout(); return; }
   const fechaFinInput = document.getElementById('fechaFin').value;
   if(!fechaFinInput){ alert('Seleccioná la fecha'); return; }
 
   const seccion = document.querySelector('.section.active')?.id;
   if(seccion === 'section-reporteDiario'){ await cargarReporteDiario(); return; }
   if(seccion === 'section-seguimiento'){ await cargarSeguimiento(); return; }
+  if(seccion === 'section-productos'){ await cargarProductos(); return; }
 
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
@@ -2734,6 +2948,264 @@ function exportSeguimientoExcel(){
   XLSX.utils.book_append_sheet(wb, ws, 'Seguimiento');
   XLSX.writeFile(wb, `Oakberry_Seguimiento_${tY}-${String(tM).padStart(2,'0')}.xlsx`);
 }
+
+// ═══════════════════════════════════════════════════════════
+//  MÓDULO VENTAS POR PRODUCTO
+// ═══════════════════════════════════════════════════════════
+
+let prodData = null;
+
+async function cargarProductos() {
+  const fechaFinInput = document.getElementById('fechaFin').value;
+  const fechaIniInput = document.getElementById('fechaInicio').value;
+  if (!fechaFinInput || !fechaIniInput) { alert('Seleccioná rango de fechas'); return; }
+
+  const tienda = document.getElementById('tiendaSelect').value;
+  const fi = fechaIniInput.replace(/-/g,'') === '' ? fechaFinInput : fechaIniInput;
+
+  showLoader(true, 'Cargando Ventas por Producto...', 'Consultando Toteat (puede tardar ~30s)...');
+
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=productos&fechaInicio=${fechaIniInput}&fechaFin=${fechaFinInput}&tienda=${tienda}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (data.error) throw new Error(data.message);
+
+    prodData = data;
+    renderProductos(data);
+
+    document.getElementById('prodSubtitle').textContent =
+      `${fechaIniInput} → ${fechaFinInput} · ${data.productos.length} productos · ${data.tiendas.join(', ')}`;
+    document.getElementById('prodExcelBtn').style.display = 'flex';
+
+  } catch(e) {
+    alert('Error cargando productos:\n' + e.message);
+    console.error(e);
+  } finally {
+    showLoader(false);
+  }
+}
+
+function renderProductos(data) {
+  const { tiendas, productos } = data;
+  const bowls  = productos.filter(p => p.esBowl);
+  const extras = productos.filter(p => !p.esBowl);
+
+  // ── KPIs ──
+  const totalBowls = bowls.reduce((s,p) => s + p.total, 0);
+  const top1 = bowls[0] || null;
+  const topExtra = extras[0] || null;
+
+  setTxt('pkBowls', totalBowls.toLocaleString('es-CR'));
+  setTxt('pkBowlsSub', `${bowls.length} SKUs`);
+  setTxt('pkTop1', top1 ? top1.total.toLocaleString('es-CR') : '—');
+  setTxt('pkTop1Sub', top1 ? top1.name : '—');
+  setTxt('pkTopExtra', topExtra ? topExtra.total.toLocaleString('es-CR') : '—');
+  setTxt('pkTopExtraSub', topExtra ? topExtra.name : '—');
+
+  // ── Render tabla genérica ──
+  function renderTabla(items, theadId, tbodyId, tfootId, colorAccent) {
+    const thead = document.getElementById(theadId);
+    const tbody = document.getElementById(tbodyId);
+    const tfoot = document.getElementById(tfootId);
+    const colSpan = 2 + tiendas.length + 2; // Producto + Categoría + tiendas + Total + %
+
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty-state"><div class="empty-txt">Sin datos</div></div></td></tr>`;
+      thead.innerHTML = ''; tfoot.innerHTML = ''; return;
+    }
+
+    // Thead
+    thead.innerHTML = `<tr>
+      <th style="text-align:left;min-width:180px">Producto</th>
+      <th style="text-align:left;color:var(--muted);min-width:120px">Categoría</th>
+      ${tiendas.map(t => `<th style="text-align:right">${t}</th>`).join('')}
+      <th style="text-align:right;color:${colorAccent}">Total</th>
+      <th style="text-align:right;color:var(--muted)">%</th>
+    </tr>`;
+
+    const grandTotal = items.reduce((s,p) => s + p.total, 0);
+
+    // Tbody
+    tbody.innerHTML = items.map(p => {
+      const pct = grandTotal > 0 ? (p.total / grandTotal * 100).toFixed(1) : '0.0';
+      // Bar visual para el %
+      const barColor = p.esBowl ? 'var(--accent)' : 'var(--teal)';
+      return `<tr>
+        <td style="text-align:left;font-family:var(--font);font-weight:600;font-size:12px">
+          ${p.name}
+        </td>
+        <td style="text-align:left;font-size:11px;color:var(--muted)">${p.hierarchyName}</td>
+        ${tiendas.map(t => {
+          const qty = p.porTienda[t] || 0;
+          return `<td style="text-align:right;font-family:var(--mono)">${qty > 0 ? qty.toLocaleString('es-CR') : '<span style="color:var(--muted)">—</span>'}</td>`;
+        }).join('')}
+        <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${colorAccent}">${p.total.toLocaleString('es-CR')}</td>
+        <td style="text-align:right;font-size:11px">
+          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+            <div style="width:40px;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${barColor};border-radius:2px"></div>
+            </div>
+            <span style="color:var(--muted);min-width:32px;text-align:right">${pct}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // Tfoot totals
+    const totalesPorTienda = tiendas.map(t => items.reduce((s,p) => s + (p.porTienda[t]||0), 0));
+    tfoot.innerHTML = `<tr class="total-row">
+      <td style="text-align:left;padding-left:14px;font-weight:800">TOTAL</td>
+      <td></td>
+      ${totalesPorTienda.map(v => `<td style="text-align:right;font-family:var(--mono);font-weight:700">${v.toLocaleString('es-CR')}</td>`).join('')}
+      <td style="text-align:right;font-family:var(--mono);font-weight:800;color:${colorAccent}">${grandTotal.toLocaleString('es-CR')}</td>
+      <td style="text-align:right;color:var(--muted)">100%</td>
+    </tr>`;
+  }
+
+  renderTabla(bowls,  'prodBowlsThead',  'prodBowlsTbody',  'prodBowlsTfoot',  'var(--accent)');
+  renderTabla(extras, 'prodExtrasThead', 'prodExtrasTbody', 'prodExtrasTfoot', 'var(--teal)');
+}
+
+function exportProductosExcel() {
+  if (!prodData) { alert('Cargá datos primero'); return; }
+  const { tiendas, productos, fechaInicio, fechaFin } = prodData;
+  const bowls  = productos.filter(p => p.esBowl);
+  const extras = productos.filter(p => !p.esBowl);
+
+  function makeSheet(items, label) {
+    const header = ['Producto', 'Categoría', ...tiendas, 'Total', '%'];
+    const grandTotal = items.reduce((s,p) => s + p.total, 0);
+    const rows = items.map(p => {
+      const pct = grandTotal > 0 ? +(p.total / grandTotal * 100).toFixed(1) : 0;
+      return [p.name, p.hierarchyName, ...tiendas.map(t => p.porTienda[t]||0), p.total, pct];
+    });
+    const totals = ['TOTAL', '', ...tiendas.map(t => items.reduce((s,p) => s+(p.porTienda[t]||0),0)), grandTotal, 100];
+    return [
+      [`Oakberry — Ventas por Producto (${label})`],
+      [`Período: ${fechaInicio} → ${fechaFin}`],
+      [],
+      header,
+      ...rows,
+      totals
+    ];
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(makeSheet(bowls,  'Bowls')),  'Bowls');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(makeSheet(extras, 'Extras')), 'Extras');
+  XLSX.writeFile(wb, `Oakberry_Productos_${fechaInicio}_${fechaFin}.xlsx`);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MÓDULO LOGIN / AUTH
+// ═══════════════════════════════════════════════════════════
+
+const SESSION_KEY = 'oak_session';
+
+function getSession() {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); }
+  catch(e) { return null; }
+}
+
+function setSession(data) {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+}
+
+function clearSession() {
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+async function doLogin() {
+  const usuario  = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value.trim();
+  const btn      = document.getElementById('loginBtn');
+  const errDiv   = document.getElementById('loginError');
+  const userInput = document.getElementById('loginUser');
+  const passInput = document.getElementById('loginPass');
+
+  errDiv.classList.remove('visible');
+  userInput.classList.remove('error');
+  passInput.classList.remove('error');
+
+  if (!usuario || !password) {
+    errDiv.textContent = 'Completá usuario y contraseña';
+    errDiv.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  document.getElementById('loginBtnTxt').textContent = 'Verificando...';
+
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=login&usuario=${encodeURIComponent(usuario)}&password=${encodeURIComponent(password)}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (data.ok) {
+      setSession({ nombre: data.nombre, usuario: data.usuario, token: data.token });
+      mostrarDashboard(data.nombre, data.usuario);
+    } else {
+      errDiv.textContent = data.mensaje || 'Credenciales incorrectas';
+      errDiv.classList.add('visible');
+      userInput.classList.add('error');
+      passInput.classList.add('error');
+      passInput.value = '';
+      passInput.focus();
+    }
+  } catch(e) {
+    errDiv.textContent = 'Error de conexión. Intentá de nuevo.';
+    errDiv.classList.add('visible');
+    console.error('Login error:', e);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('loginBtnTxt').textContent = 'Ingresar';
+  }
+}
+
+function mostrarDashboard(nombre, usuario) {
+  document.getElementById('loginScreen').classList.add('hidden');
+  // Update user chip
+  const initials = nombre.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userNameChip').textContent = nombre.split(' ')[0];
+}
+
+function doLogout() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  clearSession();
+  // Reset UI
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.remove('visible');
+  document.getElementById('userAvatar').textContent = '?';
+  document.getElementById('userNameChip').textContent = '—';
+}
+
+function checkAuth() {
+  const session = getSession();
+  if (session && session.token) {
+    mostrarDashboard(session.nombre, session.usuario);
+    return true;
+  }
+  return false;
+}
+
+// Enter key en login
+document.addEventListener('DOMContentLoaded', () => {
+  // Check existing session
+  checkAuth();
+
+  // Enter key triggers login
+  ['loginUser','loginPass'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  });
+});
+
 </script>
 </body>
 </html>
