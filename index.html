@@ -1244,56 +1244,74 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- ═══════════ VENTAS POR PRODUCTO ═══════════ -->
     <div class="section" id="section-productos">
 
-      <!-- KPIs rápidos -->
-      <div class="kpi-grid" id="prodKpis" style="grid-template-columns:repeat(3,1fr)">
-        <div class="kpi k-purple"><div class="kpi-label">Total Bowls</div><div class="kpi-value" id="pkBowls">—</div><div class="kpi-sub" id="pkBowlsSub">—</div></div>
-        <div class="kpi k-teal"><div class="kpi-label">Producto #1</div><div class="kpi-value" id="pkTop1">—</div><div class="kpi-sub" id="pkTop1Sub">—</div></div>
-        <div class="kpi k-amber"><div class="kpi-label">Extra más pedido</div><div class="kpi-value" id="pkTopExtra">—</div><div class="kpi-sub" id="pkTopExtraSub">—</div></div>
+      <!-- ── Filtros de Categoría ── -->
+      <div class="proy-controls" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <span class="ctrl-label">Categoría</span>
+        <div id="prodCatFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-lime" id="prodExcelBtn" onclick="exportProductosExcel()" style="display:none">⬇ Excel</button>
+        </div>
       </div>
 
-      <!-- Tabla principal -->
+      <!-- ── Panel superior: KPIs + Pie Chart ── -->
+      <div class="grid-2" style="margin-bottom:16px;align-items:start">
+
+        <!-- KPIs dinámicos -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="kpi k-purple" style="padding:14px 18px">
+            <div class="kpi-label" id="pkLabel1">Total filtrado</div>
+            <div class="kpi-value" id="pkVal1">—</div>
+            <div class="kpi-sub" id="pkSub1">—</div>
+          </div>
+          <div class="kpi k-teal" style="padding:14px 18px">
+            <div class="kpi-label">#1 del período</div>
+            <div class="kpi-value" id="pkVal2" style="font-size:18px">—</div>
+            <div class="kpi-sub" id="pkSub2">—</div>
+          </div>
+          <div class="kpi k-amber" style="padding:14px 18px">
+            <div class="kpi-label">vs Semana Anterior</div>
+            <div class="kpi-value" id="pkVal3">—</div>
+            <div class="kpi-sub" id="pkSub3">mismo período -7 días</div>
+          </div>
+        </div>
+
+        <!-- Pie Chart -->
+        <div class="card" style="height:100%">
+          <div class="card-header">
+            <span class="card-title" id="prodChartTitle">Distribución</span>
+            <span class="card-tag" id="prodChartTag">—</span>
+          </div>
+          <div class="card-body" style="display:flex;align-items:center;justify-content:center">
+            <div style="position:relative;width:100%;max-width:320px;height:220px;margin:0 auto">
+              <canvas id="prodPieChart"></canvas>
+              <div id="prodPieEmpty" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Sin datos</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Tabla de productos ── -->
       <div class="card">
         <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div>
-            <div style="font-weight:700;font-size:14px">Ventas por Producto</div>
+            <div style="font-weight:700;font-size:14px" id="prodTableTitle">Detalle de Productos</div>
             <div style="font-size:11px;color:var(--muted)" id="prodSubtitle">Seleccioná rango y cargá</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button class="btn btn-lime" id="prodExcelBtn" onclick="exportProductosExcel()" style="display:none">⬇ Excel</button>
           </div>
         </div>
         <div class="card-body" style="padding:0">
-
-          <!-- Bowls -->
-          <div style="padding:14px 18px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)">
-            🥣 Bowls
-          </div>
           <div class="scroll-box">
-            <table class="store-table" id="prodBowlsTable" style="min-width:600px">
-              <thead id="prodBowlsThead"></thead>
-              <tbody id="prodBowlsTbody">
-                <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🥣</div><div class="empty-txt">Cargá datos para ver ventas por producto</div></div></td></tr>
+            <table class="store-table" id="prodMainTable" style="min-width:600px">
+              <thead id="prodMainThead"></thead>
+              <tbody id="prodMainTbody">
+                <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🥣</div><div class="empty-txt">Cargá datos para ver ventas por producto</div></div></td></tr>
               </tbody>
-              <tfoot id="prodBowlsTfoot"></tfoot>
+              <tfoot id="prodMainTfoot"></tfoot>
             </table>
           </div>
-
-          <!-- Extras / Toppings -->
-          <div style="padding:18px 18px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--teal);border-top:1px solid var(--border);margin-top:8px">
-            ✨ Extras &amp; Toppings
-          </div>
-          <div class="scroll-box">
-            <table class="store-table" id="prodExtrasTable" style="min-width:600px">
-              <thead id="prodExtrasThead"></thead>
-              <tbody id="prodExtrasTbody">
-                <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">✨</div><div class="empty-txt">—</div></div></td></tr>
-              </tbody>
-              <tfoot id="prodExtrasTfoot"></tfoot>
-            </table>
-          </div>
-
         </div>
       </div>
+
     </div>
     <!-- ═══════════ FIN VENTAS POR PRODUCTO ═══════════ -->
 
@@ -2953,7 +2971,22 @@ function exportSeguimientoExcel(){
 //  MÓDULO VENTAS POR PRODUCTO
 // ═══════════════════════════════════════════════════════════
 
+// Categorías conocidas: solo AB.* tienen precio real; BA.* = toppings incluidos (excluir)
+const PROD_CATS = {
+  'AB.010': { label:'Bowls',               emoji:'🥣', color:'#a855f7' },
+  'AB.020': { label:'Smoothies',           emoji:'🥤', color:'#5af5c8' },
+  'AB.030': { label:'Productos Especiales',emoji:'⭐', color:'#f5c85a' },
+  'AB.050': { label:'Toppings To Go',      emoji:'🛍️', color:'#f59e5a' },
+  'AB.060': { label:'Bebidas',             emoji:'💧', color:'#5ab4f5' },
+  'AB.090': { label:'Toppings Adicionales',emoji:'✨', color:'#5af5a0' },
+  'AB.100': { label:'Snacks',              emoji:'🍫', color:'#f5a85a' },
+  'AB.110': { label:'Signature Bowls',     emoji:'🏆', color:'#f55a9e' },
+};
+const EXCLUIR_CATS = ['BA.010','BA.020','BA.030','BA.040','SIN_ID']; // toppings incluidos
+
 let prodData = null;
+let prodCatActiva = 'TODAS';
+let prodPieChart  = null;
 
 async function cargarProductos() {
   const fechaFinInput = document.getElementById('fechaFin').value;
@@ -2961,140 +2994,277 @@ async function cargarProductos() {
   if (!fechaFinInput || !fechaIniInput) { alert('Seleccioná rango de fechas'); return; }
 
   const tienda = document.getElementById('tiendaSelect').value;
-  const fi = fechaIniInput.replace(/-/g,'') === '' ? fechaFinInput : fechaIniInput;
-
-  showLoader(true, 'Cargando Ventas por Producto...', 'Consultando Toteat (puede tardar ~30s)...');
+  showLoader(true, 'Cargando Ventas por Producto...', 'Consultando Toteat (~30s)...');
 
   try {
     const url = `${APPS_SCRIPT_URL}?action=productos&fechaInicio=${fechaIniInput}&fechaFin=${fechaFinInput}&tienda=${tienda}`;
     const resp = await fetch(url);
     const data = await resp.json();
-
     if (data.error) throw new Error(data.message);
 
+    // Filtrar BA.* y SIN_ID
+    data.productos = data.productos.filter(p => !EXCLUIR_CATS.includes(p.hierarchyId));
+
     prodData = data;
-    renderProductos(data);
+    prodCatActiva = 'TODAS';
 
     document.getElementById('prodSubtitle').textContent =
-      `${fechaIniInput} → ${fechaFinInput} · ${data.productos.length} productos · ${data.tiendas.join(', ')}`;
+      `${fechaIniInput} → ${fechaFinInput} · ${data.tiendas.join(', ')}`;
     document.getElementById('prodExcelBtn').style.display = 'flex';
 
+    renderCatFilters(data);
+    renderProductos();
+
   } catch(e) {
-    alert('Error cargando productos:\n' + e.message);
+    alert('Error cargando productos:
+' + e.message);
     console.error(e);
   } finally {
     showLoader(false);
   }
 }
 
-function renderProductos(data) {
-  const { tiendas, productos } = data;
-  const bowls  = productos.filter(p => p.esBowl);
-  const extras = productos.filter(p => !p.esBowl);
+function renderCatFilters(data) {
+  // Detectar qué categorías existen en los datos
+  const catsEnDatos = [...new Set(data.productos.map(p => p.hierarchyId))];
+  const cont = document.getElementById('prodCatFilters');
 
-  // ── KPIs ──
-  const totalBowls = bowls.reduce((s,p) => s + p.total, 0);
-  const top1 = bowls[0] || null;
-  const topExtra = extras[0] || null;
+  const pill = (id, label, emoji, active) => `
+    <button class="tab-pill${active?' active':''}" onclick="prodFiltrar('${id}')"
+      style="display:flex;align-items:center;gap:5px;font-size:11px">
+      <span>${emoji}</span>${label}
+    </button>`;
 
-  setTxt('pkBowls', totalBowls.toLocaleString('es-CR'));
-  setTxt('pkBowlsSub', `${bowls.length} SKUs`);
-  setTxt('pkTop1', top1 ? top1.total.toLocaleString('es-CR') : '—');
-  setTxt('pkTop1Sub', top1 ? top1.name : '—');
-  setTxt('pkTopExtra', topExtra ? topExtra.total.toLocaleString('es-CR') : '—');
-  setTxt('pkTopExtraSub', topExtra ? topExtra.name : '—');
+  let html = pill('TODAS','Todas','📦', prodCatActiva==='TODAS');
+  catsEnDatos.forEach(hid => {
+    const cat = PROD_CATS[hid] || { label: hid, emoji:'•' };
+    html += pill(hid, cat.label, cat.emoji, prodCatActiva===hid);
+  });
+  cont.innerHTML = `<div class="tab-pills" style="flex-wrap:wrap">${html}</div>`;
+}
 
-  // ── Render tabla genérica ──
-  function renderTabla(items, theadId, tbodyId, tfootId, colorAccent) {
-    const thead = document.getElementById(theadId);
-    const tbody = document.getElementById(tbodyId);
-    const tfoot = document.getElementById(tfootId);
-    const colSpan = 2 + tiendas.length + 2; // Producto + Categoría + tiendas + Total + %
+function prodFiltrar(catId) {
+  prodCatActiva = catId;
+  // Update pill UI
+  document.querySelectorAll('#prodCatFilters .tab-pill').forEach(b => {
+    const matches = b.textContent.trim().startsWith(catId) ||
+      (catId === 'TODAS' && b.textContent.includes('Todas')) ||
+      (b.getAttribute('onclick') || '').includes(`'${catId}'`);
+    b.classList.toggle('active', (b.getAttribute('onclick')||'').includes(`'${catId}'`));
+  });
+  renderProductos();
+}
 
-    if (items.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty-state"><div class="empty-txt">Sin datos</div></div></td></tr>`;
-      thead.innerHTML = ''; tfoot.innerHTML = ''; return;
-    }
+function getFilteredProductos() {
+  if (!prodData) return [];
+  if (prodCatActiva === 'TODAS') return prodData.productos;
+  return prodData.productos.filter(p => p.hierarchyId === prodCatActiva);
+}
 
-    // Thead
-    thead.innerHTML = `<tr>
-      <th style="text-align:left;min-width:180px">Producto</th>
-      <th style="text-align:left;color:var(--muted);min-width:120px">Categoría</th>
-      ${tiendas.map(t => `<th style="text-align:right">${t}</th>`).join('')}
-      <th style="text-align:right;color:${colorAccent}">Total</th>
-      <th style="text-align:right;color:var(--muted)">%</th>
-    </tr>`;
+function renderProductos() {
+  if (!prodData) return;
+  const items   = getFilteredProductos();
+  const tiendas = prodData.tiendas;
+  const cat     = PROD_CATS[prodCatActiva];
+  const catLabel = prodCatActiva === 'TODAS' ? 'Todos los productos'
+    : (cat ? `${cat.emoji} ${cat.label}` : prodCatActiva);
+  const accentColor = (cat && prodCatActiva !== 'TODAS') ? cat.color : '#a855f7';
 
-    const grandTotal = items.reduce((s,p) => s + p.total, 0);
+  // ── KPI 1: Total filtrado ──
+  const totalFiltrado = items.reduce((s,p) => s + p.total, 0);
+  const top1 = items[0] || null;
+  setTxt('pkLabel1', prodCatActiva === 'TODAS' ? 'Total productos' : `Total ${cat?.label||''}`);
+  setTxt('pkVal1', totalFiltrado.toLocaleString('es-CR'));
+  setTxt('pkSub1', `${items.length} SKUs`);
 
-    // Tbody
-    tbody.innerHTML = items.map(p => {
-      const pct = grandTotal > 0 ? (p.total / grandTotal * 100).toFixed(1) : '0.0';
-      // Bar visual para el %
-      const barColor = p.esBowl ? 'var(--accent)' : 'var(--teal)';
-      return `<tr>
-        <td style="text-align:left;font-family:var(--font);font-weight:600;font-size:12px">
-          ${p.name}
-        </td>
-        <td style="text-align:left;font-size:11px;color:var(--muted)">${p.hierarchyName}</td>
-        ${tiendas.map(t => {
-          const qty = p.porTienda[t] || 0;
-          return `<td style="text-align:right;font-family:var(--mono)">${qty > 0 ? qty.toLocaleString('es-CR') : '<span style="color:var(--muted)">—</span>'}</td>`;
-        }).join('')}
-        <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${colorAccent}">${p.total.toLocaleString('es-CR')}</td>
-        <td style="text-align:right;font-size:11px">
-          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-            <div style="width:40px;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div style="width:${pct}%;height:100%;background:${barColor};border-radius:2px"></div>
-            </div>
-            <span style="color:var(--muted);min-width:32px;text-align:right">${pct}%</span>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
+  // ── KPI 2: Producto #1 ──
+  setTxt('pkVal2', top1 ? top1.total.toLocaleString('es-CR') : '—');
+  setTxt('pkSub2', top1 ? top1.name : '—');
 
-    // Tfoot totals
-    const totalesPorTienda = tiendas.map(t => items.reduce((s,p) => s + (p.porTienda[t]||0), 0));
-    tfoot.innerHTML = `<tr class="total-row">
-      <td style="text-align:left;padding-left:14px;font-weight:800">TOTAL</td>
-      <td></td>
-      ${totalesPorTienda.map(v => `<td style="text-align:right;font-family:var(--mono);font-weight:700">${v.toLocaleString('es-CR')}</td>`).join('')}
-      <td style="text-align:right;font-family:var(--mono);font-weight:800;color:${colorAccent}">${grandTotal.toLocaleString('es-CR')}</td>
-      <td style="text-align:right;color:var(--muted)">100%</td>
-    </tr>`;
+  // ── KPI 3: vs semana anterior ──
+  if (prodData.semanaAnterior) {
+    const totalAnt = prodData.semanaAnterior
+      .filter(p => prodCatActiva === 'TODAS' || p.hierarchyId === prodCatActiva)
+      .reduce((s,p) => s + p.total, 0);
+    const delta = totalAnt > 0 ? ((totalFiltrado - totalAnt) / totalAnt * 100) : null;
+    setTxt('pkVal3', delta !== null
+      ? `${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta).toFixed(1)}%` : '—');
+    const kpi3 = document.getElementById('pkVal3');
+    if (kpi3) kpi3.style.color = delta >= 0 ? 'var(--teal)' : 'var(--red)';
+    setTxt('pkSub3', totalAnt > 0 ? `${totalAnt.toLocaleString('es-CR')} sem. ant.` : 'Sin datos ant.');
+  } else {
+    setTxt('pkVal3', '—');
+    setTxt('pkSub3', 'Cargando...');
   }
 
-  renderTabla(bowls,  'prodBowlsThead',  'prodBowlsTbody',  'prodBowlsTfoot',  'var(--accent)');
-  renderTabla(extras, 'prodExtrasThead', 'prodExtrasTbody', 'prodExtrasTfoot', 'var(--teal)');
+  // ── Pie chart ──
+  setTxt('prodChartTitle', catLabel);
+  setTxt('prodChartTag', `${totalFiltrado.toLocaleString('es-CR')} uds`);
+  renderPieChart(items, tiendas, accentColor);
+
+  // ── Tabla ──
+  setTxt('prodTableTitle', catLabel);
+  renderTablaProductos(items, tiendas, accentColor);
+}
+
+function renderPieChart(items, tiendas, accentColor) {
+  const ctx = document.getElementById('prodPieChart').getContext('2d');
+  if (prodPieChart) { prodPieChart.destroy(); prodPieChart = null; }
+
+  if (items.length === 0) return;
+
+  // Si hay una sola tienda o "todas" — mostrar distribución por producto (top 8)
+  // Si hay múltiples tiendas — mostrar distribución por tienda
+  let labels, vals, colors;
+
+  if (tiendas.length > 1 && prodCatActiva === 'TODAS') {
+    // Distribución por tienda
+    const palette = ['#a855f7','#5af5c8','#f5c85a','#f55a5a','#5ab4f5','#f5a85a'];
+    labels = tiendas;
+    vals   = tiendas.map(t => items.reduce((s,p) => s+(p.porTienda[t]||0), 0));
+    colors = tiendas.map((_,i) => palette[i % palette.length]);
+  } else {
+    // Distribución por producto (top 8 + Otros)
+    const sorted = [...items].sort((a,b) => b.total - a.total);
+    const top    = sorted.slice(0,8);
+    const otros  = sorted.slice(8).reduce((s,p) => s + p.total, 0);
+    labels = top.map(p => p.name.length > 22 ? p.name.substring(0,20)+'…' : p.name);
+    vals   = top.map(p => p.total);
+    if (otros > 0) { labels.push('Otros'); vals.push(otros); }
+    // Gradient palette from accent color
+    const palette = ['#a855f7','#7c3aed','#5af5c8','#f5c85a','#f55a5a','#5ab4f5','#f5a85a','#f55a9e','#5af5a0','#c8f55a'];
+    colors = labels.map((_,i) => palette[i % palette.length]);
+  }
+
+  prodPieChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color:'#7070a0', font:{ size:10 }, boxWidth:10, padding:8 }
+        },
+        tooltip: {
+          backgroundColor:'#1a1a24', titleColor:'#e8e8f0', bodyColor:'#7070a0',
+          borderColor:'#2a2a3a', borderWidth:1,
+          callbacks: {
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+              const pct   = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : 0;
+              return ` ${ctx.parsed.toLocaleString('es-CR')} uds (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderTablaProductos(items, tiendas, accentColor) {
+  const thead = document.getElementById('prodMainThead');
+  const tbody = document.getElementById('prodMainTbody');
+  const tfoot = document.getElementById('prodMainTfoot');
+  const hasSemAnt = prodData && prodData.semanaAnterior;
+  const semAntMap = {};
+  if (hasSemAnt) {
+    prodData.semanaAnterior.forEach(p => { semAntMap[p.id] = p.total; });
+  }
+
+  const colSpan = 2 + tiendas.length + 2 + (hasSemAnt ? 2 : 0);
+
+  if (items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty-state"><div class="empty-icon">📦</div><div class="empty-txt">Sin productos para esta categoría</div></div></td></tr>`;
+    thead.innerHTML = ''; tfoot.innerHTML = ''; return;
+  }
+
+  thead.innerHTML = `<tr>
+    <th style="text-align:left;min-width:180px">Producto</th>
+    <th style="text-align:left;color:var(--muted);min-width:110px">Categoría</th>
+    ${tiendas.map(t => `<th style="text-align:right">${t}</th>`).join('')}
+    <th style="text-align:right;color:${accentColor}">Total</th>
+    <th style="text-align:right;color:var(--muted)">%</th>
+    ${hasSemAnt ? `<th style="text-align:right;color:var(--muted)">Sem. Ant.</th><th style="text-align:right">Crec.%</th>` : ''}
+  </tr>`;
+
+  const grandTotal = items.reduce((s,p) => s + p.total, 0);
+
+  tbody.innerHTML = items.map(p => {
+    const pct    = grandTotal > 0 ? (p.total / grandTotal * 100).toFixed(1) : '0.0';
+    const ant    = semAntMap[p.id] || 0;
+    const delta  = ant > 0 ? ((p.total - ant) / ant * 100) : null;
+    const dColor = delta === null ? 'var(--muted)' : delta >= 0 ? 'var(--teal)' : 'var(--red)';
+    const dTxt   = delta === null ? '—' : `${delta>=0?'▲':'▼'} ${Math.abs(delta).toFixed(0)}%`;
+    return `<tr>
+      <td style="text-align:left;font-weight:600;font-size:12px">${p.name}</td>
+      <td style="text-align:left;font-size:10px;color:var(--muted)">${p.hierarchyName}</td>
+      ${tiendas.map(t => {
+        const qty = p.porTienda[t] || 0;
+        return `<td style="text-align:right;font-family:var(--mono)">${qty > 0 ? qty.toLocaleString('es-CR') : '<span style="color:var(--muted)">—</span>'}</td>`;
+      }).join('')}
+      <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${accentColor}">${p.total.toLocaleString('es-CR')}</td>
+      <td style="text-align:right;font-size:11px">
+        <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end">
+          <div style="width:36px;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${accentColor};border-radius:2px"></div>
+          </div>
+          <span style="color:var(--muted);min-width:30px;text-align:right">${pct}%</span>
+        </div>
+      </td>
+      ${hasSemAnt ? `
+      <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${ant > 0 ? ant.toLocaleString('es-CR') : '—'}</td>
+      <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${dColor}">${dTxt}</td>` : ''}
+    </tr>`;
+  }).join('');
+
+  const totalesPorTienda = tiendas.map(t => items.reduce((s,p)=>s+(p.porTienda[t]||0),0));
+  const totalAnt = hasSemAnt ? items.reduce((s,p)=>s+(semAntMap[p.id]||0),0) : 0;
+  const deltaTotal = totalAnt > 0 ? ((grandTotal - totalAnt) / totalAnt * 100) : null;
+  const dColorT = deltaTotal === null ? 'var(--muted)' : deltaTotal>=0 ? 'var(--teal)' : 'var(--red)';
+
+  tfoot.innerHTML = `<tr class="total-row">
+    <td style="text-align:left;padding-left:14px;font-weight:800">TOTAL</td>
+    <td></td>
+    ${totalesPorTienda.map(v=>`<td style="text-align:right;font-family:var(--mono);font-weight:700">${v.toLocaleString('es-CR')}</td>`).join('')}
+    <td style="text-align:right;font-family:var(--mono);font-weight:800;color:${accentColor}">${grandTotal.toLocaleString('es-CR')}</td>
+    <td style="text-align:right;color:var(--muted)">100%</td>
+    ${hasSemAnt ? `
+    <td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--muted)">${totalAnt.toLocaleString('es-CR')}</td>
+    <td style="text-align:right;font-family:var(--mono);font-weight:800;color:${dColorT}">${deltaTotal!==null?`${deltaTotal>=0?'▲':'▼'} ${Math.abs(deltaTotal).toFixed(1)}%`:'—'}</td>` : ''}
+  </tr>`;
 }
 
 function exportProductosExcel() {
   if (!prodData) { alert('Cargá datos primero'); return; }
-  const { tiendas, productos, fechaInicio, fechaFin } = prodData;
-  const bowls  = productos.filter(p => p.esBowl);
-  const extras = productos.filter(p => !p.esBowl);
+  const { tiendas, fechaInicio, fechaFin } = prodData;
+  const items = getFilteredProductos();
+  const hasSemAnt = !!prodData.semanaAnterior;
+  const semAntMap = {};
+  if (hasSemAnt) prodData.semanaAnterior.forEach(p => { semAntMap[p.id] = p.total; });
 
-  function makeSheet(items, label) {
-    const header = ['Producto', 'Categoría', ...tiendas, 'Total', '%'];
-    const grandTotal = items.reduce((s,p) => s + p.total, 0);
-    const rows = items.map(p => {
-      const pct = grandTotal > 0 ? +(p.total / grandTotal * 100).toFixed(1) : 0;
-      return [p.name, p.hierarchyName, ...tiendas.map(t => p.porTienda[t]||0), p.total, pct];
-    });
-    const totals = ['TOTAL', '', ...tiendas.map(t => items.reduce((s,p) => s+(p.porTienda[t]||0),0)), grandTotal, 100];
-    return [
-      [`Oakberry — Ventas por Producto (${label})`],
-      [`Período: ${fechaInicio} → ${fechaFin}`],
-      [],
-      header,
-      ...rows,
-      totals
-    ];
-  }
+  const header = ['Producto','Categoría',...tiendas,'Total','%',...(hasSemAnt?['Sem.Ant.','Crec.%']:[])];
+  const grandTotal = items.reduce((s,p)=>s+p.total,0);
+  const rows = items.map(p => {
+    const pct = grandTotal > 0 ? +(p.total/grandTotal*100).toFixed(1) : 0;
+    const ant = semAntMap[p.id]||0;
+    const delta = ant>0 ? +((p.total-ant)/ant*100).toFixed(1) : null;
+    return [p.name, p.hierarchyName, ...tiendas.map(t=>p.porTienda[t]||0), p.total, pct,
+      ...(hasSemAnt ? [ant, delta] : [])];
+  });
+  const totals = ['TOTAL','',...tiendas.map(t=>items.reduce((s,p)=>s+(p.porTienda[t]||0),0)),grandTotal,100];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(makeSheet(bowls,  'Bowls')),  'Bowls');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(makeSheet(extras, 'Extras')), 'Extras');
+  const ws = XLSX.utils.aoa_to_sheet([
+    [`Oakberry — Ventas por Producto`],
+    [`Período: ${fechaInicio} → ${fechaFin}`],
+    [], header, ...rows, totals
+  ]);
+  XLSX.utils.book_append_sheet(wb, ws, 'Productos');
   XLSX.writeFile(wb, `Oakberry_Productos_${fechaInicio}_${fechaFin}.xlsx`);
 }
 
