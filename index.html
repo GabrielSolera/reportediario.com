@@ -3016,8 +3016,7 @@ async function cargarProductos() {
     renderProductos();
 
   } catch(e) {
-    alert('Error cargando productos:
-' + e.message);
+    alert('Error cargando productos: ' + e.message);
     console.error(e);
   } finally {
     showLoader(false);
