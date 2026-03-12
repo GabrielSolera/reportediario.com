@@ -1282,7 +1282,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
             <span class="card-tag" id="prodChartTag">—</span>
           </div>
           <div class="card-body" style="display:flex;align-items:center;justify-content:center">
-            <div style="position:relative;width:100%;max-width:320px;height:220px;margin:0 auto">
+            <div style="position:relative;width:100%;height:220px;margin:0 auto" id="prodChartWrap">
               <canvas id="prodPieChart"></canvas>
               <div id="prodPieEmpty" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Sin datos</div>
             </div>
@@ -2972,17 +2972,31 @@ function exportSeguimientoExcel(){
 // ═══════════════════════════════════════════════════════════
 
 // Categorías conocidas: solo AB.* tienen precio real; BA.* = toppings incluidos (excluir)
+// SKUs que son bowls — clasificación por nombre exacto
+const BOWL_SKUS = [
+  'Bowl One 9 onzas',
+  'Bowl One 9 onzas.',
+  'Bowl Classic 12 onzas',
+  'Bowl Works 16 onzas',
+  'Bowl The Oak 24 onzas',
+  'Açai para llevar de 780 ml',
+];
+const esBowlSKU = name => BOWL_SKUS.some(b => name.trim().toLowerCase() === b.toLowerCase());
+
+// Categorías para el filtro (agrupación virtual)
 const PROD_CATS = {
-  'AB.010': { label:'Bowls',               emoji:'🥣', color:'#a855f7' },
-  'AB.020': { label:'Smoothies',           emoji:'🥤', color:'#5af5c8' },
-  'AB.030': { label:'Productos Especiales',emoji:'⭐', color:'#f5c85a' },
-  'AB.050': { label:'Toppings To Go',      emoji:'🛍️', color:'#f59e5a' },
-  'AB.060': { label:'Bebidas',             emoji:'💧', color:'#5ab4f5' },
-  'AB.090': { label:'Toppings Adicionales',emoji:'✨', color:'#5af5a0' },
-  'AB.100': { label:'Snacks',              emoji:'🍫', color:'#f5a85a' },
-  'AB.110': { label:'Signature Bowls',     emoji:'🏆', color:'#f55a9e' },
+  'BOWLS':    { label:'Bowls',               emoji:'🥣', color:'#a855f7' },
+  'AB.020':   { label:'Smoothies',           emoji:'🥤', color:'#5af5c8' },
+  'AB.030':   { label:'Productos Especiales',emoji:'⭐', color:'#f5c85a' },
+  'AB.050':   { label:'Toppings To Go',      emoji:'🛍️', color:'#f59e5a' },
+  'AB.060':   { label:'Bebidas',             emoji:'💧', color:'#5ab4f5' },
+  'AB.090':   { label:'Toppings Adicionales',emoji:'✨', color:'#5af5a0' },
+  'AB.100':   { label:'Snacks',              emoji:'🍫', color:'#f5a85a' },
+  'AB.110':   { label:'Signature Bowls',     emoji:'🏆', color:'#f55a9e' },
+  'OTROS':    { label:'Otros',               emoji:'📦', color:'#7070a0' },
 };
-const EXCLUIR_CATS = ['BA.010','BA.020','BA.030','BA.040','SIN_ID']; // toppings incluidos
+// Excluir toppings incluidos (sin precio) y costo delivery
+const EXCLUIR_CATS = ['BA.010','BA.020','BA.030','BA.040','SIN_ID'];
 
 let prodData = null;
 let prodCatActiva = 'TODAS';
@@ -3024,19 +3038,21 @@ async function cargarProductos() {
 }
 
 function renderCatFilters(data) {
-  // Detectar qué categorías existen en los datos
-  const catsEnDatos = [...new Set(data.productos.map(p => p.hierarchyId))];
   const cont = document.getElementById('prodCatFilters');
-
-  const pill = (id, label, emoji, active) => `
-    <button class="tab-pill${active?' active':''}" onclick="prodFiltrar('${id}')"
+  const pill = (id, label, emoji, active) =>
+    `<button class="tab-pill${active?' active':''}" onclick="prodFiltrar('${id}')"
       style="display:flex;align-items:center;gap:5px;font-size:11px">
       <span>${emoji}</span>${label}
     </button>`;
 
+  // Detectar categorías presentes, pero "BOWLS" es virtual (por nombre)
+  const hasBowls   = data.productos.some(p => p.esBowl);
+  const hidsNoBowl = [...new Set(data.productos.filter(p => !p.esBowl).map(p => p.hierarchyId))];
+
   let html = pill('TODAS','Todas','📦', prodCatActiva==='TODAS');
-  catsEnDatos.forEach(hid => {
-    const cat = PROD_CATS[hid] || { label: hid, emoji:'•' };
+  if (hasBowls) html += pill('BOWLS', 'Bowls', '🥣', prodCatActiva==='BOWLS');
+  hidsNoBowl.forEach(hid => {
+    const cat = PROD_CATS[hid] || { label: hid, emoji:'📦', color:'#7070a0' };
     html += pill(hid, cat.label, cat.emoji, prodCatActiva===hid);
   });
   cont.innerHTML = `<div class="tab-pills" style="flex-wrap:wrap">${html}</div>`;
@@ -3056,8 +3072,9 @@ function prodFiltrar(catId) {
 
 function getFilteredProductos() {
   if (!prodData) return [];
-  if (prodCatActiva === 'TODAS') return prodData.productos;
-  return prodData.productos.filter(p => p.hierarchyId === prodCatActiva);
+  if (prodCatActiva === 'TODAS')  return prodData.productos;
+  if (prodCatActiva === 'BOWLS')  return prodData.productos.filter(p => p.esBowl);
+  return prodData.productos.filter(p => !p.esBowl && p.hierarchyId === prodCatActiva);
 }
 
 function renderProductos() {
@@ -3083,7 +3100,11 @@ function renderProductos() {
   // ── KPI 3: vs semana anterior ──
   if (prodData.semanaAnterior) {
     const totalAnt = prodData.semanaAnterior
-      .filter(p => prodCatActiva === 'TODAS' || p.hierarchyId === prodCatActiva)
+      .filter(p => {
+        if (prodCatActiva === 'TODAS')  return true;
+        if (prodCatActiva === 'BOWLS')  return p.esBowl;
+        return !p.esBowl && p.hierarchyId === prodCatActiva;
+      })
       .reduce((s,p) => s + p.total, 0);
     const delta = totalAnt > 0 ? ((totalFiltrado - totalAnt) / totalAnt * 100) : null;
     setTxt('pkVal3', delta !== null
@@ -3107,61 +3128,72 @@ function renderProductos() {
 }
 
 function renderPieChart(items, tiendas, accentColor) {
-  const ctx = document.getElementById('prodPieChart').getContext('2d');
+  // Usamos un bar chart horizontal — más claro para comparar productos
+  const canvas = document.getElementById('prodPieChart');
+  const ctx    = canvas.getContext('2d');
   if (prodPieChart) { prodPieChart.destroy(); prodPieChart = null; }
-
   if (items.length === 0) return;
 
-  // Si hay una sola tienda o "todas" — mostrar distribución por producto (top 8)
-  // Si hay múltiples tiendas — mostrar distribución por tienda
-  let labels, vals, colors;
+  // Top 8 productos por total, ordenados de mayor a menor
+  const sorted = [...items].sort((a,b) => b.total - a.total).slice(0,8);
+  const grandTotal = items.reduce((s,p) => s + p.total, 0);
 
-  if (tiendas.length > 1 && prodCatActiva === 'TODAS') {
-    // Distribución por tienda
-    const palette = ['#a855f7','#5af5c8','#f5c85a','#f55a5a','#5ab4f5','#f5a85a'];
-    labels = tiendas;
-    vals   = tiendas.map(t => items.reduce((s,p) => s+(p.porTienda[t]||0), 0));
-    colors = tiendas.map((_,i) => palette[i % palette.length]);
-  } else {
-    // Distribución por producto (top 8 + Otros)
-    const sorted = [...items].sort((a,b) => b.total - a.total);
-    const top    = sorted.slice(0,8);
-    const otros  = sorted.slice(8).reduce((s,p) => s + p.total, 0);
-    labels = top.map(p => p.name.length > 22 ? p.name.substring(0,20)+'…' : p.name);
-    vals   = top.map(p => p.total);
-    if (otros > 0) { labels.push('Otros'); vals.push(otros); }
-    // Gradient palette from accent color
-    const palette = ['#a855f7','#7c3aed','#5af5c8','#f5c85a','#f55a5a','#5ab4f5','#f5a85a','#f55a9e','#5af5a0','#c8f55a'];
-    colors = labels.map((_,i) => palette[i % palette.length]);
-  }
+  const labels = sorted.map(p => p.name.length > 24 ? p.name.substring(0,22)+'…' : p.name);
+  const vals   = sorted.map(p => p.total);
+  const pcts   = sorted.map(p => grandTotal > 0 ? +(p.total/grandTotal*100).toFixed(1) : 0);
+
+  // Colores: el más alto en accent, los demás en fade
+  const colors = sorted.map((p, i) =>
+    i === 0 ? accentColor : accentColor + (i < 3 ? 'cc' : '66')
+  );
+
+  // Ajustar altura del canvas dinámicamente
+  const barH   = 28;
+  const newH   = Math.max(160, sorted.length * barH + 40);
+  canvas.parentElement.style.height = newH + 'px';
 
   prodPieChart = new Chart(ctx, {
-    type: 'doughnut',
+    type: 'bar',
     data: {
       labels,
-      datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0, hoverOffset: 6 }]
+      datasets: [{
+        data: vals,
+        backgroundColor: colors,
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      cutout: '60%',
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
       plugins: {
-        legend: {
-          position: 'right',
-          labels: { color:'#7070a0', font:{ size:10 }, boxWidth:10, padding:8 }
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor:'#1a1a24', titleColor:'#e8e8f0', bodyColor:'#7070a0',
           borderColor:'#2a2a3a', borderWidth:1,
           callbacks: {
-            label: ctx => {
-              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
-              const pct   = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : 0;
-              return ` ${ctx.parsed.toLocaleString('es-CR')} uds (${pct}%)`;
-            }
+            label: c => ` ${c.parsed.x.toLocaleString('es-CR')} uds (${pcts[c.dataIndex]}%)`
           }
+        },
+        datalabels: {
+          anchor: 'end', align: 'end',
+          color: '#7070a0', font: { size: 10, weight: '600' },
+          formatter: (v, c) => pcts[c.dataIndex] + '%'
+        }
+      },
+      scales: {
+        x: {
+          grid: { color:'rgba(42,42,58,.4)' },
+          ticks: { color:'#7070a0', font:{ size:10 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color:'#e8e8f0', font:{ size:11 } }
         }
       }
-    }
+    },
+    plugins: [ChartDataLabels]
   });
 }
 
