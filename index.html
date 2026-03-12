@@ -1253,38 +1253,59 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         </div>
       </div>
 
-      <!-- ── Panel superior: KPIs + Pie Chart ── -->
+      <!-- ── Panel superior: 6 KPIs compactos + Chart ── -->
       <div class="grid-2" style="margin-bottom:16px;align-items:start">
 
-        <!-- KPIs dinámicos -->
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="kpi k-purple" style="padding:14px 18px">
-            <div class="kpi-label" id="pkLabel1">Total filtrado</div>
-            <div class="kpi-value" id="pkVal1">—</div>
-            <div class="kpi-sub" id="pkSub1">—</div>
+        <!-- 6 KPIs en grilla 2x3 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+          <div class="kpi k-purple" style="padding:12px 14px">
+            <div class="kpi-label" id="pkLabel1" style="font-size:9px">Total</div>
+            <div class="kpi-value" id="pkVal1" style="font-size:20px">—</div>
+            <div class="kpi-sub" id="pkSub1" style="font-size:10px">—</div>
           </div>
-          <div class="kpi k-teal" style="padding:14px 18px">
-            <div class="kpi-label">#1 del período</div>
-            <div class="kpi-value" id="pkVal2" style="font-size:18px">—</div>
-            <div class="kpi-sub" id="pkSub2">—</div>
+
+          <div class="kpi k-teal" style="padding:12px 14px">
+            <div class="kpi-label" style="font-size:9px">#1 del período</div>
+            <div class="kpi-value" id="pkVal2" style="font-size:16px;line-height:1.2">—</div>
+            <div class="kpi-sub" id="pkSub2" style="font-size:10px">—</div>
           </div>
-          <div class="kpi k-amber" style="padding:14px 18px">
-            <div class="kpi-label">vs Semana Anterior</div>
-            <div class="kpi-value" id="pkVal3">—</div>
-            <div class="kpi-sub" id="pkSub3">mismo período -7 días</div>
+
+          <div class="kpi k-amber" style="padding:12px 14px">
+            <div class="kpi-label" style="font-size:9px">vs Sem. Anterior</div>
+            <div class="kpi-value" id="pkVal3" style="font-size:20px">—</div>
+            <div class="kpi-sub" id="pkSub3" style="font-size:10px">—</div>
           </div>
+
+          <div class="kpi k-lime" style="padding:12px 14px">
+            <div class="kpi-label" style="font-size:9px">Promedio / día</div>
+            <div class="kpi-value" id="pkVal4" style="font-size:20px">—</div>
+            <div class="kpi-sub" id="pkSub4" style="font-size:10px">—</div>
+          </div>
+
+          <div class="kpi k-purple" style="padding:12px 14px">
+            <div class="kpi-label" style="font-size:9px">Venta Neta</div>
+            <div class="kpi-value" id="pkVal5" style="font-size:17px">—</div>
+            <div class="kpi-sub" id="pkSub5" style="font-size:10px">del filtro activo</div>
+          </div>
+
+          <div class="kpi k-teal" style="padding:12px 14px">
+            <div class="kpi-label" style="font-size:9px">Ticket Medio</div>
+            <div class="kpi-value" id="pkVal6" style="font-size:17px">—</div>
+            <div class="kpi-sub" id="pkSub6" style="font-size:10px">venta / unidad</div>
+          </div>
+
         </div>
 
-        <!-- Pie Chart -->
-        <div class="card" style="height:100%">
+        <!-- Bar Chart -->
+        <div class="card">
           <div class="card-header">
             <span class="card-title" id="prodChartTitle">Distribución</span>
             <span class="card-tag" id="prodChartTag">—</span>
           </div>
-          <div class="card-body" style="display:flex;align-items:center;justify-content:center">
-            <div style="position:relative;width:100%;height:220px;margin:0 auto" id="prodChartWrap">
+          <div class="card-body">
+            <div style="position:relative;width:100%;height:220px" id="prodChartWrap">
               <canvas id="prodPieChart"></canvas>
-              <div id="prodPieEmpty" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Sin datos</div>
             </div>
           </div>
         </div>
@@ -3088,7 +3109,7 @@ function renderProductos() {
 
   // ── KPI 1: Total filtrado ──
   const totalFiltrado = items.reduce((s,p) => s + p.total, 0);
-  const top1 = items[0] || null;
+  const top1 = [...items].sort((a,b) => b.total - a.total)[0] || null;
   setTxt('pkLabel1', prodCatActiva === 'TODAS' ? 'Total productos' : `Total ${cat?.label||''}`);
   setTxt('pkVal1', totalFiltrado.toLocaleString('es-CR'));
   setTxt('pkSub1', `${items.length} SKUs`);
@@ -3097,25 +3118,42 @@ function renderProductos() {
   setTxt('pkVal2', top1 ? top1.total.toLocaleString('es-CR') : '—');
   setTxt('pkSub2', top1 ? top1.name : '—');
 
-  // ── KPI 3: vs semana anterior ──
+  // ── KPI 3: vs semana anterior — mismo filtro exacto ──
+  // Filtrar semAnt igual que items actuales (por id de producto para ser exactos)
+  const itemIds = new Set(items.map(p => p.id));
   if (prodData.semanaAnterior) {
-    const totalAnt = prodData.semanaAnterior
-      .filter(p => {
-        if (prodCatActiva === 'TODAS')  return true;
-        if (prodCatActiva === 'BOWLS')  return p.esBowl;
-        return !p.esBowl && p.hierarchyId === prodCatActiva;
-      })
-      .reduce((s,p) => s + p.total, 0);
+    const semAntFiltrado = prodData.semanaAnterior.filter(p => {
+      if (prodCatActiva === 'TODAS')  return true;
+      if (prodCatActiva === 'BOWLS')  return p.esBowl;
+      return !p.esBowl && p.hierarchyId === prodCatActiva;
+    });
+    const totalAnt = semAntFiltrado.reduce((s,p) => s + p.total, 0);
     const delta = totalAnt > 0 ? ((totalFiltrado - totalAnt) / totalAnt * 100) : null;
-    setTxt('pkVal3', delta !== null
-      ? `${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta).toFixed(1)}%` : '—');
+    setTxt('pkVal3', delta !== null ? `${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta).toFixed(1)}%` : '—');
     const kpi3 = document.getElementById('pkVal3');
-    if (kpi3) kpi3.style.color = delta >= 0 ? 'var(--teal)' : 'var(--red)';
+    if (kpi3) kpi3.style.color = delta !== null ? (delta >= 0 ? 'var(--teal)' : 'var(--red)') : 'var(--muted)';
     setTxt('pkSub3', totalAnt > 0 ? `${totalAnt.toLocaleString('es-CR')} sem. ant.` : 'Sin datos ant.');
   } else {
     setTxt('pkVal3', '—');
-    setTxt('pkSub3', 'Cargando...');
+    setTxt('pkSub3', '—');
   }
+
+  // ── KPI 4: Promedio por día ──
+  const dias = prodData.diasRango || 1;
+  const promDia = totalFiltrado > 0 ? (totalFiltrado / dias).toFixed(1) : '—';
+  setTxt('pkVal4', promDia !== '—' ? promDia : '—');
+  setTxt('pkSub4', `en ${dias} día${dias !== 1 ? 's' : ''}`);
+
+  // ── KPI 5: Venta neta del filtro ──
+  const ventaNeta = items.reduce((s,p) => s + (p.ventaNeta || 0), 0);
+  const crcFmt = v => '₡' + Math.round(v).toLocaleString('es-CR');
+  setTxt('pkVal5', ventaNeta > 0 ? crcFmt(ventaNeta) : '—');
+  setTxt('pkSub5', 'del filtro activo');
+
+  // ── KPI 6: Ticket medio (venta neta / unidades) ──
+  const ticketMedio = totalFiltrado > 0 && ventaNeta > 0 ? ventaNeta / totalFiltrado : 0;
+  setTxt('pkVal6', ticketMedio > 0 ? crcFmt(ticketMedio) : '—');
+  setTxt('pkSub6', 'venta / unidad');
 
   // ── Pie chart ──
   setTxt('prodChartTitle', catLabel);
@@ -3202,9 +3240,15 @@ function renderTablaProductos(items, tiendas, accentColor) {
   const tbody = document.getElementById('prodMainTbody');
   const tfoot = document.getElementById('prodMainTfoot');
   const hasSemAnt = prodData && prodData.semanaAnterior;
+  // Build semAnt map filtering same category
   const semAntMap = {};
   if (hasSemAnt) {
-    prodData.semanaAnterior.forEach(p => { semAntMap[p.id] = p.total; });
+    const semAntFiltrados = prodData.semanaAnterior.filter(p => {
+      if (prodCatActiva === 'TODAS')  return true;
+      if (prodCatActiva === 'BOWLS')  return p.esBowl;
+      return !p.esBowl && p.hierarchyId === prodCatActiva;
+    });
+    semAntFiltrados.forEach(p => { semAntMap[p.id] = p.total; });
   }
 
   const colSpan = 2 + tiendas.length + 2 + (hasSemAnt ? 2 : 0);
