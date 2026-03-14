@@ -1044,29 +1044,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- ═══════════ SEGUIMIENTO MENSUAL ═══════════ -->
     <div class="section" id="section-seguimiento">
 
-      <!-- Controles -->
-      <div class="proy-controls seg-controls" style="flex-wrap:wrap;gap:10px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
-          <span class="ctrl-label">Sucursal</span>
-          <select class="ctrl-select" id="segStore" style="flex:1">
-            <option value="todas">Todas</option>
-            <option value="guachipelin">Guachipelín</option>
-            <option value="escazu">Avenida Escazú</option>
-            <option value="citymall">City Mall</option>
-            <option value="santaana">Santa Ana TC</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
-          <span class="ctrl-label">Mes</span>
-          <input type="month" class="ctrl-select" id="segMes" style="font-family:var(--mono);font-size:13px;flex:1">
-        </div>
-        <button class="btn-primary" id="segRunBtn" onclick="cargarSeguimiento()">
+      <!-- Controles: solo mes (sucursal viene del topbar) -->
+      <div class="proy-controls" style="gap:10px;margin-bottom:20px">
+        <span class="ctrl-label">Mes</span>
+        <input type="month" class="ctrl-input" id="segMes" style="font-family:var(--mono);font-size:13px">
+        <button class="btn btn-primary" id="segRunBtn" onclick="cargarSeguimiento()">
           <span>▶</span> Cargar
         </button>
-        <button class="btn-outline" id="segExcelBtn" onclick="exportSeguimientoExcel()" style="display:none">
+        <button class="btn btn-ghost" id="segExcelBtn" onclick="exportSeguimientoExcel()" style="display:none">
           <span>⬇</span> Excel
         </button>
-        <div id="segStatus" style="font-size:12px;color:var(--muted);margin-left:8px"></div>
+        <div id="segStatus" style="font-size:12px;color:var(--muted)"></div>
       </div>
 
       <!-- KPI row -->
@@ -1114,17 +1102,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- ═══════════ PROYECCIÓN ═══════════ -->
     <div class="section" id="section-proyeccion">
 
-      <!-- Controles proyección -->
+      <!-- Controles proyección: sucursal viene del topbar -->
       <div class="proy-controls">
-        <span class="ctrl-label">Sucursal</span>
-        <select class="ctrl-select" id="proyStore">
-          <option value="all">Todas</option>
-          <option value="guachipelin">Guachipelín</option>
-          <option value="escazu">Avenida Escazú</option>
-          <option value="citymall">City Mall</option>
-          <option value="santaana">Santa Ana TC</option>
-        </select>
-        <div class="ctrl-divider"></div>
         <span class="ctrl-label">Proyectar</span>
         <select class="ctrl-select" id="proyMonth"></select>
         <div class="ctrl-divider"></div>
@@ -1775,7 +1754,7 @@ async function fetchToteatDiario(storeKey, fromDate, toDate) {
 }
 
 async function runProjection() {
-  const storeKey = document.getElementById('proyStore').value;
+  const storeKey = document.getElementById('tiendaSelect').value === 'todas' ? 'all' : document.getElementById('tiendaSelect').value;
   const monthVal = document.getElementById('proyMonth').value;
   const histFrom = document.getElementById('proyHistFrom').value;
   const histTo   = document.getElementById('proyHistTo').value;
@@ -2672,7 +2651,9 @@ const fmtPctColor = (v) => {
 
 async function cargarSeguimiento() {
   const mesVal  = document.getElementById('segMes').value;
-  const store   = document.getElementById('segStore').value;
+  const store   = document.getElementById('tiendaSelect').value;
+  // Show active store in status
+  const storeNames = { todas:'Todas las sucursales', guachipelin:'Guachipelín', escazu:'Avenida Escazú', citymall:'City Mall', santaana:'Santa Ana TC' };
   if(!mesVal){ alert('Seleccioná el mes'); return; }
 
   const [tY, tM] = mesVal.split('-').map(Number);
@@ -2840,7 +2821,8 @@ function renderSeguimiento(data){
          acumVentas,acumTrans,acumAA,acumAATrans} = data;
 
   const ML = new Date(tY,tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
-  document.getElementById('segTableTag').textContent = ML.charAt(0).toUpperCase()+ML.slice(1);
+  const storeActiva = document.getElementById('tiendaSelect').selectedOptions[0]?.text || '';
+  document.getElementById('segTableTag').textContent = (ML.charAt(0).toUpperCase()+ML.slice(1)) + ' · ' + storeActiva;
 
   // ── KPIs ──
   const ticketMedio  = acumTrans>0 ? acumVentas/acumTrans : 0;
