@@ -39,45 +39,97 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 /* ── SIDEBAR ── */
 .sidebar{
   width:var(--sidebar-w);flex-shrink:0;
-  background:var(--surface);
+  background:var(--bg);
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;
-  height:100vh;overflow-y:auto;
+  height:100vh;overflow-y:auto;overflow-x:hidden;
   position:relative;z-index:50;
 }
 .sidebar-logo{
-  padding:24px 20px 20px;
-  border-bottom:1px solid var(--border);
+  padding:22px 18px 18px;
+  border-bottom:1px solid rgba(42,42,58,.6);
 }
-.logo-mark{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.logo-mark{display:flex;align-items:center;gap:10px;margin-bottom:3px;}
 .logo-dot{
-  width:8px;height:8px;border-radius:50%;
+  width:7px;height:7px;border-radius:50%;
   background:var(--lime);
-  box-shadow:0 0 10px var(--lime);
+  box-shadow:0 0 8px var(--lime);
   animation:pulse 2.5s ease-in-out infinite;
 }
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
-.logo-text{font-size:17px;font-weight:900;letter-spacing:.06em;color:var(--text);}
-.logo-sub{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.1em;text-transform:uppercase;}
-.sidebar-nav{padding:12px 0;flex:1;}
-.nav-section{padding:16px 16px 4px;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted2);}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.75);}}
+.logo-text{font-size:16px;font-weight:900;letter-spacing:.08em;color:var(--text);}
+.logo-sub{font-size:9px;color:var(--muted2);font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
+.sidebar-nav{padding:8px 0 16px;flex:1;}
+.nav-section{
+  padding:20px 16px 5px;
+  font-size:8.5px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted2);
+}
 .nav-item{
   display:flex;align-items:center;gap:10px;
-  padding:11px 16px;
-  cursor:pointer;font-size:13px;font-weight:600;
+  padding:9px 14px 9px 16px;
+  cursor:pointer;font-size:12.5px;font-weight:600;
   color:var(--muted);
-  border-left:2px solid transparent;
-  transition:all .18s;
-  border-radius:0 8px 8px 0;
-  margin:1px 8px 1px 0;
+  transition:all .15s;
+  position:relative;
+  margin:1px 10px 1px 10px;
+  border-radius:10px;
 }
-.nav-item:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2);}
-.nav-item.active{background:var(--surface3);color:var(--text);border-left-color:var(--accent);}
-.nav-item .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.nav-item::before{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;width:3px;
+  border-radius:0 3px 3px 0;
+  background:transparent;
+  transition:background .15s;
+  margin-left:-10px;
+}
+.nav-item:hover{
+  background:rgba(255,255,255,.04);
+  color:var(--text);
+}
+.nav-item.active{
+  background:rgba(168,85,247,.12);
+  color:var(--text);
+}
+.nav-item.active::before{ background:var(--accent); }
+.nav-item .nav-icon{
+  font-size:15px;width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  background:rgba(255,255,255,.04);
+  border-radius:7px;
+  transition:background .15s;
+}
+.nav-item.active .nav-icon{background:rgba(168,85,247,.18);}
+.nav-item:hover .nav-icon{background:rgba(255,255,255,.07);}
+.nav-label{flex:1;line-height:1;}
 .nav-badge{
-  margin-left:auto;font-size:9px;font-weight:700;
-  background:rgba(168,85,247,.15);color:var(--accent);
-  padding:2px 7px;border-radius:10px;letter-spacing:.04em;
+  font-size:8px;font-weight:800;
+  background:linear-gradient(135deg,var(--accent),#7c3aed);
+  color:#fff;
+  padding:2px 7px;border-radius:20px;letter-spacing:.06em;
+  text-transform:uppercase;
+}
+/* Modo toggle neto/bruto en sidebar footer */
+.sidebar-footer{
+  padding:12px 14px 16px;
+  border-top:1px solid rgba(42,42,58,.6);
+}
+.mode-toggle{
+  display:flex;background:var(--surface2);
+  border-radius:8px;padding:3px;gap:2px;
+}
+.mode-btn{
+  flex:1;font-size:10px;font-weight:700;
+  padding:5px 0;border-radius:6px;border:none;
+  cursor:pointer;transition:all .15s;
+  font-family:var(--font);letter-spacing:.04em;
+  color:var(--muted);background:transparent;
+}
+.mode-btn.active{
+  background:var(--surface);
+  color:var(--text);
+  box-shadow:0 1px 4px rgba(0,0,0,.4);
 }
 
 /* ── MAIN ── */
@@ -706,38 +758,51 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     </div>
     <div class="logo-sub">Dashboard Analytics</div>
   </div>
+
   <div class="sidebar-nav">
     <div class="nav-section">Principal</div>
     <div class="nav-item active" data-section="dashboard">
-      <span class="nav-icon">📊</span><span>Dashboard</span>
+      <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
     </div>
     <div class="nav-item" data-section="reporteDiario">
-      <span class="nav-icon">📅</span><span>Reporte Diario</span>
+      <span class="nav-icon">📅</span><span class="nav-label">Reporte Diario</span>
     </div>
+
     <div class="nav-section">Análisis</div>
     <div class="nav-item" data-section="analisis">
-      <span class="nav-icon">📈</span><span>Análisis</span>
+      <span class="nav-icon">📈</span><span class="nav-label">Análisis</span>
     </div>
     <div class="nav-item" data-section="descuentos">
-      <span class="nav-icon">💰</span><span>Descuentos</span>
+      <span class="nav-icon">💰</span><span class="nav-label">Descuentos</span>
     </div>
     <div class="nav-item" data-section="ticketMedio">
-      <span class="nav-icon">🎫</span><span>Ticket Medio</span>
+      <span class="nav-icon">🎫</span><span class="nav-label">Ticket Medio</span>
     </div>
     <div class="nav-item" data-section="detallePagos">
-      <span class="nav-icon">💳</span><span>Detalle de Pagos</span>
+      <span class="nav-icon">💳</span><span class="nav-label">Detalle de Pagos</span>
     </div>
     <div class="nav-item" data-section="seguimiento">
-      <span class="nav-icon">📋</span><span>Seguimiento Mensual</span>
+      <span class="nav-icon">📋</span><span class="nav-label">Seguimiento</span>
     </div>
     <div class="nav-item" data-section="productos">
-      <span class="nav-icon">🥣</span><span>Ventas Producto</span>
+      <span class="nav-icon">🥣</span><span class="nav-label">Ventas Producto</span>
     </div>
+
     <div class="nav-section">Inteligencia</div>
     <div class="nav-item" data-section="proyeccion">
-      <span class="nav-icon">📉</span><span>Proyección</span>
+      <span class="nav-icon">📉</span><span class="nav-label">Proyección</span>
       <span class="nav-badge">AI</span>
     </div>
+  </div>
+
+  <!-- Toggle Neto / Bruto -->
+  <div class="sidebar-footer">
+    <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin-bottom:7px">Modo de venta</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modoNetoBtn" onclick="setModoVenta('neto')">Neto</button>
+      <button class="mode-btn" id="modoBrutoBtn" onclick="setModoVenta('bruto')">Bruto</button>
+    </div>
+    <div style="font-size:9px;color:var(--muted2);margin-top:6px;text-align:center" id="modoVentaHint">Sin impuestos</div>
   </div>
 </div>
 
@@ -867,10 +932,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div style="font-size:12px;color:var(--muted)" id="reporteSubtitle">Ventas por día, por tienda, en el rango seleccionado</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div class="tab-pills">
-            <button class="tab-pill active" id="btnVerNeto" onclick="setModoReporte('neto')">Neto (sin IVA)</button>
-            <button class="tab-pill" id="btnVerBruto" onclick="setModoReporte('bruto')">Bruto (con IVA)</button>
-          </div>
+
           <button class="btn btn-lime" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
         </div>
       </div>
@@ -1504,7 +1566,8 @@ function renderDashboard(data) {
   if(!total) return;
 
   // KPIs
-  setTxt('kVentasDia', crc(total.ventasNetas));
+  const ventaKpi = modoVentaGlobal === 'bruto' ? (total.ventasBrutas||total.ventasNetas) : total.ventasNetas;
+  setTxt('kVentasDia', crc(ventaKpi));
   setTxt('kForecast',  crc(total.forecast));
   setTxt('kCrec',      pct(total.crecimientoDia));
   setTxt('kFechaRef',  (total.fechaRefDia||'—').split('/').slice(0,2).join('/'));
@@ -1625,10 +1688,8 @@ let modoReporte = 'neto'; // 'neto' | 'bruto'
 
 function setModoReporte(modo) {
   modoReporte = modo;
-  document.getElementById('btnVerNeto').classList.toggle('active', modo === 'neto');
-  document.getElementById('btnVerBruto').classList.toggle('active', modo === 'bruto');
-  document.getElementById('reporteSubtitle').textContent =
-    modo === 'neto' ? 'Venta Sin Impuestos · por día, por tienda' : 'Venta Bruta (con IVA) · por día, por tienda';
+  const sub = document.getElementById('reporteSubtitle');
+  if(sub) sub.textContent = modo === 'neto' ? 'Venta Sin Impuestos · por día, por tienda' : 'Venta Bruta (con IVA) · por día, por tienda';
   if (datosReporte) generarTablaReporte(datosReporte);
 }
 
@@ -1673,7 +1734,8 @@ function generarTablaReporte(data) {
     td0.textContent=tienda; tr.appendChild(td0);
     data.forEach(dia=>{
       const td_data=dia.tiendas?dia.tiendas.find(t=>t.tienda===tienda):null;
-      const v=td_data?(modoReporte==='bruto'?(td_data.ventasBrutas||td_data.ventasNetas||0):(td_data.ventasNetas||0)):0;
+      const _modo = modoVentaGlobal||modoReporte;
+      const v=td_data?(_modo==='bruto'?(td_data.ventasBrutas||td_data.ventasNetas||0):(td_data.ventasNetas||0)):0;
       if(!totPorDia[dia.fecha]) totPorDia[dia.fecha]=0;
       totPorDia[dia.fecha]+=v;
       const td=document.createElement('td');
@@ -3594,6 +3656,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+
+// ═══════════════════════════════════════════════════════════
+//  MODO VENTA GLOBAL — Neto / Bruto
+// ═══════════════════════════════════════════════════════════
+let modoVentaGlobal = 'neto'; // 'neto' | 'bruto'
+
+function setModoVenta(modo) {
+  modoVentaGlobal = modo;
+  document.getElementById('modoNetoBtn').classList.toggle('active', modo === 'neto');
+  document.getElementById('modoBrutoBtn').classList.toggle('active', modo === 'bruto');
+  document.getElementById('modoVentaHint').textContent = modo === 'neto' ? 'Sin impuestos' : 'Con impuestos (IVA)';
+
+  // Sincronizar con el toggle del Reporte Diario si existe
+  if (typeof setModoReporte === 'function') setModoReporte(modo);
+
+  // Re-renderizar la sección activa si hay datos cargados
+  const seccion = document.querySelector('.section.active')?.id;
+  if (datosGlobales) {
+    if (seccion === 'section-dashboard') renderDashboard(datosGlobales);
+    else if (seccion === 'section-analisis' && typeof renderAnalisis === 'function') renderAnalisis(datosGlobales);
+    else if (seccion === 'section-reporteDiario' && datosReporte) generarTablaReporte(datosReporte);
+  }
+
+  // Actualizar label en topbar de reporte si existe
+  const sub = document.getElementById('reporteSubtitle');
+  if (sub) sub.textContent = modo === 'neto'
+    ? 'Venta Sin Impuestos · por día, por tienda'
+    : 'Venta Bruta (con IVA) · por día, por tienda';
+}
 
 </script>
 </body>
