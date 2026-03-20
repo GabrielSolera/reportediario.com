@@ -864,9 +864,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
         <div>
           <div style="font-size:18px;font-weight:800;margin-bottom:4px">Reporte Diario</div>
-          <div style="font-size:12px;color:var(--muted)">Ventas por día, por tienda, en el rango seleccionado</div>
+          <div style="font-size:12px;color:var(--muted)" id="reporteSubtitle">Ventas por día, por tienda, en el rango seleccionado</div>
         </div>
-        <button class="btn btn-lime" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="tab-pills">
+            <button class="tab-pill active" id="btnVerNeto" onclick="setModoReporte('neto')">Neto (sin IVA)</button>
+            <button class="tab-pill" id="btnVerBruto" onclick="setModoReporte('bruto')">Bruto (con IVA)</button>
+          </div>
+          <button class="btn btn-lime" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
+        </div>
       </div>
       <div class="card">
         <div class="scroll-box">
@@ -1609,6 +1615,17 @@ function switchDashChart(type,btn,chartId){
 // ═══════════════════════════════════════════════════════════
 //  REPORTE DIARIO
 // ═══════════════════════════════════════════════════════════
+let modoReporte = 'neto'; // 'neto' | 'bruto'
+
+function setModoReporte(modo) {
+  modoReporte = modo;
+  document.getElementById('btnVerNeto').classList.toggle('active', modo === 'neto');
+  document.getElementById('btnVerBruto').classList.toggle('active', modo === 'bruto');
+  document.getElementById('reporteSubtitle').textContent =
+    modo === 'neto' ? 'Venta Sin Impuestos · por día, por tienda' : 'Venta Bruta (con IVA) · por día, por tienda';
+  if (datosReporte) generarTablaReporte(datosReporte);
+}
+
 async function cargarReporteDiario() {
   const fi = document.getElementById('fechaInicio').value;
   const ff = document.getElementById('fechaFin').value;
@@ -1650,7 +1667,7 @@ function generarTablaReporte(data) {
     td0.textContent=tienda; tr.appendChild(td0);
     data.forEach(dia=>{
       const td_data=dia.tiendas?dia.tiendas.find(t=>t.tienda===tienda):null;
-      const v=td_data?(td_data.ventasNetas||0):0;
+      const v=td_data?(modoReporte==='bruto'?(td_data.ventasBrutas||td_data.ventasNetas||0):(td_data.ventasNetas||0)):0;
       if(!totPorDia[dia.fecha]) totPorDia[dia.fecha]=0;
       totPorDia[dia.fecha]+=v;
       const td=document.createElement('td');
@@ -1690,7 +1707,7 @@ function exportarReporteDiario() {
     const row=[tienda];
     datosReporte.forEach(dia=>{
       const td=dia.tiendas?dia.tiendas.find(t=>t.tienda===tienda):null;
-      const v=td?(td.ventasNetas||0):0;
+      const v=td?(modoReporte==='bruto'?(td.ventasBrutas||td.ventasNetas||0):(td.ventasNetas||0)):0;
       if(!totPorDia[dia.fecha]) totPorDia[dia.fecha]=0;
       totPorDia[dia.fecha]+=v;
       row.push(v||'');
@@ -1833,15 +1850,15 @@ function getMesNombreJS(m){
           'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][m-1];
 }
 
-// ── MOTOR DE PROYECCIÓN ──────────────────────────────────────────────────────
-// Algoritmo:
-//   1. Promedio por dow del historial base (sin feriados)
-//   2. Regresión lineal → tendencia %/día del historial
-//   3. Calibración con mes actual: ratio real/esperado por dow
-//      (si el lunes real fue 20% más que el modelo base, todos los lunes
-//       proyectados se multiplican por ese factor — peso 40%)
-//   4. Días ya transcurridos del mes → valor REAL, no proyectado
-//   5. Feriados: 60% (sem)/75% (fin de semana)
+// ── MOTOR DE PROYECCIÓN v2 ───────────────────────────────────────────────────
+// Mejoras vs v1:
+//   1. Promedio ponderado por recencia (últimas 4 semanas pesan 3x más)
+//   2. Suavizado de outliers: P20-P80 para el promedio base por dow
+//   3. Tendencia exponencial: mejor para datos de ventas con crecimiento
+//   4. Calibración adaptiva: peso del mes actual aumenta con más datos reales
+//      (con 7+ días reales → 70% señal actual, con <3 días → 25%)
+//   5. Días ya transcurridos del mes → valor REAL, no proyectado
+//   6. Feriados: 60% (sem)/75% (fin de semana)
 function buildProjection(historicalByStore, currentMonthByStore, lastRealDay, tY, tM, storeKeys, histFrom, histTo){
   const prevM = tM===1?12:tM-1;
   const prevY = tM===1?tY-1:tY;
@@ -1851,49 +1868,91 @@ function buildProjection(historicalByStore, currentMonthByStore, lastRealDay, tY
   const histToDate   = new Date(histTo+'T00:00:00');
   const todayStr     = new Date().toISOString().split('T')[0];
 
+  // Percentil para suavizado de outliers
+  function percentile(arr, p) {
+    if(!arr.length) return 0;
+    const sorted = [...arr].sort((a,b)=>a-b);
+    const idx = (p/100) * (sorted.length-1);
+    const lo = Math.floor(idx), hi = Math.ceil(idx);
+    return sorted[lo] + (sorted[hi]-sorted[lo]) * (idx-lo);
+  }
+
   const dowAvg = {};
 
   for(const sk of storeKeys){
-    // ── Historial base: promedios por dow ──
     const sales = historicalByStore[sk] || {};
-    const entries = Object.entries(sales).filter(([,v])=>v&&v.ventas>0).sort((a,b)=>a[0].localeCompare(b[0]));
-    const buckets = [[],[],[],[],[],[],[]];
-    entries.forEach(([dateStr,obj])=>{
-      const d = new Date(dateStr+'T00:00:00');
-      if(!isFeriado(d)) buckets[d.getDay()].push(obj.ventas);
-    });
-    const baseAvg = buckets.map(b=>b.length ? b.reduce((s,v)=>s+v,0)/b.length : 0);
+    const entries = Object.entries(sales)
+      .filter(([,v])=>v&&v.ventas>0)
+      .sort((a,b)=>a[0].localeCompare(b[0]));
 
-    // ── Tendencia: regresión lineal sobre totales diarios ──
-    const pts = entries.map(([,obj],i)=>({x:i,y:obj.ventas}));
+    const N = entries.length;
+    const lastDate = N>0 ? new Date(entries[N-1][0]+'T00:00:00') : histToDate;
+
+    // ── 1. Promedio ponderado por recencia + suavizado outliers ──
+    const buckets = [[],[],[],[],[],[],[]]; // [dow] → [{val, weight}]
+    entries.forEach(([dateStr,obj],i)=>{
+      const d = new Date(dateStr+'T00:00:00');
+      if(isFeriado(d)) return;
+      const dow = d.getDay();
+      // Peso exponencial: más reciente = más peso. Últimas 4 semanas pesan ~3x
+      const daysAgo = Math.max(0, Math.round((lastDate-d)/86400000));
+      const weight  = Math.exp(-daysAgo / 60); // decaimiento: 60 días = 1/e
+      buckets[dow].push({val:obj.ventas, weight});
+    });
+
+    const baseAvg = buckets.map(b=>{
+      if(!b.length) return 0;
+      const vals = b.map(x=>x.val);
+      // Filtrar outliers: descartar por debajo de P15 o encima de P85
+      const lo = percentile(vals,15), hi = percentile(vals,85);
+      const filtered = b.filter(x=>x.val>=lo && x.val<=hi);
+      if(!filtered.length) filtered.push(...b); // si todos son outliers, usar todos
+      // Promedio ponderado por recencia
+      const sumW = filtered.reduce((s,x)=>s+x.weight,0);
+      return sumW>0 ? filtered.reduce((s,x)=>s+x.val*x.weight,0)/sumW : 0;
+    });
+
+    // ── 2. Tendencia con regresión sobre log(ventas) → tendencia exponencial ──
+    // log(y) = a + b*x → y = e^a * e^(bx), trendPerDay = e^b - 1
+    const pts = entries
+      .filter(([,obj])=>obj.ventas>0)
+      .map(([,obj],i)=>({x:i, y:Math.log(obj.ventas)}));
     let trendPerDay = 0;
-    if(pts.length>=5){
-      const n=pts.length, sx=pts.reduce((s,p)=>s+p.x,0), sy=pts.reduce((s,p)=>s+p.y,0);
-      const sxy=pts.reduce((s,p)=>s+p.x*p.y,0), sxx=pts.reduce((s,p)=>s+p.x*p.x,0);
-      const denom=n*sxx-sx*sx;
-      if(denom!==0){
-        const slope=(n*sxy-sx*sy)/denom, avgY=sy/n;
-        trendPerDay = avgY>0 ? Math.max(-0.02,Math.min(0.02,slope/avgY)) : 0;
+    if(pts.length>=7){
+      const n=pts.length;
+      const sx=pts.reduce((s,p)=>s+p.x,0)/n;
+      const sy=pts.reduce((s,p)=>s+p.y,0)/n;
+      const num=pts.reduce((s,p)=>s+(p.x-sx)*(p.y-sy),0);
+      const den=pts.reduce((s,p)=>s+(p.x-sx)**2,0);
+      if(den!==0){
+        const b = num/den;
+        trendPerDay = Math.max(-0.015, Math.min(0.015, Math.exp(b)-1));
       }
     }
 
-    // ── Calibración con días reales del mes actual ──
-    // Por cada dow que ya ocurrió en el mes actual, calculamos
-    // cuánto difiere el real vs lo que el modelo base hubiera predicho.
+    // ── 3. Calibración adaptiva con datos reales del mes actual ──
     const curSales = currentMonthByStore[sk] || {};
-    const calFactor = [1,1,1,1,1,1,1]; // factor de calibración por dow
-    if(Object.keys(curSales).length > 0){
-      const realByDow   = [[],[],[],[],[],[],[]]; // valores reales
-      const modelByDow  = [[],[],[],[],[],[],[]]; // lo que el modelo hubiera dado
+    const calFactor = [1,1,1,1,1,1,1];
+    const realDays = Object.keys(curSales).filter(d=>{
+      const obj = curSales[d];
+      return obj && obj.ventas>0 && !isFeriado(new Date(d+'T00:00:00'));
+    }).length;
+
+    // Peso adaptivo: crece con la cantidad de días reales disponibles
+    // 0 días → 0% (solo historial), 7+ días → 70% (señal actual domina)
+    const calWeight = Math.min(0.70, realDays * 0.10);
+
+    if(realDays > 0){
+      const realByDow  = [[],[],[],[],[],[],[]];
+      const modelByDow = [[],[],[],[],[],[],[]];
 
       Object.entries(curSales).forEach(([dateStr,obj])=>{
         const amount = obj&&obj.ventas ? obj.ventas : 0;
         if(amount<=0) return;
-        const d    = new Date(dateStr+'T00:00:00');
-        const dow  = d.getDay();
+        const d   = new Date(dateStr+'T00:00:00');
+        const dow = d.getDay();
         if(isFeriado(d)) return;
-        // días transcurridos desde fin historial hasta este día
-        const ahead = Math.round((d-histToDate)/86400000);
+        const ahead    = Math.round((d-histToDate)/86400000);
         const modelVal = baseAvg[dow] * Math.max(0.5, 1+trendPerDay*ahead);
         if(modelVal>0){
           realByDow[dow].push(amount);
@@ -1906,24 +1965,23 @@ function buildProjection(historicalByStore, currentMonthByStore, lastRealDay, tY
           const avgReal  = realByDow[dow].reduce((s,v)=>s+v,0)/realByDow[dow].length;
           const avgModel = modelByDow[dow].reduce((s,v)=>s+v,0)/modelByDow[dow].length;
           if(avgModel>0){
-            // Calibración ponderada: 60% modelo base + 40% señal real
-            // Cap en ±40% para evitar distorsiones por días atípicos
             const rawFactor = avgReal/avgModel;
-            calFactor[dow] = 0.60 + 0.40 * Math.max(0.6, Math.min(1.4, rawFactor));
+            // Cap más amplio (±50%) ya que tenemos más confianza en señal reciente
+            const cappedFactor = Math.max(0.5, Math.min(1.5, rawFactor));
+            calFactor[dow] = (1-calWeight) + calWeight * cappedFactor;
           }
         }
       }
-
-      console.log(`[${sk}] Cal factors por dow:`, calFactor.map(f=>f.toFixed(2)).join(' '));
+      console.log(`[${sk}] CalWeight:${(calWeight*100).toFixed(0)}% (${realDays}d reales) | Factors:`, calFactor.map(f=>f.toFixed(2)).join(' '));
     }
 
     dowAvg[sk]             = baseAvg;
     dowAvg[sk+'_trend']    = trendPerDay;
     dowAvg[sk+'_cal']      = calFactor;
     dowAvg[sk+'_curSales'] = curSales;
+    dowAvg[sk+'_realDays'] = realDays;
 
-    const baseDias = entries.length, curDias = Object.keys(curSales).length;
-    console.log(`[${sk}] Base:${baseDias}d | Cur:${curDias}d | Prom Lun:₡${Math.round(baseAvg[1]).toLocaleString()} Sab:₡${Math.round(baseAvg[6]).toLocaleString()} Dom:₡${Math.round(baseAvg[0]).toLocaleString()} | Trend:${(trendPerDay*100).toFixed(3)}%/d`);
+    console.log(`[${sk}] Base:${N}d | Prom Lun:₡${Math.round(baseAvg[1]).toLocaleString()} Sab:₡${Math.round(baseAvg[6]).toLocaleString()} Dom:₡${Math.round(baseAvg[0]).toLocaleString()} | Trend:${(trendPerDay*100).toFixed(3)}%/d`);
   }
 
   const days = [];
