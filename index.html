@@ -2412,8 +2412,7 @@ function exportProyExcel(){
 // ═══════════════════════════════════════════════════════════
 let anlPeriod   = -7;          // -7, -15, or 'mes'
 let anlCharts   = {};          // chart instances
-let anlDataRef  = null;        // datos del período de referencia
-let anlDataCurr = null;        // datos del período actual (=datosGlobales)
+let anlDataCurr = null, anlDataRef = null, anlTrendData = null; // datos análisis
 
 const CANAL_CFG = [
   { key:'uber',    label:'Uber Eats',   color:'#06C167', keyAcum:'uberAcum'  },
@@ -2490,6 +2489,7 @@ async function cargarAnalisis(){
     const month=ff.getMonth()+1, year=ff.getFullYear();
     const trendData = await fetchMonthDailyData(month, year);
 
+    anlTrendData = trendData;
     renderAnalisis(anlDataCurr, anlDataRef, trendData, fechaFinInput, fechaRef);
 
     document.getElementById('anlEmpty').style.display   = 'none';
@@ -3674,10 +3674,22 @@ function setModoVenta(modo) {
 
   // Re-renderizar la sección activa si hay datos cargados
   const seccion = document.querySelector('.section.active')?.id;
-  if (datosGlobales) {
-    if (seccion === 'section-dashboard') renderDashboard(datosGlobales);
-    else if (seccion === 'section-analisis' && typeof renderAnalisis === 'function') renderAnalisis(datosGlobales);
-    else if (seccion === 'section-reporteDiario' && datosReporte) generarTablaReporte(datosReporte);
+  if (seccion === 'section-dashboard' && datosGlobales) renderDashboard(datosGlobales);
+  else if (seccion === 'section-reporteDiario' && datosReporte) generarTablaReporte(datosReporte);
+  else if (seccion === 'section-analisis' && anlDataCurr && anlDataRef) {
+    // Re-renderizar análisis con los datos ya cargados
+    const fi = document.getElementById('fechaFin').value;
+    const ff = new Date(fi+'T12:00:00');
+    const period = anlPeriod;
+    let fechaRef;
+    if(period === 'mes'){
+      const prevM = ff.getMonth()===0 ? new Date(ff.getFullYear()-1,11,ff.getDate()) : new Date(ff.getFullYear(),ff.getMonth()-1,ff.getDate());
+      fechaRef = prevM.toISOString().split('T')[0];
+    } else {
+      const refD = new Date(ff); refD.setDate(refD.getDate()+period);
+      fechaRef = refD.toISOString().split('T')[0];
+    }
+    renderAnalisis(anlDataCurr, anlDataRef, anlTrendData||[], fi, fechaRef);
   }
 
   // Actualizar label en topbar de reporte si existe
