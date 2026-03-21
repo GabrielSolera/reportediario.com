@@ -2531,41 +2531,77 @@ async function cargarAnalisis(){
   document.getElementById('btnAnalisis').disabled = true;
 
   try{
-    // Datos actuales (reusar si ya están en caché)
-    // Nota: NO llamar cargarDatos() aquí — causaría loop con la ruta section-analisis
+    // Reusar datosGlobales si ya están — evitar fetch extra
     if(!datosGlobales){ await cargarDatosDashboard(); }
     anlDataCurr = datosGlobales;
-    if(!anlDataCurr){ throw new Error('Sin datos actuales — cargá primero el Dashboard'); }
+    if(!anlDataCurr){ throw new Error('Sin datos — cargá primero el Dashboard'); }
 
     // Calcular fecha de referencia
     const ff = new Date(fechaFinInput+'T12:00:00');
     let fechaRef;
     if(anlPeriod === 'mes'){
-      const prevM = ff.getMonth()===0 ? new Date(ff.getFullYear()-1,11,ff.getDate()) : new Date(ff.getFullYear(),ff.getMonth()-1,ff.getDate());
+      const prevM = ff.getMonth()===0
+        ? new Date(ff.getFullYear()-1,11,ff.getDate())
+        : new Date(ff.getFullYear(),ff.getMonth()-1,ff.getDate());
       fechaRef = prevM.toISOString().split('T')[0];
     } else {
       const refD = new Date(ff); refD.setDate(refD.getDate()+anlPeriod);
       fechaRef = refD.toISOString().split('T')[0];
     }
 
-    // Fetch referencia y tendencia en PARALELO
-    setStep('Cargando referencia y tendencia...');
+    // Fetch referencia y tendencia del mes en PARALELO
+    // fetchRefData usa caché — segunda vez es instantáneo
+    setStep('Cargando comparativo y tendencia...');
     const month=ff.getMonth()+1, year=ff.getFullYear();
+    const tienda = document.getElementById('tiendaSelect').value;
+
     const [anlDataRefResult, trendData] = await Promise.all([
-      fetchRefData(fechaRef),
+      fetchRefDataRapido(fechaRef, tienda),
       fetchMonthDailyData(month, year)
     ]);
     anlDataRef = anlDataRefResult;
-
     anlTrendData = trendData;
-    renderAnalisis(anlDataCurr, anlDataRef, trendData, fechaFinInput, fechaRef);
 
+    renderAnalisis(anlDataCurr, anlDataRef, trendData, fechaFinInput, fechaRef);
     document.getElementById('anlEmpty').style.display   = 'none';
     document.getElementById('anlContent').style.display = 'block';
     setTxt('anlSubtitle', `Fecha: ${fechaFinInput} · Comparando ${anlPeriodLabel()}`);
 
   }catch(e){ alert('Error en análisis: '+e.message); console.error(e); }
   finally{ showLoader(false); document.getElementById('btnAnalisis').disabled=false; }
+}
+
+// Fetch datos de referencia usando historialDiario (rápido, sin crecimiento vs mes anterior)
+async function fetchRefDataRapido(fechaRef, tienda){
+  const clave = `refrapido-${fechaRef}-${tienda}`;
+  if(cacheConsultas[clave] && (Date.now()-cacheConsultas[clave].ts)<10*60*1000)
+    return cacheConsultas[clave].data;
+
+  const storeKey = tienda === 'todas' ? 'all' : tienda;
+  const url = `${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKey}&fechaInicio=${fechaRef}&fechaFin=${fechaRef}`;
+  try {
+    const resp = await fetch(url);
+    const hist = await resp.json(); // [{ fecha, ventasNetas, transacciones }]
+    if(!Array.isArray(hist) || !hist.length) return null;
+
+    // Convert to same format as datosGlobales for renderAnalisis compatibility
+    // renderAnalisis needs: [{tienda, ventasNetas, transacciones, uber, peya, didi, olo, otros, ...}]
+    // For reference we only need ventasNetas + transacciones — canales not available via historial
+    // Use the full dashboard endpoint but with cache
+    const ff = new Date(fechaRef+'T12:00:00');
+    const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
+    const urlFull = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const respFull = await fetch(urlFull);
+    const data = await respFull.json();
+    if(data && data.length) {
+      cacheConsultas[clave] = { data, ts: Date.now() };
+      return data;
+    }
+    return null;
+  } catch(e) {
+    console.error('fetchRefDataRapido:', e);
+    return null;
+  }
 }
 
 // Fetch ventas diarias del mes — UNA sola llamada via historialDiario (mucho más rápido)
