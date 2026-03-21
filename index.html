@@ -1910,7 +1910,7 @@ async function runProjection() {
   const _crNow   = new Date(Date.now() - 6*60*60*1000);
   const today    = new Date(_crNow.getUTCFullYear(), _crNow.getUTCMonth(), _crNow.getUTCDate());
   const isCurMes = today.getFullYear()===tY && today.getMonth()+1===tM;
-  const lastRealDay = isCurMes ? today.getDate()-1 : 0; // días ya cerrados (hoy no cierra hasta el día siguiente)
+  const lastRealDay = isCurMes ? today.getDate() : 0; // incluye hoy con datos parciales
 
   showLoader(true,'Calculando proyección...','Iniciando...');
   document.getElementById('proyRunBtn').disabled=true;
@@ -1982,7 +1982,7 @@ async function runProjection() {
 
     renderProyeccion(proyData);
     document.getElementById('proyExcelBtn').style.display='flex';
-    const nota = lastRealDay>0 ? ` · ${lastRealDay} días reales de ${getMesNombreJS(tM)} incluidos` : '';
+    const nota = lastRealDay>0 ? ` · días 1–${lastRealDay} incluidos (hoy parcial)` : '';
     setTxt('pageSub','Proyección generada: '+new Date().toLocaleTimeString('es-CR')+nota);
 
   }catch(e){ alert('Error en proyección:\n\n'+e.message); console.error(e); }
@@ -2548,13 +2548,14 @@ async function cargarAnalisis(){
       fechaRef = refD.toISOString().split('T')[0];
     }
 
-    setStep(`Cargando referencia: ${fechaRef}...`);
-    anlDataRef = await fetchRefData(fechaRef);
-
-    // También fetch de ventas diarias del mes para tendencia
-    setStep('Calculando tendencia del mes...');
+    // Fetch referencia y tendencia en PARALELO
+    setStep('Cargando referencia y tendencia...');
     const month=ff.getMonth()+1, year=ff.getFullYear();
-    const trendData = await fetchMonthDailyData(month, year);
+    const [anlDataRefResult, trendData] = await Promise.all([
+      fetchRefData(fechaRef),
+      fetchMonthDailyData(month, year)
+    ]);
+    anlDataRef = anlDataRefResult;
 
     anlTrendData = trendData;
     renderAnalisis(anlDataCurr, anlDataRef, trendData, fechaFinInput, fechaRef);
@@ -2567,36 +2568,43 @@ async function cargarAnalisis(){
   finally{ showLoader(false); document.getElementById('btnAnalisis').disabled=false; }
 }
 
-// Fetch ventas diarias del mes actual vía Apps Script (un día a la vez en caché)
+// Fetch ventas diarias del mes — UNA sola llamada via historialDiario (mucho más rápido)
 async function fetchMonthDailyData(month, year){
-  const today = new Date();
-  const isCurrentMonth = today.getMonth()+1===month && today.getFullYear()===year;
-  const lastDay = isCurrentMonth ? today.getDate() : new Date(year,month,0).getDate();
-  const results = [];
+  const pad = n => String(n).padStart(2,'0');
+  const crNow = new Date(Date.now() - 6*60*60*1000);
+  const isCurrentMonth = crNow.getUTCMonth()+1===month && crNow.getUTCFullYear()===year;
+  const lastDay = isCurrentMonth ? crNow.getUTCDate() : new Date(year,month,0).getDate();
   const tienda = document.getElementById('tiendaSelect').value;
+  const storeKey = tienda === 'todas' ? 'all' : tienda;
 
-  // Fetch solo días con posible data (hasta hoy si mes actual)
-  for(let d=1; d<=lastDay; d++){
-    const clave = `daily-${d}-${month}-${year}-${tienda}`;
-    let data;
-    if(cacheConsultas[clave]){
-      data = cacheConsultas[clave].data;
-    } else {
-      try{
-        const url=`${APPS_SCRIPT_URL}?day=${d}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
-        const resp=await fetch(url);
-        data=await resp.json();
-        if(data&&data.length&&!data[0]?.error) cacheConsultas[clave]={data,ts:Date.now()};
-        await new Promise(r=>setTimeout(r,120));
-      }catch(e){ data=null; }
-    }
-    if(data&&data.length){
-      const tot=data.find(r=>r.tienda==='TODAS')||data[0];
-      results.push({ day:d, ventas: num(tot?.ventasNetas||0), trans: num(tot?.transacciones||0) });
-    }
+  const clave = `historial-${month}-${year}-${storeKey}-${lastDay}`;
+  if(cacheConsultas[clave]) return cacheConsultas[clave].data;
+
+  const fechaIni = `${year}-${pad(month)}-01`;
+  const fechaFin = `${year}-${pad(month)}-${pad(lastDay)}`;
+  const url = `${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKey}&fechaInicio=${fechaIni}&fechaFin=${fechaFin}`;
+
+  try {
+    const resp = await fetch(url);
+    const hist = await resp.json(); // [{ fecha, ventasNetas, transacciones }]
+    if(!Array.isArray(hist)) return [];
+
+    // Convert to same format as before: [{day, ventasNetas, transacciones}]
+    const results = hist.map(h => {
+      const d = new Date(h.fecha+'T12:00:00');
+      return { day: d.getDate(), fecha: h.fecha, ventas: h.ventasNetas||0, trans: h.transacciones||0 };
+    });
+
+    cacheConsultas[clave] = { data: results, ts: Date.now() };
+    return results;
+  } catch(e) {
+    console.error('fetchMonthDailyData:', e);
+    return [];
   }
-  return results;
 }
+
+
+
 
 // ── RENDER CENTRAL ──
 function renderAnalisis(curr, ref, trendData, fechaCurr, fechaRef){
