@@ -1052,7 +1052,44 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           </div>
         </div>
 
-        <!-- ⑤ TABLA COMPARATIVA COMPLETA -->
+        <!-- ⑤ COSTO Y MARGEN -->
+        <div class="grid-2" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">💲 Costo Neto de Productos</span>
+              <span class="card-tag" id="anlCostoTag">del día</span>
+            </div>
+            <div class="card-body">
+              <div id="anlCostoGrid"></div>
+              <div style="margin-top:14px"><div class="chart-wrap" style="height:160px"><canvas id="anlChartCosto"></canvas></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📈 Top Productos del Día</span>
+              <span class="card-tag" id="anlTopProdTag">por unidades</span>
+            </div>
+            <div class="card-body" style="padding:0">
+              <div id="anlTopProdList"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑥ CRECIMIENTO POR CANAL -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <span class="card-title">📡 Crecimiento por Canal</span>
+            <span class="card-tag" id="anlCanalCrecTag">vs período anterior</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div id="anlCanalCrecGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)"></div>
+            <div class="card-body">
+              <div class="chart-wrap" style="height:200px"><canvas id="anlChartCanalCrec"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑦ TABLA COMPARATIVA COMPLETA -->
         <div class="card">
           <div class="card-header">
             <span class="card-title">Tabla Comparativa Completa</span>
@@ -2815,12 +2852,154 @@ function renderMetricas(totCurr, totRef, tiendas){
   tkg.innerHTML=metricaRow('Ticket día',  fmtK(ticketD), ticketRefD>0?((ticketD-ticketRefD)/ticketRefD)*100:null)+
                 metricaRow('Ticket acum.', fmtK(ticketA), ticketRefA>0?((ticketA-ticketRefA)/ticketRefA)*100:null);
   renderMiniBarChart('anlChartTicket',tiendas.map(t=>t.tienda.replace('Oakberry ','')),tiendas.map(t=>{const tn=num(t.transacciones);return tn>0?num(t.ventasNetas)/tn:0;}),'#f5c85a');
+
+  // ⑤ Costo y Margen
+  renderCostoMargen(tiendas, refTiendas);
+
+  // ⑥ Top Productos
+  renderTopProductos(curr);
+
+  // ⑦ Crecimiento por Canal
+  renderCanalCrecimiento(tiendas, refTiendas);
 }
 
 function metricaRow(label, val, delta){
   const dc = delta!==null ? (delta>=0?'d-pos':'d-neg') : 'd-neu';
   const ds = delta!==null ? `<span class="metrica-delta ${dc}">${delta>=0?'+':''}${typeof delta==='number'?delta.toFixed(1)+'%':delta}</span>` : '';
   return `<div class="metrica-row"><span class="metrica-label">${label}</span><span style="display:flex;align-items:center;gap:6px"><span class="metrica-val">${val}</span>${ds}</span></div>`;
+}
+
+
+// ── COSTO Y MARGEN ────────────────────────────────────────────────────────────
+function renderCostoMargen(tiendas, refTiendas) {
+  const total = tiendas.find(t=>t.tienda==='TODAS') || tiendas[0] || {};
+  const costo = num(total.costoDia || 0);
+  const venta = num(total.ventasNetas || 0);
+  const margen = venta - costo;
+  const costoPct = venta > 0 ? (costo/venta*100) : 0;
+  const margenPct = venta > 0 ? (margen/venta*100) : 0;
+
+  // Ref comparison
+  const refTotal = refTiendas ? (refTiendas.find(t=>t.tienda==='TODAS') || refTiendas[0] || {}) : {};
+  const refCosto = num(refTotal.costoDia || 0);
+  const refVenta = num(refTotal.ventasNetas || 0);
+  const refCostoPct = refVenta > 0 ? (refCosto/refVenta*100) : 0;
+  const deltaCostoPct = refCostoPct > 0 ? costoPct - refCostoPct : null;
+
+  setTxt('anlCostoTag', 'del día');
+  const grid = document.getElementById('anlCostoGrid');
+  grid.innerHTML = `
+    ${metricaRow('Costo Neto', fmtK(costo), null)}
+    ${metricaRow('Margen Bruto', fmtK(margen), null)}
+    ${metricaRow('Margen %', margenPct.toFixed(1)+'%', null)}
+    ${metricaRow('Costo %', costoPct.toFixed(1)+'%', deltaCostoPct !== null ? -deltaCostoPct : null)}
+  `;
+
+  // Bar chart: venta vs costo por tienda
+  const labels = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>t.tienda.replace('Oakberry ',''));
+  const costos = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>num(t.costoDia||0));
+  const ventas = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>num(t.ventasNetas||0));
+
+  if(anlCharts['anlChartCosto']) anlCharts['anlChartCosto'].destroy();
+  const ctx = document.getElementById('anlChartCosto')?.getContext('2d');
+  if(!ctx) return;
+  anlCharts['anlChartCosto'] = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Venta', data:ventas, backgroundColor:'#a855f766', borderColor:'#a855f7', borderWidth:1, borderRadius:4 },
+      { label:'Costo', data:costos, backgroundColor:'#f55a5a66', borderColor:'#f55a5a', borderWidth:1, borderRadius:4 }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{color:'#7070a0',font:{size:10}} }, datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',callbacks:{label:c=>` ${c.dataset.label}: ${fmtK(c.parsed.y)}`}}},
+      scales:{ x:{grid:{display:false},ticks:{color:'#7070a0',font:{size:9}}},
+               y:{grid:{color:'rgba(42,42,58,.4)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}}}
+  });
+}
+
+// ── TOP PRODUCTOS DEL DÍA ─────────────────────────────────────────────────────
+function renderTopProductos(curr) {
+  const list = document.getElementById('anlTopProdList');
+  // Aggregate products from all stores in curr
+  const tiendas = Array.isArray(curr) ? curr.filter(t=>t.tienda!=='TODAS') : [];
+  // We don't have per-product data in curr (only totals) — show message to use Ventas Producto tab
+  // Instead show top canales breakdown as proxy
+  if(!tiendas.length){ list.innerHTML='<div class="empty-state"><div class="empty-txt">Usá la pestaña Ventas Producto para el detalle</div></div>'; return; }
+
+  // Show per-store ventas as ranked list
+  const sorted = [...tiendas].sort((a,b)=>num(b.ventasNetas)-num(a.ventasNetas));
+  const max = num(sorted[0]?.ventasNetas||1);
+  const storeColors = {'Oakberry Guachipelin':'#a855f7','Oakberry Avenida Escazu':'#5af5c8','Oakberry City Mall':'#f5c85a','Santa Ana Town Center':'#f55a5a','Santa Ana TC':'#f55a5a'};
+
+  list.innerHTML = sorted.map((t,i)=>{
+    const v = num(t.ventasNetas);
+    const pct = max>0 ? (v/max*100) : 0;
+    const color = storeColors[t.tienda] || '#a855f7';
+    const name = t.tienda.replace('Oakberry ','');
+    const trans = num(t.transacciones);
+    const ticket = trans>0 ? Math.round(v/trans) : 0;
+    return `<div style="padding:10px 18px;border-bottom:1px solid rgba(42,42,58,.4)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:12px;font-weight:700">${name}</span>
+        <span style="font-family:var(--mono);font-size:12px;color:${color}">${fmtK(v)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;height:4px;background:var(--border);border-radius:2px">
+          <div style="width:${pct}%;height:100%;background:${color};border-radius:2px"></div>
+        </div>
+        <span style="font-size:10px;color:var(--muted)">${trans} ord · ticket ${fmtK(ticket)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  setTxt('anlTopProdTag', `${sorted.length} tiendas`);
+}
+
+// ── CRECIMIENTO POR CANAL ─────────────────────────────────────────────────────
+function renderCanalCrecimiento(tiendas, refTiendas) {
+  const total    = tiendas.find(t=>t.tienda==='TODAS') || tiendas[0] || {};
+  const refTotal = refTiendas ? (refTiendas.find(t=>t.tienda==='TODAS') || refTiendas[0] || {}) : {};
+
+  const canales = CANAL_CFG;
+  const grid = document.getElementById('anlCanalCrecGrid');
+  grid.innerHTML = canales.map(c=>{
+    const curr  = num(total[c.key]||0);
+    const ref   = num(refTotal[c.key]||0);
+    const delta = ref>0 ? ((curr-ref)/ref*100) : null;
+    const dColor = delta===null?'var(--muted)':(delta>=0?'var(--teal)':'var(--red)');
+    const ventaTotal = num(total.ventasNetas||1);
+    const pct = ventaTotal>0 ? (curr/ventaTotal*100).toFixed(1) : '0.0';
+    return `<div class="canal-kpi">
+      <div class="canal-name"><span class="canal-dot" style="background:${c.color}"></span>${c.label.toUpperCase()}</div>
+      <div class="canal-pct" style="color:${c.color}">${pct}%</div>
+      <div class="canal-value">${fmtK(curr)}</div>
+      <div class="canal-delta" style="background:${delta!==null?(delta>=0?'rgba(90,245,200,.1)':'rgba(245,90,90,.1)'):'var(--surface2)'};color:${dColor}">
+        ${delta!==null?(delta>=0?'▲':'▼')+' '+Math.abs(delta).toFixed(1)+'%':'—'}
+      </div>
+    </div>`;
+  }).join('');
+
+  setTxt('anlCanalCrecTag', refTiendas ? 'vs período anterior' : 'sin referencia');
+
+  // Bar chart: canal actual vs referencia
+  if(anlCharts['anlChartCanalCrec']) anlCharts['anlChartCanalCrec'].destroy();
+  const ctx = document.getElementById('anlChartCanalCrec')?.getContext('2d');
+  if(!ctx) return;
+  anlCharts['anlChartCanalCrec'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: canales.map(c=>c.label),
+      datasets:[
+        { label:'Actual',    data:canales.map(c=>num(total[c.key]||0)),    backgroundColor:canales.map(c=>c.color+'aa'), borderRadius:4 },
+        { label:'Referencia',data:canales.map(c=>num((refTotal||{})[c.key]||0)), backgroundColor:'rgba(112,112,160,.25)', borderRadius:4 }
+      ]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#7070a0',font:{size:10}}}, datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',callbacks:{label:c=>` ${c.dataset.label}: ${fmtK(c.parsed.y)}`}}},
+      scales:{ x:{grid:{display:false},ticks:{color:'#7070a0',font:{size:9}}},
+               y:{grid:{color:'rgba(42,42,58,.4)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}}}
+  });
 }
 
 function renderMiniBarChart(id, labels, data, color){
