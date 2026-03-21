@@ -2653,7 +2653,7 @@ function renderAnalisis(curr, ref, trendData, fechaCurr, fechaRef){
   renderCompChart(tiendas, ref);
   renderTrendChart(trendData, fechaCurr, curr, ref);
   renderCanales(totCurr, totRef);
-  renderMetricas(totCurr, totRef, tiendas);
+  renderMetricas(totCurr, totRef, tiendas, ref);
   renderTablaCompleta(tiendas, ref);
 }
 
@@ -2823,7 +2823,7 @@ function renderCanales(totCurr, totRef){
 }
 
 // ⑤ MÉTRICAS
-function renderMetricas(totCurr, totRef, tiendas){
+function renderMetricas(totCurr, totRef, tiendas, ref){
   // Descuentos
   const descCurr  = num(totCurr.descuentos||0);
   const descAcum  = num(totCurr.descuentosAcum||0);
@@ -2858,13 +2858,13 @@ function renderMetricas(totCurr, totRef, tiendas){
   renderMiniBarChart('anlChartTicket',tiendas.map(t=>t.tienda.replace('Oakberry ','')),tiendas.map(t=>{const tn=num(t.transacciones);return tn>0?num(t.ventasNetas)/tn:0;}),'#f5c85a');
 
   // ⑤ Costo y Margen
-  renderCostoMargen(tiendas, refTiendas);
+  renderCostoMargen(tiendas, ref);
 
   // ⑥ Top Productos
-  renderTopProductos(curr);
+  renderTopProductos(tiendas);
 
   // ⑦ Crecimiento por Canal
-  renderCanalCrecimiento(tiendas, refTiendas);
+  renderCanalCrecimiento(tiendas, ref);
 }
 
 function metricaRow(label, val, delta){
