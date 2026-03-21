@@ -3314,8 +3314,9 @@ function renderSeguimiento(data){
   });
 
   // ── Fila de totales ──
-  const totalAA       = rows.reduce((s,r)=>s+r.aaVentas,0);
-  const totalAATrans  = rows.reduce((s,r)=>s+r.aaTrans,0);
+  // Solo días con hasData para comparar manzanas con manzanas
+  const totalAA      = rows.filter(r=>r.hasData).reduce((s,r)=>s+r.aaVentas,0);
+  const totalAATrans = rows.filter(r=>r.hasData).reduce((s,r)=>s+r.aaTrans,0);
   // % vs ppto acum: ventas acumuladas vs presupuesto prorrateado al último día con data
   const desvFinal     = pptoProrrateado>0 ? ((acumVentas-pptoProrrateado)/pptoProrrateado)*100 : null;
   const totalCrecPct  = totalAA>0 ? ((acumVentas-totalAA)/totalAA)*100 : null;
