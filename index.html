@@ -1521,6 +1521,25 @@ function initDates() {
 // ═══════════════════════════════════════════════════════════
 //  DASHBOARD DATA LOAD
 // ═══════════════════════════════════════════════════════════
+async function cargarDatosDashboard() {
+  // Carga datos del dashboard sin routing por sección (evita loops)
+  const fechaFinInput = document.getElementById('fechaFin').value;
+  if(!fechaFinInput) return;
+  const ff = new Date(fechaFinInput+'T12:00:00');
+  const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
+  const tienda = document.getElementById('tiendaSelect').value;
+  showLoader(true,'Cargando datos...','Consultando Toteat');
+  try {
+    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if(data && !data.error && Array.isArray(data)) {
+      datosGlobales = data;
+    }
+  } catch(e) { console.error('cargarDatosDashboard:', e); }
+  finally { showLoader(false); }
+}
+
 async function cargarDatos() {
   if (!getSession()) { doLogout(); return; }
   const fechaFinInput = document.getElementById('fechaFin').value;
@@ -1530,6 +1549,7 @@ async function cargarDatos() {
   if(seccion === 'section-reporteDiario'){ await cargarReporteDiario(); return; }
   if(seccion === 'section-seguimiento'){ await cargarSeguimiento(); return; }
   if(seccion === 'section-productos'){ await cargarProductos(); return; }
+  if(seccion === 'section-analisis'){ await cargarAnalisis(); return; }
 
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
@@ -1849,9 +1869,11 @@ async function runProjection() {
   const storeKeys = storeKey==='all' ? Object.keys(STORES) : [storeKey];
 
   // Determinar si el mes a proyectar ya tiene días transcurridos
-  const today    = new Date();
+  // Usar hora CR (UTC-6) para evitar que a las 6pm UTC ya "sea mañana"
+  const _crNow   = new Date(Date.now() - 6*60*60*1000);
+  const today    = new Date(_crNow.getUTCFullYear(), _crNow.getUTCMonth(), _crNow.getUTCDate());
   const isCurMes = today.getFullYear()===tY && today.getMonth()+1===tM;
-  const lastRealDay = isCurMes ? today.getDate()-1 : 0; // días ya cerrados
+  const lastRealDay = isCurMes ? today.getDate()-1 : 0; // días ya cerrados (hoy no cierra hasta el día siguiente)
 
   showLoader(true,'Calculando proyección...','Iniciando...');
   document.getElementById('proyRunBtn').disabled=true;
@@ -1951,7 +1973,9 @@ function buildProjection(historicalByStore, currentMonthByStore, lastRealDay, tY
   const pDow  = countDow(prevY,prevM);
   const daysInMonth  = new Date(tY,tM,0).getDate();
   const histToDate   = new Date(histTo+'T00:00:00');
-  const todayStr     = new Date().toISOString().split('T')[0];
+  // Hoy en CR (UTC-6) — evitar desfase de timezone
+  const _nowCR   = new Date(Date.now() - 6*60*60*1000);
+  const todayStr = _nowCR.toISOString().split('T')[0];
 
   // Percentil para suavizado de outliers
   function percentile(arr, p) {
@@ -2289,19 +2313,21 @@ function renderProyTable(data){
     if(d.dow===0)  badges+=`<span class="badge-sm b-sun">DOM</span>`;
     if(d.isFeriado)badges+=`<span class="badge-sm b-hol">${d.feriadoName}</span>`;
 
-    // Tendencia: proyectado (o real si ya pasó)
+    // Tendencia: real si ya pasó, proyección si es futuro, — si no hay real y es hoy
     const tend    = d.projected;
-    const tendColor = d.isReal ? 'var(--teal)' : 'var(--accent)';
-    const tendLabel = d.isReal
+    const tendLabel = (d.isReal && !d.isToday)
       ? `<span style="color:var(--teal)">₡${tend.toLocaleString('es-CR')}</span>`
-      : `<span style="color:var(--accent)">${fmtK(tend)}</span>`;
+      : d.isToday
+        ? `<span style="color:var(--accent);font-style:italic">${fmtK(tend)}</span>`
+        : `<span style="color:var(--muted)">${fmtK(tend)}</span>`;
 
     // Budget del forecast sheet
     const dayNum  = new Date(d.date+'T12:00:00').getDate();
     const budget  = data.forecastPorDia ? (data.forecastPorDia[dayNum] || 0) : 0;
 
-    // Venta real (solo si ya pasó el día)
-    const realVal = d.isReal ? d.projected : null;
+    // Venta real: solo días con isReal=true (day <= lastRealDay, días cerrados)
+    // d.isReal es true solo si day <= lastRealDay del mes actual
+    const realVal = (d.isReal && !d.isToday) ? d.projected : null;
 
     // Desviaciones vs budget
     const desvBudget    = (realVal!==null && budget>0) ? realVal - budget : null;
@@ -2466,9 +2492,10 @@ async function cargarAnalisis(){
 
   try{
     // Datos actuales (reusar si ya están en caché)
-    if(!datosGlobales){ await cargarDatos(); }
+    // Nota: NO llamar cargarDatos() aquí — causaría loop con la ruta section-analisis
+    if(!datosGlobales){ await cargarDatosDashboard(); }
     anlDataCurr = datosGlobales;
-    if(!anlDataCurr){ throw new Error('Sin datos actuales'); }
+    if(!anlDataCurr){ throw new Error('Sin datos actuales — cargá primero el Dashboard'); }
 
     // Calcular fecha de referencia
     const ff = new Date(fechaFinInput+'T12:00:00');
