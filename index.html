@@ -2476,9 +2476,10 @@ function exportProyExcel(){
 // ═══════════════════════════════════════════════════════════
 //  MÓDULO ANÁLISIS
 // ═══════════════════════════════════════════════════════════
-let anlPeriod   = -7;          // -7, -15, or 'mes'
-let anlCharts   = {};          // chart instances
-let anlDataCurr = null, anlDataRef = null, anlTrendData = null; // datos análisis
+let anlPeriod      = -7;
+let anlCharts      = {};
+let anlDataCurr    = null, anlDataRef = null, anlTrendData = null;
+let anlLastTienda  = null; // para detectar cambio de tienda
 
 const CANAL_CFG = [
   { key:'uber',    label:'Uber Eats',   color:'#06C167', keyAcum:'uberAcum'  },
@@ -2531,9 +2532,19 @@ async function cargarAnalisis(){
   document.getElementById('btnAnalisis').disabled = true;
 
   try{
-    // Reusar datosGlobales si ya están — evitar fetch extra
-    if(!datosGlobales){ await cargarDatosDashboard(); }
-    anlDataCurr = datosGlobales;
+    // Cargar datos filtrados por tienda activa
+    const tiendaActual = document.getElementById('tiendaSelect').value;
+    if(!datosGlobales || anlLastTienda !== tiendaActual){ await cargarDatosDashboard(); }
+    anlLastTienda = tiendaActual;
+
+    // Filtrar por tienda si no es "todas"
+    let currData = datosGlobales;
+    if(tiendaActual !== 'todas' && Array.isArray(datosGlobales)){
+      const tiendaNombre = {guachipelin:'Oakberry Guachipelin',escazu:'Oakberry Avenida Escazu',citymall:'Oakberry City Mall',santaana:'Santa Ana TC'}[tiendaActual];
+      const row = datosGlobales.find(r=>r.tienda===tiendaNombre);
+      if(row) currData = [{ tienda:'TODAS', ...row }, row];
+    }
+    anlDataCurr = currData;
     if(!anlDataCurr){ throw new Error('Sin datos — cargá primero el Dashboard'); }
 
     // Calcular fecha de referencia
@@ -2551,12 +2562,37 @@ async function cargarAnalisis(){
 
     setStep('Cargando comparativo...');
     const month=ff.getMonth()+1, year=ff.getFullYear();
-    const tienda = document.getElementById('tiendaSelect').value;
 
-    anlDataRef = await fetchRefDataRapido(fechaRef, tienda);
-    anlTrendData = []; // no se usa más
+    anlDataRef = await fetchRefDataRapido(fechaRef, tiendaActual);
 
-    renderAnalisis(anlDataCurr, anlDataRef, [], fechaFinInput, fechaRef);
+    // Cargar datos diarios del mes actual y mes anterior para el gráfico de línea
+    setStep('Cargando tendencia día a día...');
+    const pad = n=>String(n).padStart(2,'0');
+    const crNow = new Date(Date.now()-6*60*60*1000);
+    const lastDay = (ff.getFullYear()===crNow.getUTCFullYear()&&ff.getMonth()+1===crNow.getUTCMonth()+1)
+      ? crNow.getUTCDate() : new Date(ff.getFullYear(),ff.getMonth()+1,0).getDate();
+    const storeKeyAnl = tiendaActual==='todas'?'all':tiendaActual;
+    const mesIni  = `${ff.getFullYear()}-${pad(ff.getMonth()+1)}-01`;
+    const mesFin  = `${ff.getFullYear()}-${pad(ff.getMonth()+1)}-${pad(lastDay)}`;
+    const refIni  = `${new Date(fechaRef+'T12:00:00').getFullYear()}-${pad(new Date(fechaRef+'T12:00:00').getMonth()+1)}-01`;
+    const refFinD = new Date(fechaRef+'T12:00:00');
+    const refLastDay = Math.min(lastDay, new Date(refFinD.getFullYear(),refFinD.getMonth()+1,0).getDate());
+    const refFinStr  = `${refFinD.getFullYear()}-${pad(refFinD.getMonth()+1)}-${pad(refLastDay)}`;
+
+    let anlDailyActual = [], anlDailyRef = [];
+    try {
+      const [respAct, respRef] = await Promise.all([
+        fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKeyAnl}&fechaInicio=${mesIni}&fechaFin=${mesFin}`),
+        fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKeyAnl}&fechaInicio=${refIni}&fechaFin=${refFinStr}`)
+      ]);
+      anlDailyActual = await respAct.json();
+      anlDailyRef    = await respRef.json();
+      if(!Array.isArray(anlDailyActual)) anlDailyActual=[];
+      if(!Array.isArray(anlDailyRef))    anlDailyRef=[];
+    } catch(e){ console.warn('Daily data error:', e); }
+    anlTrendData = { actual: anlDailyActual, ref: anlDailyRef, mesIni, refIni };
+
+    renderAnalisis(anlDataCurr, anlDataRef, anlTrendData, fechaFinInput, fechaRef);
     document.getElementById('anlEmpty').style.display   = 'none';
     document.getElementById('anlContent').style.display = 'block';
     setTxt('anlSubtitle', `Fecha: ${fechaFinInput} · Comparando ${anlPeriodLabel()}`);
@@ -2720,47 +2756,69 @@ function renderCompChart(tiendas, ref){
 
 // ③ TENDENCIA DEL MES
 function renderTrendChart(dailyData, fechaCurr, curr, ref){
-  // Comparativo: mes actual vs mes anterior por tienda
   if(anlCharts.trend) anlCharts.trend.destroy();
   const ctx = document.getElementById('anlChartTrend')?.getContext('2d');
   if(!ctx) return;
 
-  const tiendas = Array.isArray(curr)
-    ? curr.filter(t=>t.tienda!=='TODAS')
-    : [];
+  // dailyData = { actual: [{fecha, ventasNetas}], ref: [...], mesIni, refIni }
+  const hasDaily = dailyData && Array.isArray(dailyData.actual) && dailyData.actual.length>0;
+  if(!hasDaily){
+    // Fallback: barras por tienda
+    const tag=document.getElementById('anlTrendTag');
+    if(tag) tag.textContent='sin datos diarios';
+    return;
+  }
 
-  if(!tiendas.length) return;
+  const actData = dailyData.actual;
+  const refData = dailyData.ref || [];
+  const daysInMonth = actData.length > 0 ? Math.max(...actData.map(d=>new Date(d.fecha+'T12:00:00').getDate())) : 31;
 
-  const labels   = tiendas.map(t=>t.tienda.replace('Oakberry ','').replace(' Town Center',''));
-  const currVals = tiendas.map(t=>num(t.ventasAcumuladas||t.ventasNetas||0));
-  const refVals  = ref
-    ? tiendas.map(t=>{ const r=ref.find(x=>x.tienda===t.tienda); return r?num(r.ventasAcumuladas||r.ventasNetas||0):0; })
-    : tiendas.map(()=>0);
-  const colors   = tiendas.map(t=>storeColor(t.tienda));
+  // Construir arrays indexados por día del mes (1-31)
+  const actByDay = {}; actData.forEach(d=>{ actByDay[new Date(d.fecha+'T12:00:00').getDate()] = d.ventasNetas||0; });
+  const refByDay = {}; refData.forEach(d=>{ refByDay[new Date(d.fecha+'T12:00:00').getDate()] = d.ventasNetas||0; });
+
+  const maxDay = Math.max(daysInMonth, refData.length>0 ? Math.max(...refData.map(d=>new Date(d.fecha+'T12:00:00').getDate())) : 0);
+  const labels = Array.from({length:maxDay},(_,i)=>String(i+1));
+  const actVals = labels.map((_,i)=>actByDay[i+1]||null);
+  const refVals = labels.map((_,i)=>refByDay[i+1]||null);
+
+  // Colores
+  const actColor = '#a855f7';
+  const refColor = '#5af5c8';
+
+  // Fecha label para leyenda
+  const actMes = dailyData.mesIni ? new Date(dailyData.mesIni+'T12:00:00').toLocaleDateString('es-CR',{month:'short',year:'numeric'}) : 'Actual';
+  const refMes = dailyData.refIni ? new Date(dailyData.refIni+'T12:00:00').toLocaleDateString('es-CR',{month:'short',year:'numeric'}) : 'Anterior';
 
   anlCharts.trend = new Chart(ctx, {
-    type:'bar',
+    type:'line',
     data:{ labels, datasets:[
-      { label:'Mes actual',    data:currVals, backgroundColor:colors.map(c=>c+'cc'), borderColor:colors, borderWidth:1, borderRadius:5 },
-      { label:'Ref. anterior', data:refVals,  backgroundColor:'rgba(112,112,160,.2)', borderColor:'rgba(112,112,160,.5)', borderWidth:1, borderRadius:5 }
+      { label:actMes, data:actVals, borderColor:actColor, borderWidth:2.5,
+        backgroundColor:actColor+'22', fill:true,
+        pointRadius:3, pointBackgroundColor:actColor,
+        tension:.3, spanGaps:true },
+      { label:refMes, data:refVals, borderColor:refColor, borderWidth:1.5,
+        backgroundColor:'transparent',
+        pointRadius:2, pointBackgroundColor:refColor,
+        borderDash:[5,4], tension:.3, spanGaps:true }
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{
-        legend:{ labels:{color:'#7070a0',font:{size:10}} },
+        legend:{ labels:{color:'#7070a0',font:{size:10},boxWidth:14} },
         datalabels:{display:false},
         tooltip:{ backgroundColor:'#1a1a24', bodyColor:'#7070a0',
-          callbacks:{ label: c=>' '+c.dataset.label+': '+fmtK(c.parsed.y) }}
+          callbacks:{ label:c=>' '+c.dataset.label+': '+fmtK(c.parsed.y) }}
       },
       scales:{
-        x:{ grid:{display:false}, ticks:{color:'#7070a0',font:{size:11}} },
+        x:{ grid:{color:'rgba(42,42,58,.3)'}, ticks:{color:'#7070a0',font:{size:9},maxTicksLimit:15} },
         y:{ grid:{color:'rgba(42,42,58,.4)'}, ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)} }
       }
     }
   });
 
   const tag=document.getElementById('anlTrendTag');
-  if(tag) tag.textContent='mes actual vs referencia';
+  if(tag) tag.textContent=`${actMes} vs ${refMes}`;
 }
 
 // ④ CANALES
@@ -2925,39 +2983,50 @@ function renderCostoMargen(tiendas, refTiendas) {
 // ── TOP PRODUCTOS DEL DÍA ─────────────────────────────────────────────────────
 function renderTopProductos(curr) {
   const list = document.getElementById('anlTopProdList');
-  // Aggregate products from all stores in curr
+  // Top productos requiere el endpoint de productos — mostrar canal breakdown como proxy
+  // y botón para ir a la pestaña de Ventas Producto
   const tiendas = Array.isArray(curr) ? curr.filter(t=>t.tienda!=='TODAS') : [];
-  // We don't have per-product data in curr (only totals) — show message to use Ventas Producto tab
-  // Instead show top canales breakdown as proxy
-  if(!tiendas.length){ list.innerHTML='<div class="empty-state"><div class="empty-txt">Usá la pestaña Ventas Producto para el detalle</div></div>'; return; }
+  const total   = Array.isArray(curr) ? (curr.find(t=>t.tienda==='TODAS')||curr[0]) : {};
 
-  // Show per-store ventas as ranked list
-  const sorted = [...tiendas].sort((a,b)=>num(b.ventasNetas)-num(a.ventasNetas));
-  const max = num(sorted[0]?.ventasNetas||1);
-  const storeColors = {'Oakberry Guachipelin':'#a855f7','Oakberry Avenida Escazu':'#5af5c8','Oakberry City Mall':'#f5c85a','Santa Ana Town Center':'#f55a5a','Santa Ana TC':'#f55a5a'};
+  // Mostrar breakdown por canal del día
+  const canales = [
+    {key:'uber',  label:'Uber Eats',  color:'#06C167'},
+    {key:'peya',  label:'Pedidos Ya', color:'#FF6244'},
+    {key:'didi',  label:'Didi Food',  color:'#FF6600'},
+    {key:'olo',   label:'Mercat/OLO', color:'#5af5c8'},
+    {key:'otros', label:'Mostrador',  color:'#a855f7'},
+  ];
+  const totalVenta = canales.reduce((s,c)=>s+num(total[c.key]||0),0)||1;
 
-  list.innerHTML = sorted.map((t,i)=>{
-    const v = num(t.ventasNetas);
-    const pct = max>0 ? (v/max*100) : 0;
-    const color = storeColors[t.tienda] || '#a855f7';
-    const name = t.tienda.replace('Oakberry ','');
-    const trans = num(t.transacciones);
-    const ticket = trans>0 ? Math.round(v/trans) : 0;
-    return `<div style="padding:10px 18px;border-bottom:1px solid rgba(42,42,58,.4)">
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-        <span style="font-size:12px;font-weight:700">${name}</span>
-        <span style="font-family:var(--mono);font-size:12px;color:${color}">${fmtK(v)}</span>
+  list.innerHTML = canales.map(c=>{
+    const v = num(total[c.key]||0);
+    const pct = totalVenta>0 ? (v/totalVenta*100) : 0;
+    if(v===0) return '';
+    return `<div style="padding:9px 18px;border-bottom:1px solid rgba(42,42,58,.4)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${c.color};display:inline-block"></span>
+          ${c.label}
+        </span>
+        <span style="font-family:var(--mono);font-size:12px;color:${c.color}">${fmtK(v)}</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <div style="flex:1;height:4px;background:var(--border);border-radius:2px">
-          <div style="width:${pct}%;height:100%;background:${color};border-radius:2px"></div>
+        <div style="flex:1;height:3px;background:var(--border);border-radius:2px">
+          <div style="width:${pct.toFixed(1)}%;height:100%;background:${c.color};border-radius:2px"></div>
         </div>
-        <span style="font-size:10px;color:var(--muted)">${trans} ord · ticket ${fmtK(ticket)}</span>
+        <span style="font-size:10px;color:var(--muted)">${pct.toFixed(1)}%</span>
       </div>
     </div>`;
-  }).join('');
+  }).filter(Boolean).join('');
 
-  setTxt('anlTopProdTag', `${sorted.length} tiendas`);
+  // Botón para ir a Ventas Producto
+  list.innerHTML += `<div style="padding:14px 18px;text-align:center">
+    <button class="btn btn-lime" style="font-size:11px;padding:6px 14px" onclick="document.querySelector('[data-section=productos]').click()">
+      🥣 Ver Ventas por Producto →
+    </button>
+  </div>`;
+
+  setTxt('anlTopProdTag', 'canales del día');
 }
 
 // ── CRECIMIENTO POR CANAL ─────────────────────────────────────────────────────
