@@ -839,6 +839,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <button class="logout-btn" tabindex="-1">✕</button>
         </div>
         <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos()">↻ Actualizar</button>
+      <button class="btn" id="btnSincronizar" onclick="forzarSincronizacion()" title="Forzar sincronización del cache con Toteat" style="font-size:11px;padding:6px 10px;opacity:.7">⟳ Sync</button>
     </div>
   </div>
 
@@ -1559,19 +1560,20 @@ function initDates() {
 //  DASHBOARD DATA LOAD
 // ═══════════════════════════════════════════════════════════
 async function cargarDatosDashboard() {
-  // Carga datos del dashboard sin routing por sección (evita loops)
   const fechaFinInput = document.getElementById('fechaFin').value;
   if(!fechaFinInput) return;
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
   const tienda = document.getElementById('tiendaSelect').value;
-  showLoader(true,'Cargando datos...','Consultando Toteat');
+  showLoader(true,'Cargando datos...','Leyendo cache');
   try {
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const url = `${APPS_SCRIPT_URL}?action=getDatos&day=${day}&month=${month}&year=${year}&tienda=${tienda}`;
     const resp = await fetch(url);
-    const data = await resp.json();
-    if(data && !data.error && Array.isArray(data)) {
+    const json = await resp.json();
+    const data = json.datos || json;
+    if(data && Array.isArray(data) && !data.error) {
       datosGlobales = data;
+      if(json.ultimaSync) ultimaSync = json.ultimaSync;
     }
   } catch(e) { console.error('cargarDatosDashboard:', e); }
   finally { showLoader(false); }
@@ -1600,17 +1602,20 @@ async function cargarDatos() {
     return;
   }
 
-  showLoader(true,'Cargando datos...','Consultando Toteat');
+  showLoader(true,'Cargando datos...','Leyendo cache');
   document.getElementById('btnActualizar').disabled = true;
   try{
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const url = `${APPS_SCRIPT_URL}?action=getDatos&day=${day}&month=${month}&year=${year}&tienda=${tienda}`;
     const resp = await fetch(url);
-    const data = await resp.json();
-    if(!data||data.error||!data.length){ alert('Sin datos: '+(data?.message||'—')); return; }
+    const json = await resp.json();
+    const data = json.datos || json;
+    if(!data||!Array.isArray(data)||!data.length){ alert('Sin datos: '+(json?.message||'—')); return; }
     datosGlobales = data;
     cacheConsultas[clave] = {data,ts:ahora};
+    if(json.ultimaSync) ultimaSync = json.ultimaSync;
     renderDashboard(data);
-    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR'));
+    const syncStr = ultimaSync ? ' · sync: '+new Date(ultimaSync).toLocaleTimeString('es-CR') : '';
+    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+syncStr);
   }catch(e){ alert('Error: '+e.message); }
   finally{ showLoader(false); document.getElementById('btnActualizar').disabled=false; }
 }
@@ -2584,10 +2589,11 @@ async function fetchRefDataRapido(fechaRef, tienda){
     // Use the full dashboard endpoint but with cache
     const ff = new Date(fechaRef+'T12:00:00');
     const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
-    const urlFull = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const urlFull = `${APPS_SCRIPT_URL}?action=getDatos&day=${day}&month=${month}&year=${year}&tienda=${tienda}`;
     const respFull = await fetch(urlFull);
-    const data = await respFull.json();
-    if(data && data.length) {
+    const json = await respFull.json();
+    const data = json.datos || json;
+    if(data && Array.isArray(data) && data.length) {
       cacheConsultas[clave] = { data, ts: Date.now() };
       return data;
     }
@@ -3046,6 +3052,24 @@ function renderTablaCompleta(tiendas, ref){
     tbody.appendChild(tr);
   });
 }
+async function forzarSincronizacion() {
+  const btn = document.getElementById('btnSincronizar');
+  if(btn){ btn.disabled=true; btn.textContent='⟳ Sync...'; }
+  showLoader(true,'Sincronizando con Toteat...','Esto tarda ~30 segundos');
+  try {
+    const resp = await fetch(`${APPS_SCRIPT_URL}?action=sincronizar`);
+    const json = await resp.json();
+    if(json.ok) {
+      setTxt('pageSub','Cache sincronizado: '+new Date().toLocaleTimeString('es-CR'));
+      await cargarDatos(); // recargar con datos frescos
+    }
+  } catch(e) { alert('Error sincronizando: '+e.message); }
+  finally {
+    showLoader(false);
+    if(btn){ btn.disabled=false; btn.textContent='⟳ Sync'; }
+  }
+}
+
 window.addEventListener('load', () => {
   initDates();
   // Inicializar mes de seguimiento al mes actual
