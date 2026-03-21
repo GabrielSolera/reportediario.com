@@ -2586,8 +2586,9 @@ async function fetchRefDataRapido(fechaRef, tienda){
     const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
     const urlFull = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
     const respFull = await fetch(urlFull);
-    const data = await respFull.json();
-    if(data && data.length) {
+    const json = await respFull.json();
+    const data = json.datos || json;
+    if(data && Array.isArray(data) && data.length) {
       cacheConsultas[clave] = { data, ts: Date.now() };
       return data;
     }
@@ -3917,5 +3918,4 @@ function setModoVenta(modo) {
 
 </script>
 </body>
-
 </html>
