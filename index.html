@@ -1559,15 +1559,15 @@ function initDates() {
 //  DASHBOARD DATA LOAD
 // ═══════════════════════════════════════════════════════════
 async function cargarDatosDashboard() {
-  // Carga datos del dashboard sin routing por sección (evita loops)
   const fechaFinInput = document.getElementById('fechaFin').value;
   if(!fechaFinInput) return;
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
   const tienda = document.getElementById('tiendaSelect').value;
+  // Siempre fetchear "todas" para tener todos los datos disponibles para filtrar
   showLoader(true,'Cargando datos...','Consultando Toteat');
   try {
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=todas&modoRapido=true`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(data && !data.error && Array.isArray(data)) {
@@ -2540,9 +2540,19 @@ async function cargarAnalisis(){
     // Filtrar por tienda si no es "todas"
     let currData = datosGlobales;
     if(tiendaActual !== 'todas' && Array.isArray(datosGlobales)){
-      const tiendaNombre = {guachipelin:'Oakberry Guachipelin',escazu:'Oakberry Avenida Escazu',citymall:'Oakberry City Mall',santaana:'Santa Ana TC'}[tiendaActual];
+      const tiendaNombres = {
+        guachipelin: 'Oakberry Guachipelin',
+        escazu:      'Oakberry Avenida Escazu',
+        citymall:    'Oakberry City Mall',
+        santaana:    'Santa Ana TC'
+      };
+      const tiendaNombre = tiendaNombres[tiendaActual];
       const row = datosGlobales.find(r=>r.tienda===tiendaNombre);
-      if(row) currData = [{ tienda:'TODAS', ...row }, row];
+      if(row){
+        // Crear TODAS como copia de la tienda individual para que los totales sean correctos
+        const todas = {...row, tienda:'TODAS'};
+        currData = [todas, row];
+      }
     }
     anlDataCurr = currData;
     if(!anlDataCurr){ throw new Error('Sin datos — cargá primero el Dashboard'); }
@@ -2603,36 +2613,39 @@ async function cargarAnalisis(){
 
 // Fetch datos de referencia usando historialDiario (rápido, sin crecimiento vs mes anterior)
 async function fetchRefDataRapido(fechaRef, tienda){
-  const clave = `refrapido-${fechaRef}-${tienda}`;
-  if(cacheConsultas[clave] && (Date.now()-cacheConsultas[clave].ts)<10*60*1000)
-    return cacheConsultas[clave].data;
-
-  const storeKey = tienda === 'todas' ? 'all' : tienda;
-  const url = `${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKey}&fechaInicio=${fechaRef}&fechaFin=${fechaRef}`;
+  // Siempre fetechear "todas" para tener canales y todas las tiendas
+  const clave = `refrapido-${fechaRef}`;
+  if(cacheConsultas[clave] && (Date.now()-cacheConsultas[clave].ts)<10*60*1000){
+    return filtrarRefPorTienda(cacheConsultas[clave].data, tienda);
+  }
   try {
-    const resp = await fetch(url);
-    const hist = await resp.json(); // [{ fecha, ventasNetas, transacciones }]
-    if(!Array.isArray(hist) || !hist.length) return null;
-
-    // Convert to same format as datosGlobales for renderAnalisis compatibility
-    // renderAnalisis needs: [{tienda, ventasNetas, transacciones, uber, peya, didi, olo, otros, ...}]
-    // For reference we only need ventasNetas + transacciones — canales not available via historial
-    // Use the full dashboard endpoint but with cache
     const ff = new Date(fechaRef+'T12:00:00');
     const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
-    const urlFull = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
-    const respFull = await fetch(urlFull);
-    const json = await respFull.json();
-    const data = json.datos || json;
+    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=todas&modoRapido=true`;
+    const resp = await fetch(url);
+    const data = await resp.json();
     if(data && Array.isArray(data) && data.length) {
       cacheConsultas[clave] = { data, ts: Date.now() };
-      return data;
+      return filtrarRefPorTienda(data, tienda);
     }
     return null;
   } catch(e) {
     console.error('fetchRefDataRapido:', e);
     return null;
   }
+}
+
+function filtrarRefPorTienda(data, tienda){
+  if(!data || !Array.isArray(data)) return null;
+  if(tienda === 'todas') return data;
+  const tiendaNombres = {
+    guachipelin:'Oakberry Guachipelin', escazu:'Oakberry Avenida Escazu',
+    citymall:'Oakberry City Mall',      santaana:'Santa Ana TC'
+  };
+  const nombre = tiendaNombres[tienda];
+  const row = data.find(r=>r.tienda===nombre);
+  if(!row) return data; // fallback: devolver todo
+  return [{...row, tienda:'TODAS'}, row];
 }
 
 // Fetch ventas diarias del mes — UNA sola llamada via historialDiario (mucho más rápido)
