@@ -1334,10 +1334,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- ═══════════ VENTAS POR PRODUCTO ═══════════ -->
     <div class="section" id="section-productos">
 
-      <!-- ── Filtros de Categoría ── -->
-      <div class="proy-controls" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <!-- ── Filtros ── -->
+      <div class="proy-controls" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
         <span class="ctrl-label">Categoría</span>
         <div id="prodCatFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+      <div class="proy-controls" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <span class="ctrl-label">Canal</span>
+        <div id="prodCanalFilters" style="display:flex;gap:6px;flex-wrap:wrap">
+          <div class="tab-pills">
+            <button class="tab-pill active" onclick="prodFiltrarCanal('TODOS')">Todos</button>
+            <button class="tab-pill" onclick="prodFiltrarCanal('uber')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#06C167;display:inline-block"></span>Uber Eats</button>
+            <button class="tab-pill" onclick="prodFiltrarCanal('peya')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#FF6244;display:inline-block"></span>Pedidos Ya</button>
+            <button class="tab-pill" onclick="prodFiltrarCanal('didi')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#FF6600;display:inline-block"></span>Didi Food</button>
+            <button class="tab-pill" onclick="prodFiltrarCanal('olo')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#5af5c8;display:inline-block"></span>Mercat/OLO</button>
+            <button class="tab-pill" onclick="prodFiltrarCanal('otros')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#a855f7;display:inline-block"></span>Mostrador</button>
+          </div>
+        </div>
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
           <button class="btn btn-lime" id="prodExcelBtn" onclick="exportProductosExcel()" style="display:none">⬇ Excel</button>
         </div>
@@ -3512,8 +3525,9 @@ const PROD_CATS = {
 const EXCLUIR_CATS = ['BA.010','BA.020','BA.030','BA.040','SIN_ID'];
 
 let prodData = null;
-let prodCatActiva = 'TODAS';
-let prodPieChart  = null;
+let prodCatActiva   = 'TODAS';
+let prodCanalActivo = 'TODOS';
+let prodPieChart    = null;
 
 async function cargarProductos() {
   const fechaFinInput = document.getElementById('fechaFin').value;
@@ -3533,10 +3547,13 @@ async function cargarProductos() {
     data.productos = data.productos.filter(p => !EXCLUIR_CATS.includes(p.hierarchyId));
 
     prodData = data;
-    prodCatActiva = 'TODAS';
+    prodCatActiva   = 'TODAS';
+    prodCanalActivo = 'TODOS';
 
     document.getElementById('prodSubtitle').textContent =
       `${fechaIniInput} → ${fechaFinInput} · ${data.tiendas.join(', ')}`;
+    // Reset canal pills UI
+    document.querySelectorAll('#prodCanalFilters .tab-pill').forEach((b,i)=>b.classList.toggle('active',i===0));
     document.getElementById('prodExcelBtn').style.display = 'flex';
 
     renderCatFilters(data);
@@ -3573,21 +3590,46 @@ function renderCatFilters(data) {
 
 function prodFiltrar(catId) {
   prodCatActiva = catId;
-  // Update pill UI
   document.querySelectorAll('#prodCatFilters .tab-pill').forEach(b => {
-    const matches = b.textContent.trim().startsWith(catId) ||
-      (catId === 'TODAS' && b.textContent.includes('Todas')) ||
-      (b.getAttribute('onclick') || '').includes(`'${catId}'`);
     b.classList.toggle('active', (b.getAttribute('onclick')||'').includes(`'${catId}'`));
+  });
+  renderProductos();
+}
+
+function prodFiltrarCanal(canal) {
+  prodCanalActivo = canal;
+  document.querySelectorAll('#prodCanalFilters .tab-pill').forEach(b => {
+    b.classList.toggle('active', (b.getAttribute('onclick')||'').includes(`'${canal}'`));
   });
   renderProductos();
 }
 
 function getFilteredProductos() {
   if (!prodData) return [];
-  if (prodCatActiva === 'TODAS')  return prodData.productos;
-  if (prodCatActiva === 'BOWLS')  return prodData.productos.filter(p => p.esBowl);
-  return prodData.productos.filter(p => !p.esBowl && p.hierarchyId === prodCatActiva);
+  // Filtrar por categoría
+  let items = prodData.productos;
+  if (prodCatActiva === 'BOWLS')       items = items.filter(p => p.esBowl);
+  else if (prodCatActiva !== 'TODAS')  items = items.filter(p => !p.esBowl && p.hierarchyId === prodCatActiva);
+
+  // Filtrar por canal — usar porCanal para recalcular totales
+  if (prodCanalActivo !== 'TODOS') {
+    items = items
+      .filter(p => p.porCanal && (p.porCanal[prodCanalActivo]||0) > 0)
+      .map(p => ({
+        ...p,
+        total:    p.porCanal[prodCanalActivo] || 0,
+        ventaNeta: p.ventaNeta && p.total > 0
+          ? Math.round(p.ventaNeta * (p.porCanal[prodCanalActivo]||0) / p.total)
+          : 0,
+        // Ajustar porTienda proporcionalmente (aproximado)
+        porTienda: Object.fromEntries(
+          Object.entries(p.porTienda).map(([t,v]) => [t, Math.round(v * (p.porCanal[prodCanalActivo]||0) / (p.total||1))])
+        ),
+        _canalFiltrado: prodCanalActivo
+      }));
+  }
+
+  return items.sort((a,b) => b.total - a.total);
 }
 
 function renderProductos() {
