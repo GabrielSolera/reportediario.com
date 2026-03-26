@@ -1355,6 +1355,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <button class="btn btn-lime" id="prodExcelBtn" onclick="exportProductosExcel()" style="display:none">⬇ Excel</button>
         </div>
       </div>
+      <div id="prodCanalBanner" style="display:none;padding:8px 14px;margin-bottom:12px;background:rgba(245,200,90,.08);border:1px solid rgba(245,200,90,.2);border-radius:8px;font-size:12px;color:var(--amber)">
+        ⚠️ El filtro de canal requiere redeploy del Apps Script. Recargá los datos después de hacer deploy.
+      </div>
 
       <!-- ── Panel superior: 6 KPIs compactos + Chart ── -->
       <div class="grid-2" style="margin-bottom:16px;align-items:start">
@@ -3611,22 +3614,29 @@ function getFilteredProductos() {
   if (prodCatActiva === 'BOWLS')       items = items.filter(p => p.esBowl);
   else if (prodCatActiva !== 'TODAS')  items = items.filter(p => !p.esBowl && p.hierarchyId === prodCatActiva);
 
-  // Filtrar por canal — usar porCanal para recalcular totales
+  // Filtrar por canal
   if (prodCanalActivo !== 'TODOS') {
+    // Si porCanal no existe (gs no redeployado), avisar
+    const tienePorCanal = items.some(p => p.porCanal);
+    if (!tienePorCanal) {
+      console.warn('porCanal no disponible — redeploy el .gs');
+    }
     items = items
       .filter(p => p.porCanal && (p.porCanal[prodCanalActivo]||0) > 0)
-      .map(p => ({
-        ...p,
-        total:    p.porCanal[prodCanalActivo] || 0,
-        ventaNeta: p.ventaNeta && p.total > 0
-          ? Math.round(p.ventaNeta * (p.porCanal[prodCanalActivo]||0) / p.total)
-          : 0,
-        // Ajustar porTienda proporcionalmente (aproximado)
-        porTienda: Object.fromEntries(
-          Object.entries(p.porTienda).map(([t,v]) => [t, Math.round(v * (p.porCanal[prodCanalActivo]||0) / (p.total||1))])
-        ),
-        _canalFiltrado: prodCanalActivo
-      }));
+      .map(p => {
+        const totalOriginal = p.total || 1;
+        const totalCanal    = p.porCanal[prodCanalActivo] || 0;
+        const ratio         = totalCanal / totalOriginal;
+        return {
+          ...p,
+          total:    totalCanal,
+          ventaNeta: p.ventaNeta ? Math.round(p.ventaNeta * ratio) : 0,
+          porTienda: Object.fromEntries(
+            Object.entries(p.porTienda).map(([t,v]) => [t, Math.round(v * ratio)])
+          ),
+          _canalFiltrado: prodCanalActivo
+        };
+      });
   }
 
   return items.sort((a,b) => b.total - a.total);
@@ -3634,6 +3644,14 @@ function getFilteredProductos() {
 
 function renderProductos() {
   if (!prodData) return;
+
+  // Detectar si porCanal está disponible (requiere redeploy del .gs)
+  const tienePorCanal = prodData.productos.some(p => p.porCanal);
+  const canalBanner = document.getElementById('prodCanalBanner');
+  if(canalBanner){
+    canalBanner.style.display = (!tienePorCanal && prodCanalActivo !== 'TODOS') ? 'block' : 'none';
+  }
+
   const items   = getFilteredProductos();
   const tiendas = prodData.tiendas;
   const cat     = PROD_CATS[prodCatActiva];
