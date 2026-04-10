@@ -2723,18 +2723,19 @@ function renderAnalisis(curr, ref, trendData, fechaCurr, fechaRef){
   renderTablaCompleta(tiendas, ref);
 }
 
-// ① RANKING
+// ① RANKING — usa ventasAcumuladas (período completo, no solo el día)
 function renderRanking(tiendas, ref){
-  const sorted = [...tiendas].sort((a,b)=>num(b.ventasNetas)-num(a.ventasNetas));
-  const maxV   = num(sorted[0]?.ventasNetas||1);
+  const vAnl = t => num(t.ventasAcumuladas||t.ventasNetas||0);
+  const sorted = [...tiendas].sort((a,b)=>vAnl(b)-vAnl(a));
+  const maxV   = vAnl(sorted[0])||1;
   const medals = ['🥇','🥈','🥉','4️⃣'];
   const container = document.getElementById('anlRanking');
   container.innerHTML='';
 
   sorted.forEach((t,i)=>{
-    const v = num(t.ventasNetas);
+    const v = vAnl(t);
     const refRow = ref ? ref.find(r=>r.tienda===t.tienda) : null;
-    const refV = refRow ? num(refRow.ventasNetas) : 0;
+    const refV = refRow ? num(refRow.ventasAcumuladas||refRow.ventasNetas||0) : 0;
     const delta = refV>0 ? ((v-refV)/refV)*100 : 0;
     const hasRef = refV>0;
     const color = storeColor(t.tienda);
@@ -2754,11 +2755,11 @@ function renderRanking(tiendas, ref){
 
 function pl2(v){ return v>=0?'↑':'↓'; }
 
-// ② COMPARATIVO CHART
+// ② COMPARATIVO CHART — usa ventasAcumuladas
 function renderCompChart(tiendas, ref){
   const labels = tiendas.map(t=>t.tienda.replace('Oakberry ','').replace(' Town Center',''));
-  const curr   = tiendas.map(t=>num(t.ventasNetas));
-  const refVals= tiendas.map(t=>{ const r=ref?ref.find(r2=>r2.tienda===t.tienda):null; return r?num(r.ventasNetas):0; });
+  const curr   = tiendas.map(t=>num(t.ventasAcumuladas||t.ventasNetas||0));
+  const refVals= tiendas.map(t=>{ const r=ref?ref.find(r2=>r2.tienda===t.tienda):null; return r?num(r.ventasAcumuladas||r.ventasNetas||0):0; });
 
   if(anlCharts.comp) anlCharts.comp.destroy();
   const ctx = document.getElementById('anlChartComp').getContext('2d');
@@ -2852,8 +2853,8 @@ function renderTrendChart(dailyData, fechaCurr, curr, ref){
 
 // ④ CANALES
 function renderCanales(totCurr, totRef){
-  const totalAcum = CANAL_CFG.reduce((s,c)=>s+num(totCurr[c.keyAcum]),0)||1;
-  const totalRef  = totRef ? CANAL_CFG.reduce((s,c)=>s+num(totRef[c.keyAcum]),0)||1 : 1;
+  const totalAcum = CANAL_CFG.reduce((s,c)=>s+num(totCurr[c.keyAcum]||0),0)||num(totCurr.ventasAcumuladas||totCurr.ventasNetas||1);
+  const totalRef  = totRef ? CANAL_CFG.reduce((s,c)=>s+num(totRef[c.keyAcum]||0),0)||num(totRef.ventasAcumuladas||totRef.ventasNetas||1) : 1;
 
   // KPI pills row
   const grid=document.getElementById('anlCanalesGrid');
@@ -2912,38 +2913,34 @@ function renderCanales(totCurr, totRef){
 
 // ⑤ MÉTRICAS
 function renderMetricas(totCurr, totRef, tiendas, ref){
-  // Descuentos
-  const descCurr  = num(totCurr.descuentos||0);
-  const descAcum  = num(totCurr.descuentosAcum||0);
-  const descRefD  = totRef?num(totRef.descuentos||0):0;
-  const descRefA  = totRef?num(totRef.descuentosAcum||0):0;
-  const descPctV  = num(totCurr.ventasBrutas||totCurr.ventasNetas)>0 ? descAcum/(num(totCurr.ventasBrutasAcum||totCurr.ventasAcumuladas))*100 : 0;
+  // Descuentos — usar acumulado del período
+  const descAcum  = num(totCurr.descuentosAcum||totCurr.descuentos||0);
+  const descRefA  = totRef?num(totRef.descuentosAcum||totRef.descuentos||0):0;
+  const ventaBase = num(totCurr.ventasAcumuladas||totCurr.ventasNetas||1);
+  const ventaRefBase = num(totRef?.ventasAcumuladas||totRef?.ventasNetas||1);
+  const descPctV  = ventaBase>0 ? (descAcum/ventaBase)*100 : 0;
 
   const dg=document.getElementById('anlDescGrid');
-  dg.innerHTML=metricaRow('Desc. día',  fmtK(descCurr), descRefD>0?((descCurr-descRefD)/descRefD)*100:null)+
-               metricaRow('Desc. acum.', fmtK(descAcum),  descRefA>0?((descAcum-descRefA)/descRefA)*100:null)+
+  dg.innerHTML=metricaRow('Desc. período', fmtK(descAcum), descRefA>0?((descAcum-descRefA)/descRefA)*100:null)+
                metricaRow('% sobre venta', descPctV.toFixed(1)+'%', null);
-  renderMiniBarChart('anlChartDesc',tiendas.map(t=>t.tienda.replace('Oakberry ','')),tiendas.map(t=>num(t.descuentos||0)),CANAL_CFG[0].color);
+  renderMiniBarChart('anlChartDesc',tiendas.map(t=>t.tienda.replace('Oakberry ','')),
+    tiendas.map(t=>num(t.descuentosAcum||t.descuentos||0)),CANAL_CFG[0].color);
 
-  // Transacciones
-  const transCurr = num(totCurr.transacciones||0);
-  const transAcum = num(totCurr.transaccionesAcum||0);
-  const transRefD = totRef?num(totRef.transacciones||0):0;
-  const transRefA = totRef?num(totRef.transaccionesAcum||0):0;
+  // Transacciones — acumulado del período
+  const transAcum = num(totCurr.transaccionesAcum||totCurr.transacciones||0);
+  const transRefA = totRef?num(totRef.transaccionesAcum||totRef.transacciones||0):0;
   const tg=document.getElementById('anlTransGrid');
-  tg.innerHTML=metricaRow('Trans. día',  transCurr, transRefD>0?((transCurr-transRefD)/transRefD)*100:null)+
-               metricaRow('Trans. acum.', transAcum, transRefA>0?((transAcum-transRefA)/transRefA)*100:null);
-  renderMiniBarChart('anlChartTrans',tiendas.map(t=>t.tienda.replace('Oakberry ','')),tiendas.map(t=>num(t.transacciones||0)),'#5af5c8');
+  tg.innerHTML=metricaRow('Trans. período', transAcum, transRefA>0?((transAcum-transRefA)/transRefA)*100:null);
+  renderMiniBarChart('anlChartTrans',tiendas.map(t=>t.tienda.replace('Oakberry ','')),
+    tiendas.map(t=>num(t.transaccionesAcum||t.transacciones||0)),'#5af5c8');
 
-  // Ticket medio
-  const ticketD = transCurr>0 ? num(totCurr.ventasNetas)/transCurr : 0;
-  const ticketA = transAcum>0 ? num(totCurr.ventasAcumuladas)/transAcum : 0;
-  const ticketRefD = totRef&&num(totRef.transacciones)>0 ? num(totRef.ventasNetas)/num(totRef.transacciones) : 0;
-  const ticketRefA = totRef&&num(totRef.transaccionesAcum)>0 ? num(totRef.ventasAcumuladas)/num(totRef.transaccionesAcum) : 0;
+  // Ticket medio — acumulado del período
+  const ticketA = transAcum>0 ? ventaBase/transAcum : 0;
+  const ticketRefA = transRefA>0 ? ventaRefBase/transRefA : 0;
   const tkg=document.getElementById('anlTicketGrid');
-  tkg.innerHTML=metricaRow('Ticket día',  fmtK(ticketD), ticketRefD>0?((ticketD-ticketRefD)/ticketRefD)*100:null)+
-                metricaRow('Ticket acum.', fmtK(ticketA), ticketRefA>0?((ticketA-ticketRefA)/ticketRefA)*100:null);
-  renderMiniBarChart('anlChartTicket',tiendas.map(t=>t.tienda.replace('Oakberry ','')),tiendas.map(t=>{const tn=num(t.transacciones);return tn>0?num(t.ventasNetas)/tn:0;}),'#f5c85a');
+  tkg.innerHTML=metricaRow('Ticket período', fmtK(ticketA), ticketRefA>0?((ticketA-ticketRefA)/ticketRefA)*100:null);
+  renderMiniBarChart('anlChartTicket',tiendas.map(t=>t.tienda.replace('Oakberry ','')),
+    tiendas.map(t=>{const tn=num(t.transaccionesAcum||t.transacciones||0);return tn>0?num(t.ventasAcumuladas||t.ventasNetas||0)/tn:0;}),'#f5c85a');
 
   // ⑤ Costo y Margen
   renderCostoMargen(tiendas, ref);
@@ -2965,16 +2962,16 @@ function metricaRow(label, val, delta){
 // ── COSTO Y MARGEN ────────────────────────────────────────────────────────────
 function renderCostoMargen(tiendas, refTiendas) {
   const total = tiendas.find(t=>t.tienda==='TODAS') || tiendas[0] || {};
-  const costo = num(total.costoDia || 0);
-  const venta = num(total.ventasNetas || 0);
+  const costo = num(total.costoAcum || total.costoDia || 0);
+  const venta = num(total.ventasAcumuladas || total.ventasNetas || 0);
   const margen = venta - costo;
   const costoPct = venta > 0 ? (costo/venta*100) : 0;
   const margenPct = venta > 0 ? (margen/venta*100) : 0;
 
   // Ref comparison
   const refTotal = refTiendas ? (refTiendas.find(t=>t.tienda==='TODAS') || refTiendas[0] || {}) : {};
-  const refCosto = num(refTotal.costoDia || 0);
-  const refVenta = num(refTotal.ventasNetas || 0);
+  const refCosto = num(refTotal.costoAcum || refTotal.costoDia || 0);
+  const refVenta = num(refTotal.ventasAcumuladas || refTotal.ventasNetas || 0);
   const refCostoPct = refVenta > 0 ? (refCosto/refVenta*100) : 0;
   const deltaCostoPct = refCostoPct > 0 ? costoPct - refCostoPct : null;
 
@@ -2989,8 +2986,8 @@ function renderCostoMargen(tiendas, refTiendas) {
 
   // Bar chart: venta vs costo por tienda
   const labels = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>t.tienda.replace('Oakberry ',''));
-  const costos = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>num(t.costoDia||0));
-  const ventas = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>num(t.ventasNetas||0));
+  const costos = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>num(t.costoAcum||t.costoDia||0));
+  const ventas = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>num(t.ventasAcumuladas||t.ventasNetas||0));
 
   if(anlCharts['anlChartCosto']) anlCharts['anlChartCosto'].destroy();
   const ctx = document.getElementById('anlChartCosto')?.getContext('2d');
@@ -3066,11 +3063,11 @@ function renderCanalCrecimiento(tiendas, refTiendas) {
   const canales = CANAL_CFG;
   const grid = document.getElementById('anlCanalCrecGrid');
   grid.innerHTML = canales.map(c=>{
-    const curr  = num(total[c.key]||0);
-    const ref   = num(refTotal[c.key]||0);
+    const curr  = num(total[c.keyAcum]||total[c.key]||0);
+    const ref   = num(refTotal[c.keyAcum]||refTotal[c.key]||0);
     const delta = ref>0 ? ((curr-ref)/ref*100) : null;
     const dColor = delta===null?'var(--muted)':(delta>=0?'var(--teal)':'var(--red)');
-    const ventaTotal = num(total.ventasNetas||1);
+    const ventaTotal = num(total.ventasAcumuladas||total.ventasNetas||1);
     const pct = ventaTotal>0 ? (curr/ventaTotal*100).toFixed(1) : '0.0';
     return `<div class="canal-kpi">
       <div class="canal-name"><span class="canal-dot" style="background:${c.color}"></span>${c.label.toUpperCase()}</div>
@@ -3093,8 +3090,8 @@ function renderCanalCrecimiento(tiendas, refTiendas) {
     data:{
       labels: canales.map(c=>c.label),
       datasets:[
-        { label:'Actual',    data:canales.map(c=>num(total[c.key]||0)),    backgroundColor:canales.map(c=>c.color+'aa'), borderRadius:4 },
-        { label:'Referencia',data:canales.map(c=>num((refTotal||{})[c.key]||0)), backgroundColor:'rgba(112,112,160,.25)', borderRadius:4 }
+        { label:'Actual',    data:canales.map(c=>num(total[c.keyAcum]||total[c.key]||0)),    backgroundColor:canales.map(c=>c.color+'aa'), borderRadius:4 },
+        { label:'Referencia',data:canales.map(c=>num((refTotal||{})[c.keyAcum]||(refTotal||{})[c.key]||0)), backgroundColor:'rgba(112,112,160,.25)', borderRadius:4 }
       ]
     },
     options:{ responsive:true, maintainAspectRatio:false,
@@ -3125,16 +3122,18 @@ function renderTablaCompleta(tiendas, ref){
   const sorted=[...tiendas].sort((a,b)=>num(b.ventasNetas)-num(a.ventasNetas));
   sorted.forEach(t=>{
     const refRow=ref?ref.find(r=>r.tienda===t.tienda):null;
-    const refV=refRow?num(refRow.ventasNetas):0;
-    const delta=refV>0?((num(t.ventasNetas)-refV)/refV)*100:null;
-    const trans=num(t.transacciones); const ticket=trans>0?num(t.ventasNetas)/trans:0;
-    const desc=num(t.descuentos||0); const descPct=num(t.ventasNetas)>0?desc/num(t.ventasNetas)*100:0;
-    // Canal top
-    const canalTop=CANAL_CFG.reduce((top,c)=>num(t[c.key])>num(t[top.key])?c:top,CANAL_CFG[0]);
+    const refV=refRow?num(refRow.ventasAcumuladas||refRow.ventasNetas||0):0;
+    const vAcum=num(t.ventasAcumuladas||t.ventasNetas||0);
+    const delta=refV>0?((vAcum-refV)/refV)*100:null;
+    const trans=num(t.transaccionesAcum||t.transacciones||0);
+    const ticket=trans>0?vAcum/trans:0;
+    const desc=num(t.descuentosAcum||t.descuentos||0);
+    const descPct=vAcum>0?desc/vAcum*100:0;
+    const canalTop=CANAL_CFG.reduce((top,c)=>num(t[c.keyAcum]||t[c.key])>num(t[top.keyAcum]||t[top.key])?c:top,CANAL_CFG[0]);
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td style="padding-left:16px;font-weight:700">${t.tienda.replace('Oakberry ','')}</td>
-      <td style="color:var(--accent)">${fmtK(t.ventasNetas)}</td>
+      <td style="color:var(--accent)">${fmtK(vAcum)}</td>
       <td style="color:var(--muted)">${refV>0?fmtK(refV):'—'}</td>
       <td style="color:${delta!==null?(delta>=0?'var(--teal)':'var(--red)'):'var(--muted)'}">${delta!==null?(delta>=0?'+':'')+delta.toFixed(1)+'%':'—'}</td>
       <td style="border-left:1px solid var(--border)">${trans}</td>
