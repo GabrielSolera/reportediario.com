@@ -803,6 +803,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <button class="mode-btn" id="modoBrutoBtn" onclick="setModoVenta('bruto')">Bruto</button>
     </div>
     <div style="font-size:9px;color:var(--muted2);margin-top:6px;text-align:center" id="modoVentaHint">Sin impuestos</div>
+
+    <!-- Toggle CRC / USD -->
+    <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin:14px 0 7px">Moneda</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="monedaCRCBtn" onclick="setMoneda('CRC')">₡ CRC</button>
+      <button class="mode-btn" id="monedaUSDBtn" onclick="setMoneda('USD')">$ USD</button>
+    </div>
+    <div style="font-size:9px;color:var(--muted2);margin-top:6px;text-align:center;cursor:pointer" id="tcDisplay" onclick="mostrarConfigTC()" title="Click para editar tipo de cambio">TC: cargando...</div>
+  </div>
+
+  <!-- Modal tipo de cambio -->
+  <div id="tcModal" style="display:none;position:absolute;bottom:0;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:16px;z-index:300">
+    <div style="font-size:11px;font-weight:700;margin-bottom:10px;color:var(--muted)">TIPO DE CAMBIO (₡/$)</div>
+    <input type="number" id="tcInput" style="width:100%;font-family:var(--font);font-size:14px;font-weight:600;background:var(--surface2);color:var(--text);border:1px solid var(--border2);padding:8px 12px;border-radius:8px;outline:none;margin-bottom:8px" placeholder="520.00">
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-primary" style="flex:1;font-size:11px;padding:6px" onclick="guardarTC()">Guardar</button>
+      <button class="btn btn-ghost" style="flex:1;font-size:11px;padding:6px" onclick="document.getElementById('tcModal').style.display='none'">Cancelar</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center" id="tcFuente"></div>
   </div>
 </div>
 
@@ -911,7 +930,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
                     <th style="padding-left:16px">Tienda</th>
                     <th>Ventas</th><th>Forecast</th><th>Desv%</th><th>Crec%</th>
                     <th style="border-left:1px solid var(--border)">Acum</th>
-                    <th>Fcst Acum</th><th>Desv%</th><th style="padding-right:16px">Crec%</th>
+                    <th>Fcst Acum</th><th>Desv%</th><th style="padding-right:16px">SSS%</th>
                   </tr>
                 </thead>
                 <tbody id="tablaTiendas">
@@ -1529,7 +1548,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
 //  UTILS
 // ═══════════════════════════════════════════════════════════
 const num  = (v, d=0) => { const n=Number(v); return isNaN(n)?d:n; };
-const crc  = v => `₡${Math.round(num(v)).toLocaleString('es-CR')}`;
+const crc  = v => fmtMoneda(num(v));
 const pct  = (v,d=1) => { const n=num(v); return `${n>0?'+':''}${n.toFixed(d)}%`; };
 const fmtK = n => { if(n>=1000000) return '₡'+(n/1000000).toFixed(2)+'M'; if(n>=1000) return '₡'+Math.round(n/1000)+'K'; return '₡'+Math.round(n).toLocaleString('es-CR'); };
 const setTxt = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
@@ -1655,7 +1674,7 @@ function renderDashboard(data) {
   const elDF = document.getElementById('kDesvForecast');
   if(elDF){ elDF.textContent=pct(dF)+' vs forecast'; elDF.className='kpi-delta '+deltaClass(dF); }
   const elDA = document.getElementById('kCrecAcum');
-  if(elDA){ elDA.textContent=pct(dA)+' vs mes anterior'; elDA.className='kpi-delta '+deltaClass(dA); }
+  if(elDA){ elDA.textContent=pct(dA)+' SSS aa'; elDA.className='kpi-delta '+deltaClass(dA); }
 
   // Descuentos & pagos
   setTxt('descDia',  crc(total.descuentos));  setTxt('descAcum',      crc(total.descuentosAcum||0));
@@ -3144,13 +3163,82 @@ function renderTablaCompleta(tiendas, ref){
     tbody.appendChild(tr);
   });
 }
+
+// ── MONEDA CRC / USD ──────────────────────────────────────────────────────────
+async function cargarTipoCambioFn() {
+  try {
+    const resp = await fetch(`${APPS_SCRIPT_URL}?action=tipoCambio`);
+    const data = await resp.json();
+    if(data && data.venta) {
+      tipoCambio = data.venta;
+      const fuente = data.fuente === 'BCCR' ? `BCCR ${data.fecha}` : 'estimado';
+      const el = document.getElementById('tcDisplay');
+      if(el) el.textContent = `TC: ₡${tipoCambio.toFixed(0)} (${fuente})`;
+      const fi = document.getElementById('tcFuente');
+      if(fi) fi.textContent = `Fuente: ${fuente}`;
+      const inp = document.getElementById('tcInput');
+      if(inp) inp.value = tipoCambio.toFixed(2);
+    }
+  } catch(e) {
+    console.warn('TC fallback:', e);
+    const el = document.getElementById('tcDisplay');
+    if(el) el.textContent = `TC: ₡${tipoCambio.toFixed(0)} (estimado)`;
+  }
+}
+
+function setMoneda(moneda) {
+  monedaGlobal = moneda;
+  document.getElementById('monedaCRCBtn').classList.toggle('active', moneda==='CRC');
+  document.getElementById('monedaUSDBtn').classList.toggle('active', moneda==='USD');
+  const seccion = document.querySelector('.section.active')?.id;
+  if(seccion==='section-dashboard' && datosGlobales) renderDashboard(datosGlobales);
+  else if(seccion==='section-reporteDiario' && datosReporte) generarTablaReporte(datosReporte);
+  else if(seccion==='section-analisis' && anlDataCurr && anlDataRef) {
+    const fi=document.getElementById('fechaFin').value;
+    const ff=new Date(fi+'T12:00:00');
+    let fechaRef;
+    if(anlPeriod==='mes'){
+      const pm=ff.getMonth()===0?new Date(ff.getFullYear()-1,11,ff.getDate()):new Date(ff.getFullYear(),ff.getMonth()-1,ff.getDate());
+      fechaRef=pm.toISOString().split('T')[0];
+    } else { const rd=new Date(ff); rd.setDate(rd.getDate()+anlPeriod); fechaRef=rd.toISOString().split('T')[0]; }
+    renderAnalisis(anlDataCurr, anlDataRef, anlTrendData||[], fi, fechaRef);
+  }
+}
+
+function mostrarConfigTC() {
+  const modal = document.getElementById('tcModal');
+  if(modal) modal.style.display = modal.style.display==='none'?'block':'none';
+}
+
+function guardarTC() {
+  const val = parseFloat(document.getElementById('tcInput').value);
+  if(val > 0) {
+    tipoCambio = val;
+    const el = document.getElementById('tcDisplay');
+    if(el) el.textContent = `TC: ₡${tipoCambio.toFixed(0)} (manual)`;
+    const fi = document.getElementById('tcFuente');
+    if(fi) fi.textContent = 'Ingresado manualmente';
+  }
+  const modal = document.getElementById('tcModal');
+  if(modal) modal.style.display = 'none';
+  setMoneda(monedaGlobal);
+}
+
+function fmtMoneda(valorCRC) {
+  if(monedaGlobal === 'USD') {
+    const usd = valorCRC / tipoCambio;
+    return '$' + usd.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+  }
+  return '₡' + Math.round(valorCRC).toLocaleString('es-CR');
+}
+
 window.addEventListener('load', () => {
   initDates();
-  // Inicializar mes de seguimiento al mes actual
   const hoy = new Date();
   const mesStr = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
   const segMesEl = document.getElementById('segMes');
   if(segMesEl) segMesEl.value = mesStr;
+  cargarTipoCambioFn(); // cargar TC del BCCR al inicio
   cargarDatos();
 });
 
@@ -4020,6 +4108,8 @@ document.addEventListener('DOMContentLoaded', () => {
 //  MODO VENTA GLOBAL — Neto / Bruto
 // ═══════════════════════════════════════════════════════════
 let modoVentaGlobal = 'neto'; // 'neto' | 'bruto'
+let monedaGlobal   = 'CRC';  // 'CRC' | 'USD'
+let tipoCambio     = 520.0;  // fallback — se actualiza del BCCR via .gs
 
 function setModoVenta(modo) {
   modoVentaGlobal = modo;
