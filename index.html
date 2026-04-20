@@ -868,7 +868,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <span class="user-name" id="userNameChip">—</span>
           <button class="logout-btn" tabindex="-1">✕</button>
         </div>
-        <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos()">↻ Actualizar</button>
+        <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos(true)">↻ Actualizar</button>
     </div>
   </div>
 
@@ -1672,13 +1672,20 @@ function initDates() {
 // ═══════════════════════════════════════════════════════════
 //  DASHBOARD DATA LOAD
 // ═══════════════════════════════════════════════════════════
-async function cargarDatosDashboard() {
+async function cargarDatosDashboard(forzar=false) {
   const fechaFinInput = document.getElementById('fechaFin').value;
   if(!fechaFinInput) return;
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
-  const tienda = document.getElementById('tiendaSelect').value;
-  // Siempre fetchear "todas" para tener todos los datos disponibles para filtrar
+
+  // Caché de 5 minutos — evitar re-fetches al cambiar de sección
+  const cacheKey = `dashboard-${day}-${month}-${year}`;
+  const cached   = cacheConsultas[cacheKey];
+  if(!forzar && cached && (Date.now()-cached.ts) < 5*60*1000) {
+    datosGlobales = cached.data;
+    return;
+  }
+
   showLoader(true,'Cargando datos...','Consultando Toteat');
   try {
     const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=todas&modoRapido=true`;
@@ -1686,6 +1693,7 @@ async function cargarDatosDashboard() {
     const data = await resp.json();
     if(data && !data.error && Array.isArray(data)) {
       datosGlobales = data;
+      cacheConsultas[cacheKey] = { data, ts: Date.now() };
     }
   } catch(e) { console.error('cargarDatosDashboard:', e); }
   finally { showLoader(false); }
@@ -2669,7 +2677,7 @@ async function cargarAnalisis(){
   document.getElementById('btnAnalisis').disabled = true;
 
   try{
-    // Cargar datos filtrados por tienda activa
+    // Reutilizar datos del dashboard si ya están en cache
     const tiendaActual = document.getElementById('tiendaSelect').value;
     if(!datosGlobales || anlLastTienda !== tiendaActual){ await cargarDatosDashboard(); }
     anlLastTienda = tiendaActual;
@@ -3268,7 +3276,17 @@ function renderTablaCompleta(tiendas, ref){
 
 // ── MONEDA CRC / USD ──────────────────────────────────────────────────────────
 async function cargarTipoCambioFn() {
-  // Mostrar fallback inmediatamente — se actualiza si el API responde
+  // Intentar leer del localStorage primero (se actualiza cada hora)
+  try {
+    const cached = localStorage.getItem('oakberry_tc');
+    if(cached) {
+      const obj = JSON.parse(cached);
+      if(obj.venta && (Date.now()-obj.ts) < 60*60*1000) { // 1 hora
+        tipoCambio = obj.venta;
+      }
+    }
+  } catch(e){}
+
   const updateDisplay = (venta, fuente) => {
     tipoCambio = venta;
     const el  = document.getElementById('tcDisplay');
@@ -3296,6 +3314,7 @@ async function cargarTipoCambioFn() {
     if(data && data.venta && data.venta > 400) {
       const fuente = data.fuente === 'BCCR'   ? `BCCR ${data.fecha}`  :
                      data.fuente === 'OpenER'  ? 'Open Exchange Rates' : 'estimado';
+      try { localStorage.setItem('oakberry_tc', JSON.stringify({venta:data.venta, ts:Date.now()})); } catch(e){}
       updateDisplay(data.venta, fuente);
     } else {
       updateDisplay(tipoCambio, 'estimado');
