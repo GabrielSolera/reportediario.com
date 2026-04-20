@@ -1414,14 +1414,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
             <thead><tr>
               <th style="text-align:left">Fecha</th>
               <th style="text-align:left">Día</th>
-              <th style="text-align:right">Budget</th>
-              <th style="text-align:right">Proyección</th>
-              <th style="text-align:right">Venta Real</th>
-              <th style="text-align:right">Desv. vs Budget</th>
+              <th style="text-align:right;color:#7070a0">Budget</th>
+              <th style="text-align:right">Venta</th>
+              <th style="text-align:right">Desv. ₡</th>
               <th style="text-align:right">Desv. %</th>
             </tr></thead>
             <tbody id="proyTableBody">
-              <tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Sin datos</div></div></td></tr>
+              <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Sin datos</div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -2456,10 +2455,26 @@ function renderProyTable(data){
 
   tbody.innerHTML='';
   let totBudget=0, totProy=0, totReal=0;
+  let insertedDivider = false; // separador entre pasado y futuro
 
   for(const d of data.days){
-    const tr=document.createElement('tr');
+    // ── Insertar separador visual entre días reales y proyectados ──
+    if(!d.isReal && !d.isToday && !insertedDivider){
+      insertedDivider = true;
+      const sep = document.createElement('tr');
+      sep.innerHTML = `<td colspan="6" style="
+        padding:6px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;
+        text-transform:uppercase;color:#a855f7;background:rgba(168,85,247,.06);
+        border-top:1px solid rgba(168,85,247,.25);border-bottom:1px solid rgba(168,85,247,.1)">
+        ▾ Proyectado — días restantes del mes
+      </td>`;
+      tbody.appendChild(sep);
+    }
+
+    const tr = document.createElement('tr');
+    // Estilo base por tipo de día
     if(d.isToday)        tr.className='row-today';
+    else if(!d.isReal)   tr.style.opacity='0.72'; // futuro más tenue
     else if(d.isFeriado) tr.className='row-holiday';
     else if(d.isWeekend) tr.className='row-weekend';
 
@@ -2472,60 +2487,78 @@ function renderProyTable(data){
     const dayNum = new Date(d.date+'T12:00:00').getDate();
     const budget = data.forecastPorDia ? (num(data.forecastPorDia[dayNum]) || 0) : 0;
     const proy   = d.projected || 0;
-    const real   = d.isReal ? d.projected : null; // días cerrados = real, futuro = null
-
-    // Desv real vs budget (días ya cerrados)
-    const desvRB    = (real!==null && budget>0) ? real-budget : null;
-    const desvRBpct = (real!==null && budget>0) ? (real-budget)/budget*100 : null;
-    // Desv proyección vs budget (días futuros)
-    const desvPB    = (real===null && budget>0) ? proy-budget : null;
-    const desvPBpct = (real===null && budget>0) ? (proy-budget)/budget*100 : null;
+    const real   = d.isReal ? d.projected : null;
 
     totBudget += budget;
     totProy   += proy;
     if(real!==null) totReal += real;
 
-    // Budget cell
-    const bCell = budget>0
-      ? fmtMoneda(budget)
+    // Columna "Venta" — muestra real si está cerrado, proyección si es futuro
+    // Estado visual diferente para cada caso
+    let ventaCell, estadoBadge;
+    if(d.isToday) {
+      // Hoy: real parcial
+      estadoBadge = '';
+      ventaCell = `<span style="color:var(--accent);font-weight:700">${fmtMoneda(real)}
+        <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:3px">parcial</span></span>`;
+    } else if(real !== null) {
+      // Día cerrado: venta real confirmada
+      estadoBadge = '';
+      ventaCell = `<span style="color:var(--teal);font-weight:700">${fmtMoneda(real)}</span>`;
+    } else {
+      // Día futuro: proyección
+      estadoBadge = '';
+      ventaCell = `<span style="color:#9090b8;font-style:italic">${fmtMoneda(proy)}</span>`;
+    }
+
+    // Desviación — real vs budget en pasado, proyección vs budget en futuro
+    const ventaRef = real !== null ? real : proy;
+    const desv     = budget > 0 ? ventaRef - budget : null;
+    const desvPct  = budget > 0 ? (ventaRef - budget) / budget * 100 : null;
+
+    // Colores más apagados para filas proyectadas
+    const isProy = real === null && !d.isToday;
+    const posFmt = isProy ? '#4a7a6a' : 'var(--teal)';
+    const negFmt = isProy ? '#7a4a4a' : 'var(--red)';
+    const desvFmtStr = desv !== null
+      ? `<span style="color:${desv>=0?posFmt:negFmt}">${desv>=0?'+':''}${fmtMoneda(Math.abs(desv))}${desv<0?' ▼':' ▲'}</span>`
+      : '<span style="color:var(--muted)">—</span>';
+    const desvPctStr = desvPct !== null
+      ? `<span style="color:${desvPct>=0?posFmt:negFmt}">${desvPct>=0?'+':''}${desvPct.toFixed(1)}%</span>`
       : '<span style="color:var(--muted)">—</span>';
 
-    // Proyección cell — gris si es futuro, verde si es real
-    const proyFmt = fmtMoneda(proy);
-    const proyCell = real!==null
-      ? `<span style="color:var(--teal);font-weight:700">${proyFmt}${d.isToday?'<span style="font-size:9px;color:var(--muted);margin-left:4px">parcial</span>':''}</span>`
-      : `<span style="color:var(--muted)">${proyFmt}</span>`;
-
-    // Real cell — solo días cerrados
-    const realCell = real!==null
-      ? `<span style="color:var(--teal);font-weight:700">${fmtMoneda(real)}</span>`
+    const budgetStr = budget > 0
+      ? `<span style="color:var(--muted)">${fmtMoneda(budget)}</span>`
       : '<span style="color:var(--muted)">—</span>';
 
-    // Desv cells — real vs budget si cerrado, proyección vs budget si futuro
-    const desvCell    = real!==null ? fmtDesv(desvRB)    : (desvPB!==null    ? `<span style="color:var(--muted);font-size:11px">${fmtDesv(desvPB).replace('color:var(--teal)','color:#4a7a6a').replace('color:var(--red)','color:#7a4a4a')}</span>` : '<span style="color:var(--muted)">—</span>');
-    const desvPctCell = real!==null ? fmtDesvPct(desvRBpct) : (desvPBpct!==null ? `<span style="color:var(--muted);font-size:11px">${fmtDesvPct(desvPBpct)}</span>` : '<span style="color:var(--muted)">—</span>');
-
-    tr.innerHTML=`
+    tr.innerHTML = `
       <td style="color:var(--muted);font-family:var(--mono);font-size:11px">${d.date}</td>
-      <td style="font-weight:700">${d.dayName} ${badges}</td>
-      <td style="font-family:var(--mono);font-size:12px;text-align:right">${bCell}</td>
-      <td style="font-family:var(--mono);font-size:12px;text-align:right">${proyCell}</td>
-      <td style="font-family:var(--mono);font-size:12px;text-align:right">${realCell}</td>
-      <td style="text-align:right;font-family:var(--mono);font-size:12px">${desvCell}</td>
-      <td style="text-align:right">${desvPctCell}</td>`;
+      <td style="font-weight:${real!==null?'700':'500'};color:${real!==null?'var(--text)':'#7070a0'}">${d.dayName} ${badges}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:right">${budgetStr}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:right">${ventaCell}</td>
+      <td style="text-align:right;font-family:var(--mono);font-size:12px">${desvFmtStr}</td>
+      <td style="text-align:right">${desvPctStr}</td>`;
     tbody.appendChild(tr);
   }
 
-  // Totales
-  const desvTotPct = totBudget>0 ? (totReal-totBudget)/totBudget*100 : null;
-  const tfoot = `<tr style="background:rgba(168,85,247,.08);font-weight:800">
-    <td colspan="2" style="padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Total mes</td>
-    <td style="text-align:right;font-family:var(--mono)">${totBudget>0?fmtMoneda(totBudget):'—'}</td>
-    <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${fmtMoneda(totProy)}</td>
-    <td style="text-align:right;font-family:var(--mono);color:var(--teal)">${totReal>0?fmtMoneda(totReal):'—'}</td>
-    <td style="text-align:right;font-family:var(--mono)">${desvTotPct!==null?(desvTotPct>=0?'<span style="color:var(--teal)">':'<span style="color:var(--red)">') + fmtMoneda(Math.abs(totReal-totBudget))+'</span>':'—'}</td>
-    <td style="text-align:right">${desvTotPct!==null?fmtDesvPct(desvTotPct):'—'}</td>
-  </tr>`;
+  // ── Fila de totales ──
+  const desvTotPct  = totBudget>0 ? (totReal-totBudget)/totBudget*100 : null;
+  const desvProyPct = totBudget>0 ? (totProy-totBudget)/totBudget*100 : null;
+  const tfoot = `
+    <tr style="background:rgba(90,245,200,.06);font-weight:700;border-top:1px solid rgba(90,245,200,.2)">
+      <td colspan="2" style="padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--teal)">✓ Real acumulado</td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${totBudget>0?fmtMoneda(totBudget):'—'}</td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--teal)">${totReal>0?fmtMoneda(totReal):'—'}</td>
+      <td style="text-align:right;font-family:var(--mono)">${desvTotPct!==null?(desvTotPct>=0?'<span style="color:var(--teal)">':'<span style="color:var(--red)">') + fmtMoneda(Math.abs(totReal-totBudget))+'</span>':'—'}</td>
+      <td style="text-align:right">${desvTotPct!==null?fmtDesvPct(desvTotPct):'—'}</td>
+    </tr>
+    <tr style="background:rgba(168,85,247,.06);font-weight:700;border-top:1px solid rgba(168,85,247,.15)">
+      <td colspan="2" style="padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#a855f7">◈ Proyección mes</td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${totBudget>0?fmtMoneda(totBudget):'—'}</td>
+      <td style="text-align:right;font-family:var(--mono);color:#a855f7">${fmtMoneda(totProy)}</td>
+      <td style="text-align:right;font-family:var(--mono)">${desvProyPct!==null?(desvProyPct>=0?'<span style="color:#7a5faa">':'<span style="color:#7a4a5a">') + fmtMoneda(Math.abs(totProy-totBudget))+'</span>':'—'}</td>
+      <td style="text-align:right">${desvProyPct!==null?fmtDesvPct(desvProyPct):'—'}</td>
+    </tr>`;
   tbody.insertAdjacentHTML('beforeend', tfoot);
 }
 
