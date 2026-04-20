@@ -789,6 +789,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     </div>
 
     <div class="nav-section">Inteligencia</div>
+    <div class="nav-item" data-section="estacionalidad">
+      <span class="nav-icon">📊</span><span class="nav-label">Estacionalidad</span>
+    </div>
     <div class="nav-item" data-section="proyeccion">
       <span class="nav-icon">📉</span><span class="nav-label">Proyección</span>
       <span class="nav-badge">AI</span>
@@ -1223,6 +1226,77 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     </div>
 
+    <!-- ═══════════ ESTACIONALIDAD ═══════════ -->
+    <div class="section" id="section-estacionalidad">
+
+      <!-- Controles -->
+      <div class="proy-controls" style="margin-bottom:16px;flex-wrap:wrap;gap:10px;align-items:center">
+        <span class="ctrl-label">Años</span>
+        <div id="estacYearsFilters" style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="tab-pill active" onclick="estacToggleYear(2024)">2024</button>
+          <button class="tab-pill active" onclick="estacToggleYear(2025)">2025</button>
+          <button class="tab-pill active" onclick="estacToggleYear(2026)">2026</button>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <span class="ctrl-label">Mes inicio</span>
+          <select id="estacMesIni" class="ctrl-select" onchange="renderEstac()">
+            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+          <span class="ctrl-label">Mes fin</span>
+          <select id="estacMesFin" class="ctrl-select" onchange="renderEstac()">
+            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+            <option value="12" selected>Diciembre</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- KPIs resumen -->
+      <div id="estacKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
+
+      <!-- Chart 1: Ventas mensuales -->
+      <div class="card-dark" style="margin-bottom:14px;padding:18px 20px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+          Ventas mensuales — comparativo anual
+        </div>
+        <div id="estacLegend1" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
+        <div style="position:relative;height:280px"><canvas id="estacChart1"></canvas></div>
+      </div>
+
+      <!-- Chart 2: Índice de estacionalidad -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="card-dark" style="padding:18px 20px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+            Índice de estacionalidad (% anual)
+          </div>
+          <div id="estacLegend2" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--muted)"></div>
+          <div style="position:relative;height:220px"><canvas id="estacChart2"></canvas></div>
+        </div>
+        <div class="card-dark" style="padding:18px 20px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+            Ticket medio mensual (₡)
+          </div>
+          <div id="estacLegend3" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--muted)"></div>
+          <div style="position:relative;height:220px"><canvas id="estacChart3"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Chart 3: YoY -->
+      <div class="card-dark" style="padding:18px 20px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+          Crecimiento YoY por mes (%)
+        </div>
+        <div id="estacLegend4" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
+        <div style="position:relative;height:200px"><canvas id="estacChart4"></canvas></div>
+      </div>
+
+    </div>
+
     <!-- ═══════════ PROYECCIÓN ═══════════ -->
     <div class="section" id="section-proyeccion">
 
@@ -1621,6 +1695,7 @@ async function cargarDatos() {
   if(seccion === 'section-reporteDiario'){ await cargarReporteDiario(); return; }
   if(seccion === 'section-seguimiento'){ await cargarSeguimiento(); return; }
   if(seccion === 'section-productos'){ await cargarProductos(); return; }
+  if(seccion === 'section-estacionalidad'){ await cargarEstacionalidad(); return; }
   if(seccion === 'section-analisis'){ await cargarAnalisis(); return; }
 
   const ff = new Date(fechaFinInput+'T12:00:00');
@@ -3230,6 +3305,271 @@ function fmtMoneda(valorCRC) {
     return '$' + usd.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
   }
   return '₡' + Math.round(valorCRC).toLocaleString('es-CR');
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  ESTACIONALIDAD
+// ═══════════════════════════════════════════════════════════
+const ESTAC_COLORS = {
+  2023: { line:'#5a5aaa', fill:'rgba(90,90,170,.15)',  dash:[],    label:'2023' },
+  2024: { line:'#5af5c8', fill:'rgba(90,245,200,.12)', dash:[4,3], label:'2024' },
+  2025: { line:'#a855f7', fill:'rgba(168,85,247,.15)', dash:[],    label:'2025' },
+  2026: { line:'#f5c85a', fill:'rgba(245,200,90,.15)', dash:[],    label:'2026' },
+};
+const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// Datos conocidos (de los tests) — se extienden si llegan datos del API
+let estacData = {
+  2025: {
+    ventas: [19536717,19490867,23706260,19058331,20065771,17433187,18283449,20221502,17841033,20452216,21873231,21252613],
+    trans:  [3794,3618,4238,3278,3425,3056,3222,3504,2928,3677,3930,3744]
+  },
+  2026: {
+    ventas: [25402059,21553271,25607666,null,null,null,null,null,null,null,null,null],
+    trans:  [4300,3611,4408,null,null,null,null,null,null,null,null,null],
+    proy:   [null,null,null,21443000,23318046,20258771,21246844,23499018,20732721,23767127,25418461,24697253],
+    budget: [28613477,24110182,25607659,25294763,26339003,24310078,23487610,25612324,27593065,26204617,27041967,29282702]
+  }
+};
+
+let estacYearsActive = new Set([2024, 2025, 2026]);
+let estacCharts = {};
+let estacLoaded = false;
+
+function estacToggleYear(y) {
+  if(estacYearsActive.has(y)) {
+    if(estacYearsActive.size > 1) estacYearsActive.delete(y);
+  } else {
+    estacYearsActive.add(y);
+  }
+  document.querySelectorAll('#estacYearsFilters .tab-pill').forEach(btn => {
+    const yr = parseInt(btn.textContent);
+    btn.classList.toggle('active', estacYearsActive.has(yr));
+  });
+  renderEstac();
+}
+
+async function cargarEstacionalidad() {
+  if(estacLoaded) { renderEstac(); return; }
+  showLoader(true, 'Cargando estacionalidad...', 'Consultando historial');
+  try {
+    // Fetch historial diario año a año para calcular mensuales
+    const pad = n=>String(n).padStart(2,'0');
+    const years = [2024]; // 2025 y 2026 ya tenemos datos
+    for(const yr of years) {
+      const data = { ventas: Array(12).fill(0), trans: Array(12).fill(0) };
+      // Fetch mes a mes para no timeout
+      for(let m=1; m<=12; m++) {
+        const days = new Date(yr,m,0).getDate();
+        const ini = `${yr}-${pad(m)}-01`, fin = `${yr}-${pad(m)}-${pad(days)}`;
+        try {
+          const resp = await fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=all&fechaInicio=${ini}&fechaFin=${fin}`);
+          const rows = await resp.json();
+          if(Array.isArray(rows)) rows.forEach(r=>{ data.ventas[m-1]+=r.ventasNetas||0; data.trans[m-1]+=r.transacciones||0; });
+        } catch(e) { console.warn(`estac ${yr}-${m}:`, e); }
+      }
+      estacData[yr] = data;
+      setStep(`Cargando ${yr}...`);
+    }
+    estacLoaded = true;
+  } catch(e) { console.error('estacionalidad:', e); }
+  finally { showLoader(false); }
+  renderEstac();
+}
+
+function getEstacFiltered(yr) {
+  const d = estacData[yr];
+  if(!d) return null;
+  const mesIni = parseInt(document.getElementById('estacMesIni').value) - 1;
+  const mesFin = parseInt(document.getElementById('estacMesFin').value) - 1;
+  const ventas = d.ventas.map((v,i) => {
+    if(i < mesIni || i > mesFin) return null;
+    if(v !== null && v > 0) return v;
+    if(yr === 2026 && d.proy && d.proy[i] !== null) return d.proy[i]; // proyección
+    return null;
+  });
+  const trans = d.trans ? d.trans.map((v,i) => (i<mesIni||i>mesFin)?null:(v||null)) : Array(12).fill(null);
+  return { ventas, trans };
+}
+
+function buildLegend(containerId, years) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = years.map(yr => {
+    const c = ESTAC_COLORS[yr];
+    const isDash = c.dash.length > 0;
+    const lineEl = isDash
+      ? `<span style="width:18px;height:0;border-top:2px dashed ${c.line};display:inline-block"></span>`
+      : `<span style="width:18px;height:2px;background:${c.line};display:inline-block"></span>`;
+    return `<span style="display:flex;align-items:center;gap:5px">${lineEl}${c.label}</span>`;
+  }).join('');
+}
+
+function renderEstac() {
+  const years = [...estacYearsActive].sort();
+  const mesIni = parseInt(document.getElementById('estacMesIni').value) - 1;
+  const mesFin = parseInt(document.getElementById('estacMesFin').value) - 1;
+  const labels = MESES_CORTOS.slice(mesIni, mesFin+1);
+  const isDark = document.documentElement.classList.contains('dark') || window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc = 'rgba(42,42,58,.5)';
+  const tc = '#7070a0';
+  const fmtM = v => v!=null ? +(v/1e6).toFixed(2) : null;
+
+  // ── KPIs ──
+  const kpiDiv = document.getElementById('estacKpis');
+  const totales = years.map(yr => {
+    const d = getEstacFiltered(yr);
+    if(!d) return null;
+    const tot = d.ventas.filter(v=>v!=null).reduce((a,b)=>a+b,0);
+    const tr  = d.trans.filter(v=>v!=null).reduce((a,b)=>a+b,0);
+    const prev = estacData[yr-1];
+    const prevTot = prev ? prev.ventas.slice(mesIni,mesFin+1).filter(v=>v!=null).reduce((a,b)=>a+b,0) : 0;
+    const yoy = prevTot > 0 ? (tot-prevTot)/prevTot*100 : null;
+    return { yr, tot, tr, yoy };
+  }).filter(Boolean);
+
+  kpiDiv.innerHTML = totales.map(t => {
+    const c = ESTAC_COLORS[t.yr];
+    const yoyStr = t.yoy!=null ? `<span style="font-size:11px;color:${t.yoy>=0?'#5af5c8':'#f55a5a'}">${t.yoy>=0?'+':''}${t.yoy.toFixed(1)}% YoY</span>` : '';
+    return `<div class="kpi" style="padding:12px 14px;border-left:3px solid ${c.line}">
+      <div class="kpi-label" style="font-size:9px">${t.yr}</div>
+      <div class="kpi-value" style="font-size:18px;color:${c.line}">₡${(t.tot/1e6).toFixed(1)}M</div>
+      <div class="kpi-sub" style="font-size:10px">${t.tr.toLocaleString('es-CR')} trans · ${yoyStr}</div>
+    </div>`;
+  }).join('');
+
+  buildLegend('estacLegend1', years);
+  buildLegend('estacLegend2', years);
+  buildLegend('estacLegend3', years);
+  buildLegend('estacLegend4', years.filter(yr=>yr>Math.min(...years)));
+
+  // ── Chart 1: Ventas mensuales ──
+  if(estacCharts.c1) estacCharts.c1.destroy();
+  const ctx1 = document.getElementById('estacChart1')?.getContext('2d');
+  if(ctx1) {
+    estacCharts.c1 = new Chart(ctx1, {
+      type:'line',
+      data:{ labels, datasets: years.map(yr=>{
+        const d = getEstacFiltered(yr);
+        const c = ESTAC_COLORS[yr];
+        const vals = d ? d.ventas.slice(mesIni,mesFin+1).map(fmtM) : [];
+        // Para 2026 distinguir proyectado (puntos vacíos)
+        const isReal = d?.ventas.slice(mesIni,mesFin+1).map(v=>v!==null && (estacData[yr]?.proy?.[mesIni+ vals.indexOf(fmtM(v))] === null || !estacData[yr]?.proy)):null;
+        return {
+          label: String(yr), data: vals,
+          borderColor: c.line, borderWidth: yr===2026?2.5:2,
+          backgroundColor: c.fill, fill: yr===2026,
+          borderDash: c.dash,
+          pointRadius: 4, pointBackgroundColor: c.line,
+          tension: 0.3, spanGaps: true
+        };
+      })},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ mode:'index', intersect:false, backgroundColor:'#1a1a24',
+            callbacks:{ label:c=>` ${c.dataset.label}: ₡${c.raw}M` } } },
+        scales:{
+          x:{ grid:{color:gc}, ticks:{color:tc,font:{size:11}} },
+          y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>'₡'+v+'M'} }
+        }
+      }
+    });
+  }
+
+  // ── Chart 2: Índice % ──
+  if(estacCharts.c2) estacCharts.c2.destroy();
+  const ctx2 = document.getElementById('estacChart2')?.getContext('2d');
+  if(ctx2) {
+    const uniformeLine = Array(labels.length).fill(+(100/12).toFixed(1));
+    estacCharts.c2 = new Chart(ctx2, {
+      type:'bar',
+      data:{ labels, datasets:[
+        ...years.map(yr=>{
+          const d = getEstacFiltered(yr);
+          const tot = d ? d.ventas.filter(v=>v!=null).reduce((a,b)=>a+b,0)||1 : 1;
+          const c = ESTAC_COLORS[yr];
+          return {
+            label:String(yr),
+            data: d ? d.ventas.slice(mesIni,mesFin+1).map(v=>v!=null?+(v/tot*100).toFixed(1):null) : [],
+            backgroundColor: c.line+'88', borderColor: c.line, borderWidth:1, borderRadius:3
+          };
+        }),
+        { label:'Base', data:uniformeLine, type:'line', borderColor:'#BA7517', borderWidth:1.5,
+          borderDash:[4,3], pointRadius:0, fill:false }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ mode:'index', intersect:false, backgroundColor:'#1a1a24',
+            callbacks:{ label:c=>` ${c.dataset.label}: ${c.raw}%` } } },
+        scales:{
+          x:{ grid:{color:gc}, ticks:{color:tc,font:{size:10}} },
+          y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>v+'%'}, suggestedMin:5 }
+        }
+      }
+    });
+  }
+
+  // ── Chart 3: Ticket medio ──
+  if(estacCharts.c3) estacCharts.c3.destroy();
+  const ctx3 = document.getElementById('estacChart3')?.getContext('2d');
+  if(ctx3) {
+    estacCharts.c3 = new Chart(ctx3, {
+      type:'line',
+      data:{ labels, datasets: years.map(yr=>{
+        const d = getEstacFiltered(yr);
+        const c = ESTAC_COLORS[yr];
+        const tickets = d ? d.ventas.slice(mesIni,mesFin+1).map((v,i)=>{
+          const t = d.trans[mesIni+i]; return (v&&t&&t>0)?Math.round(v/t):null;
+        }) : [];
+        return { label:String(yr), data:tickets, borderColor:c.line, borderWidth:2,
+          backgroundColor:'transparent', borderDash:c.dash,
+          pointRadius:3, pointBackgroundColor:c.line, tension:0.3, spanGaps:true };
+      })},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ mode:'index', intersect:false, backgroundColor:'#1a1a24',
+            callbacks:{ label:c=>` ${c.dataset.label}: ₡${(c.raw||0).toLocaleString('es-CR')}` } } },
+        scales:{
+          x:{ grid:{color:gc}, ticks:{color:tc,font:{size:10}} },
+          y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>'₡'+v.toLocaleString('es-CR')}, suggestedMin:5000 }
+        }
+      }
+    });
+  }
+
+  // ── Chart 4: YoY por mes ──
+  if(estacCharts.c4) estacCharts.c4.destroy();
+  const ctx4 = document.getElementById('estacChart4')?.getContext('2d');
+  if(ctx4) {
+    const yearsYoY = years.filter(yr=>yr>Math.min(...years));
+    estacCharts.c4 = new Chart(ctx4, {
+      type:'bar',
+      data:{ labels, datasets: yearsYoY.map(yr=>{
+        const curr = getEstacFiltered(yr);
+        const prev = getEstacFiltered(yr-1);
+        const c = ESTAC_COLORS[yr];
+        const yoys = curr && prev ? curr.ventas.slice(mesIni,mesFin+1).map((v,i)=>{
+          const pv = prev.ventas[mesIni+i];
+          return (v&&pv&&pv>0)?+(((v-pv)/pv)*100).toFixed(1):null;
+        }) : [];
+        return { label:String(yr)+' vs '+(yr-1), data:yoys,
+          backgroundColor: yoys.map(v=>v===null?'transparent':v>=0?c.line+'99':c.line+'55'),
+          borderColor: yoys.map(v=>v===null?'transparent':c.line),
+          borderWidth:1, borderRadius:3 };
+      })},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ mode:'index', intersect:false, backgroundColor:'#1a1a24',
+            callbacks:{ label:c=>c.raw!=null?` ${c.dataset.label}: ${c.raw>=0?'+':''}${c.raw}%`:' sin dato' } } },
+        scales:{
+          x:{ grid:{color:gc}, ticks:{color:tc,font:{size:11}} },
+          y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>v+'%'},
+            suggestedMin:-10, suggestedMax:40 }
+        }
+      }
+    });
+  }
 }
 
 window.addEventListener('load', () => {
