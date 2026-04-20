@@ -93,15 +93,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 }
 .nav-item.active::before{ background:var(--accent); }
 .nav-item .nav-icon{
-  font-size:15px;width:22px;height:22px;
+  width:30px;height:30px;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;
   background:rgba(255,255,255,.04);
-  border-radius:7px;
+  border-radius:8px;
   transition:background .15s;
 }
-.nav-item.active .nav-icon{background:rgba(168,85,247,.18);}
-.nav-item:hover .nav-icon{background:rgba(255,255,255,.07);}
+.nav-item .nav-icon svg{ color:#7070a0; transition:color .15s; }
+.nav-item.active .nav-icon{ background:rgba(168,85,247,.2); }
+.nav-item.active .nav-icon svg{ color:#c084fc; }
+.nav-item:hover .nav-icon{ background:rgba(255,255,255,.07); }
+.nav-item:hover .nav-icon svg{ color:#a0a0c0; }
+/* Phosphor: mostrar fill en activo, regular en resto */
+.nav-item .ph-fill{ display:none; }
+.nav-item .ph-regular{ display:block; }
+.nav-item.active .ph-fill{ display:block; }
+.nav-item.active .ph-regular{ display:none; }
 .nav-label{flex:1;line-height:1;}
 .nav-badge{
   font-size:8px;font-weight:800;
@@ -762,38 +770,38 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   <div class="sidebar-nav">
     <div class="nav-section">Principal</div>
     <div class="nav-item active" data-section="dashboard">
-      <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M112 48H48a8 8 0 00-8 8v64a8 8 0 008 8h64a8 8 0 008-8V56a8 8 0 00-8-8zm0 96H48a8 8 0 00-8 8v64a8 8 0 008 8h64a8 8 0 008-8v-64a8 8 0 00-8-8zm96-96h-64a8 8 0 00-8 8v64a8 8 0 008 8h64a8 8 0 008-8V56a8 8 0 00-8-8zm0 96h-64a8 8 0 00-8 8v64a8 8 0 008 8h64a8 8 0 008-8v-64a8 8 0 00-8-8z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-64a16 16 0 00-16 16v64a16 16 0 0016 16h64a16 16 0 0016-16V48a16 16 0 00-16-16zm-96 0H48a16 16 0 00-16 16v64a16 16 0 0016 16h64a16 16 0 0016-16V48a16 16 0 00-16-16zm96 96h-64a16 16 0 00-16 16v64a16 16 0 0016 16h64a16 16 0 0016-16v-64a16 16 0 00-16-16zm-96 0H48a16 16 0 00-16 16v64a16 16 0 0016 16h64a16 16 0 0016-16v-64a16 16 0 00-16-16z" fill="currentColor"/></svg></span><span class="nav-label">Dashboard</span>
     </div>
     <div class="nav-item" data-section="reporteDiario">
-      <span class="nav-icon">📅</span><span class="nav-label">Reporte Diario</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 176H48V112h160zm0-112H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 48H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zM136 160h48a8 8 0 000-16h-48a8 8 0 000 16zm0 32h48a8 8 0 000-16h-48a8 8 0 000 16zM72 160h16a8 8 0 000-16H72a8 8 0 000 16zm0 32h16a8 8 0 000-16H72a8 8 0 000 16z" fill="currentColor"/></svg></span><span class="nav-label">Reporte Diario</span>
     </div>
 
     <div class="nav-section">Análisis</div>
     <div class="nav-item" data-section="analisis">
-      <span class="nav-icon">📈</span><span class="nav-label">Análisis</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M232 56v48a8 8 0 01-16 0V75.3l-82.3 82.4a8 8 0 01-11.4 0L96 131.3l-74.3 74.4a8 8 0 01-11.4-11.4l80-80a8 8 0 0111.4 0L128 140.7l76.7-76.7H184a8 8 0 010-16h48v8z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M240 56v48a8 8 0 01-16 0V75.3l-82.3 82.4a8 8 0 01-11.4 0L104 131.3 30.6 204.7a8 8 0 01-11.2-11.4l80-80a8 8 0 0111.4 0L136 139.3l76.7-76.7H192a8 8 0 010-16h48z" fill="currentColor"/></svg></span><span class="nav-label">Análisis</span>
     </div>
     <div class="nav-item" data-section="descuentos">
-      <span class="nav-icon">💰</span><span class="nav-label">Descuentos</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M243.3 143l-96.5 96.4a16.1 16.1 0 01-22.6 0L19.3 134.5A15.9 15.9 0 0114 123.1V48a16 16 0 0116-16h75.1a15.9 15.9 0 0111.4 4.7L221.4 141a16 16 0 011.9 2zm-176.6-79a20 20 0 1020 20 20 20 0 00-20-20z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M243.3 143l-96.5 96.4a16.1 16.1 0 01-22.6 0L19.3 134.5A15.9 15.9 0 0114 123.1V48a16 16 0 0116-16h75.1a15.9 15.9 0 0111.4 4.7L221.4 141a16 16 0 011.9 2zM66.7 104a20 20 0 1020-20 20 20 0 00-20 20z" fill="currentColor"/></svg></span><span class="nav-label">Descuentos</span>
     </div>
     <div class="nav-item" data-section="ticketMedio">
-      <span class="nav-icon">🎫</span><span class="nav-label">Ticket Medio</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M216 40H40a16 16 0 00-16 16v144a16 16 0 0016 16h176a16 16 0 0016-16V56a16 16 0 00-16-16zM96 172a12 12 0 110-24 12 12 0 010 24zm64 0a12 12 0 110-24 12 12 0 010 24zm40-60H56a8 8 0 010-16h144a8 8 0 010 16zm0-40H56a8 8 0 010-16h144a8 8 0 010 16z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M216 40H40a16 16 0 00-16 16v144a16 16 0 0016 16h176a16 16 0 0016-16V56a16 16 0 00-16-16zm-8 160H48V64h160zm-48-48a12 12 0 11-24 0 12 12 0 0124 0zm-64 0a12 12 0 11-24 0 12 12 0 0124 0zm112-52H48a8 8 0 010-16h160a8 8 0 010 16zm0-40H48a8 8 0 010-16h160a8 8 0 010 16z" fill="currentColor"/></svg></span><span class="nav-label">Ticket Medio</span>
     </div>
     <div class="nav-item" data-section="detallePagos">
-      <span class="nav-icon">💳</span><span class="nav-label">Detalle de Pagos</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M224 56H32a16 16 0 00-16 16v112a16 16 0 0016 16h192a16 16 0 0016-16V72a16 16 0 00-16-16zm0 128H32V96h192zm0-112H32V72h192zm-32 88H160a8 8 0 010-16h32a8 8 0 010 16zm-64 0H96a8 8 0 010-16h32a8 8 0 010 16z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M224 56H32a16 16 0 00-16 16v112a16 16 0 0016 16h192a16 16 0 0016-16V72a16 16 0 00-16-16zm0 128H32V96h192zm0-96H32V72h192zm-16 88h-32a8 8 0 010-16h32a8 8 0 010 16zm-64 0H96a8 8 0 010-16h32a8 8 0 010 16z" fill="currentColor"/></svg></span><span class="nav-label">Detalle de Pagos</span>
     </div>
     <div class="nav-item" data-section="seguimiento">
-      <span class="nav-icon">📋</span><span class="nav-label">Seguimiento</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 176H48V112h160zm0-112H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zM164 148l-50 49.6-26-27.4a8 8 0 0111.6-11l14.4 15.1 38.4-38a8 8 0 0111.6 11.7z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 48H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zm-43.8 104.8l-49.8 48.4a8 8 0 01-11.2-.4l-26-27.4a8 8 0 0111.6-11l20 21.1 43.8-42.5a8 8 0 0111.6 11.8z" fill="currentColor"/></svg></span><span class="nav-label">Seguimiento</span>
     </div>
     <div class="nav-item" data-section="productos">
-      <span class="nav-icon">🥣</span><span class="nav-label">Ventas Producto</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M224 128a96 96 0 11-192 0h192zM88 64a24 24 0 100 48 24 24 0 000-48zm80 0a24 24 0 100 48 24 24 0 000-48zM32 112h192a96 96 0 00-192 0z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M224 120H32a8 8 0 00-8 8 104 104 0 00208 0 8 8 0 00-8-8zM88 56a32 32 0 110 64 32 32 0 010-64zm80 0a32 32 0 110 64 32 32 0 010-64z" fill="currentColor"/></svg></span><span class="nav-label">Ventas Producto</span>
     </div>
 
     <div class="nav-section">Inteligencia</div>
     <div class="nav-item" data-section="estacionalidad">
-      <span class="nav-icon">📊</span><span class="nav-label">Estacionalidad</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M224 200H40V56a8 8 0 00-16 0v152a8 8 0 008 8h192a8 8 0 000-16zm-160-40a8 8 0 005.7-2.3l50.3-50.4 34.3 34.4a8 8 0 0011.4 0l64-64a8 8 0 00-11.4-11.4L171 128.7l-34.3-34.4a8 8 0 00-11.4 0l-56 56A8 8 0 0064 160z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M232 208H48V56a8 8 0 00-16 0v160a8 8 0 008 8h192a8 8 0 000-16zm-72-72l-34.3-34.4a8 8 0 00-11.4 0l-56 56a8 8 0 0011.4 11.4l50.3-50.3 34.3 34.3a8 8 0 0011.4 0l64-64a8 8 0 00-11.4-11.4z" fill="currentColor"/></svg></span><span class="nav-label">Estacionalidad</span>
     </div>
     <div class="nav-item" data-section="proyeccion">
-      <span class="nav-icon">📉</span><span class="nav-label">Proyección</span>
+      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M197.6 110.4l-21.2-4.8-4.8-21.2a6 6 0 00-11.6 0l-4.8 21.2-21.2 4.8a6 6 0 000 11.6l21.2 4.8 4.8 21.2a6 6 0 0011.6 0l4.8-21.2 21.2-4.8a6 6 0 000-11.6zM88 152l-13.4-3-3-13.5a6 6 0 00-11.6 0L57 152l-13.4 3a6 6 0 000 11.6l13.4 3 3 13.4a6 6 0 0011.6 0l3-13.4 13.4-3a6 6 0 000-11.6zM148 32l-13.4 3-3 13.4a6 6 0 01-11.6 0L117 35l-13.4-3a6 6 0 010-11.6L117 17l3-13.4a6 6 0 0111.6 0l3 13.4 13.4 3a6 6 0 010 11.6z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M197.6 107l-21.2-4.7L171.7 81a6 6 0 00-11.6 0l-4.7 21.3L134.2 107a6 6 0 000 11.6l21.2 4.7 4.7 21.3a6 6 0 0011.6 0l4.7-21.3 21.2-4.7a6 6 0 000-11.6zM88 149l-13.4-3-3-13.5a6 6 0 00-11.6 0l-3 13.5-13.4 3a6 6 0 000 11.6l13.4 3 3 13.4a6 6 0 0011.6 0l3-13.4 13.4-3a6 6 0 000-11.6zM148 29l-13.4 3-3 13.4a6 6 0 01-11.6 0l-3-13.4L103.6 29a6 6 0 010-11.6l13.4-3 3-13.4a6 6 0 0111.6 0l3 13.4 13.4 3a6 6 0 010 11.6z" fill="currentColor"/></svg></span><span class="nav-label">Proyección</span>
       <span class="nav-badge">AI</span>
     </div>
   </div>
