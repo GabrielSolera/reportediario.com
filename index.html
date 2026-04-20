@@ -3437,12 +3437,28 @@ function renderEstac() {
   const totales = years.map(yr => {
     const d = getEstacFiltered(yr);
     if(!d) return null;
-    const tot = d.ventas.filter(v=>v!=null).reduce((a,b)=>a+b,0);
-    const tr  = d.trans.filter(v=>v!=null).reduce((a,b)=>a+b,0);
+
+    // Para 2026: separar real de proyectado en los totales del KPI
+    let tot = 0, totProy = 0, tr = 0;
+    if(yr === 2026) {
+      const lastReal = estacData[2026]
+        ? estacData[2026].ventas.reduce((last,v,i)=>v!==null&&v>0?i:last,-1) : -1;
+      d.ventas.slice(mesIni,mesFin+1).forEach((v,i)=>{
+        if(v==null) return;
+        if(mesIni+i <= lastReal) tot += v;
+        else totProy += v;
+      });
+      d.trans.slice(mesIni,mesFin+1).forEach(v=>{ if(v) tr += v; });
+    } else {
+      tot = d.ventas.filter(v=>v!=null).reduce((a,b)=>a+b,0);
+      tr  = d.trans.filter(v=>v!=null).reduce((a,b)=>a+b,0);
+    }
+
     const prev = estacData[yr-1];
     const prevTot = prev ? prev.ventas.slice(mesIni,mesFin+1).filter(v=>v!=null).reduce((a,b)=>a+b,0) : 0;
+    // YoY solo sobre real, no proyectado
     const yoy = prevTot > 0 ? (tot-prevTot)/prevTot*100 : null;
-    return { yr, tot, tr, yoy };
+    return { yr, tot, totProy, tr, yoy };
   }).filter(Boolean);
 
   kpiDiv.innerHTML = totales.map(t => {
@@ -3461,12 +3477,16 @@ function renderEstac() {
             margin-left:4px">${yoySign}${t.yoy.toFixed(1)}% YoY</span>`
       : '';
     const ticketMedio = t.tr > 0 ? Math.round(t.tot / t.tr) : 0;
+    const proyLine = t.totProy > 0
+      ? `<span style="color:var(--muted);font-size:10px">+ ₡${(t.totProy/1e6).toFixed(1)}M proy</span>`
+      : '';
+    const realLabel = t.yr === 2026 && t.totProy > 0 ? ' <span style="font-size:9px;opacity:.6">(real)</span>' : '';
     return `<div class="kpi" style="padding:12px 14px;border-left:3px solid ${c.line}">
       <div class="kpi-label" style="font-size:9px;font-family:var(--font);letter-spacing:.06em">${t.yr}</div>
-      <div class="kpi-value" style="font-size:19px;color:${c.line};font-family:var(--mono)">₡${(t.tot/1e6).toFixed(1)}M ${yoyBadge}</div>
-      <div class="kpi-sub" style="font-size:10px;font-family:var(--font);margin-top:5px;display:flex;gap:10px">
+      <div class="kpi-value" style="font-size:19px;color:${c.line};font-family:var(--mono)">₡${(t.tot/1e6).toFixed(1)}M${realLabel} ${yoyBadge}</div>
+      <div class="kpi-sub" style="font-size:10px;font-family:var(--font);margin-top:5px;display:flex;gap:10px;align-items:center">
         <span>${t.tr.toLocaleString('es-CR')} trans</span>
-        ${ticketMedio > 0 ? `<span style="color:var(--muted)">ticket ₡${ticketMedio.toLocaleString('es-CR')}</span>` : ''}
+        ${proyLine}
       </div>
     </div>`;
   }).join('');
@@ -3480,26 +3500,97 @@ function renderEstac() {
   if(estacCharts.c1) estacCharts.c1.destroy();
   const ctx1 = document.getElementById('estacChart1')?.getContext('2d');
   if(ctx1) {
+    // Para 2026: determinar último mes real disponible
+    const lastRealMes2026 = estacData[2026]
+      ? estacData[2026].ventas.reduce((last, v, i) => v !== null && v > 0 ? i : last, -1)
+      : -1;
+
+    const datasets = [];
+    years.forEach(yr => {
+      const d = getEstacFiltered(yr);
+      const c = ESTAC_COLORS[yr];
+      if(!d) return;
+      const vSlice = d.ventas.slice(mesIni, mesFin+1);
+
+      if(yr === 2026) {
+        // Dataset 1: datos reales (hasta lastRealMes2026)
+        const realVals = vSlice.map((v, i) => {
+          const globalIdx = mesIni + i;
+          return (estacData[2026].ventas[globalIdx] !== null &&
+                  estacData[2026].ventas[globalIdx] > 0 &&
+                  estacData[2026].proy && estacData[2026].proy[globalIdx] === null)
+            ? fmtM(v) : null;
+        });
+        // Si no tenemos proy array, usar índice simple
+        const realVals2 = vSlice.map((v, i) => {
+          const globalIdx = mesIni + i;
+          const isReal = globalIdx <= lastRealMes2026;
+          return isReal ? fmtM(v) : null;
+        });
+
+        datasets.push({
+          label: '2026 real',
+          data: realVals2,
+          borderColor: c.line, borderWidth: 2.5,
+          backgroundColor: c.fill, fill: true,
+          pointRadius: 4, pointBackgroundColor: c.line,
+          pointBorderColor: c.line,
+          tension: 0.3, spanGaps: false
+        });
+
+        // Dataset 2: proyección (desde último real en adelante) — incluye puente
+        const proyVals = vSlice.map((v, i) => {
+          const globalIdx = mesIni + i;
+          // Incluir el último mes real como punto de arranque del punteado
+          return globalIdx >= lastRealMes2026 ? fmtM(v) : null;
+        });
+        datasets.push({
+          label: '2026 proy',
+          data: proyVals,
+          borderColor: c.line, borderWidth: 1.5,
+          backgroundColor: 'transparent', fill: false,
+          borderDash: [6, 4],
+          pointRadius: proyVals.map((v,i) => (mesIni+i) === lastRealMes2026 ? 0 : 3),
+          pointBackgroundColor: 'transparent',
+          pointBorderColor: c.line, pointBorderWidth: 1.5,
+          tension: 0.3, spanGaps: false
+        });
+      } else {
+        // Años anteriores — dataset simple
+        datasets.push({
+          label: String(yr),
+          data: vSlice.map(fmtM),
+          borderColor: c.line, borderWidth: 2,
+          backgroundColor: c.fill, fill: false,
+          borderDash: c.dash,
+          pointRadius: 3, pointBackgroundColor: c.line,
+          tension: 0.3, spanGaps: true
+        });
+      }
+    });
+
+    // Actualizar leyenda para reflejar split
+    const legendDiv = document.getElementById('estacLegend1');
+    if(legendDiv) {
+      const hasReal2026 = years.includes(2026);
+      legendDiv.innerHTML = years.filter(yr=>yr!==2026).map(yr=>{
+        const c=ESTAC_COLORS[yr];
+        return `<span style="display:flex;align-items:center;gap:5px"><span style="width:18px;height:2px;background:${c.line};display:inline-block"></span>${c.label}</span>`;
+      }).join('') +
+      (hasReal2026 ? `
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:18px;height:2px;background:${ESTAC_COLORS[2026].line};display:inline-block"></span>2026 real</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:18px;height:0;border-top:2px dashed ${ESTAC_COLORS[2026].line};display:inline-block"></span>2026 proyección</span>
+      ` : '');
+    }
+
     estacCharts.c1 = new Chart(ctx1, {
       type:'line',
-      data:{ labels, datasets: years.map(yr=>{
-        const d = getEstacFiltered(yr);
-        const c = ESTAC_COLORS[yr];
-        const vals = d ? d.ventas.slice(mesIni,mesFin+1).map(fmtM) : [];
-        // Para 2026 distinguir proyectado (puntos vacíos)
-        return {
-          label: String(yr), data: vals,
-          borderColor: c.line, borderWidth: yr===2026?2.5:2,
-          backgroundColor: c.fill, fill: yr===2026,
-          borderDash: c.dash,
-          pointRadius: 4, pointBackgroundColor: c.line,
-          tension: 0.3, spanGaps: true
-        };
-      })},
+      data:{ labels, datasets },
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false},
           tooltip:{ mode:'index', intersect:false, backgroundColor:'#1a1a24',
-            callbacks:{ label:c=>` ${c.dataset.label}: ₡${c.raw}M` } } },
+            callbacks:{ label:c=>c.raw!=null?` ${c.dataset.label}: ₡${c.raw}M`:null,
+              filter: item => item.raw !== null } } },
         scales:{
           x:{ grid:{color:gc}, ticks:{color:tc,font:{size:11}} },
           y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>'₡'+v+'M'} }
