@@ -1989,7 +1989,7 @@ function countDow(year,month){
 // Fetch historial via Apps Script (evita CORS de Toteat)
 // Retorna { 'YYYY-MM-DD': totalNeto }
 async function fetchToteatDiario(storeKey, fromDate, toDate) {
-  const clave = `historial-${storeKey}-${fromDate}-${toDate}`;
+  const clave = `historial-${storeKey}-${fromDate}-${toDate}-${modoVentaGlobal}`;
   if(cacheConsultas[clave] && (Date.now()-cacheConsultas[clave].ts)<10*60*1000){
     return cacheConsultas[clave].data;
   }
@@ -2001,9 +2001,13 @@ async function fetchToteatDiario(storeKey, fromDate, toDate) {
   const byDate = {};
   (Array.isArray(data) ? data : (data.data||[])).forEach(row => {
     if(row.fecha){
+      const neto  = Number(row.ventasNetas)  || 0;
+      const bruto = Number(row.ventasBrutas) || neto * 1.13; // fallback si no viene bruto
       byDate[row.fecha] = {
-        ventas: Number(row.ventasNetas)    || 0,
-        trans:  Number(row.transacciones)  || 0
+        ventas:       modoVentaGlobal === 'bruto' ? bruto : neto,
+        ventasNeto:   neto,
+        ventasBruto:  bruto,
+        trans:        Number(row.transacciones) || 0
       };
     }
   });
@@ -2442,7 +2446,7 @@ function renderProyTable(data){
   const fmtDesv = (v) => {
     if(v===null) return `<span style="color:var(--muted)">—</span>`;
     const color = v>0 ? 'var(--teal)' : (v<0 ? 'var(--red)' : 'var(--muted)');
-    return `<span style="color:${color}">${v>0?'+':''}₡${Math.round(Math.abs(v)).toLocaleString('es-CR')}${v<0?' ▼':' ▲'}</span>`;
+    return `<span style="color:${color}">${v>0?'+':''}${fmtMoneda(Math.abs(v))}${v<0?' ▼':' ▲'}</span>`;
   };
   const fmtDesvPct = (v) => {
     if(v===null) return `<span style="color:var(--muted)">—</span>`;
@@ -2483,18 +2487,18 @@ function renderProyTable(data){
 
     // Budget cell
     const bCell = budget>0
-      ? `₡${Math.round(budget).toLocaleString('es-CR')}`
+      ? fmtMoneda(budget)
       : '<span style="color:var(--muted)">—</span>';
 
     // Proyección cell — gris si es futuro, verde si es real
-    const proyFmt = `₡${Math.round(proy).toLocaleString('es-CR')}`;
+    const proyFmt = fmtMoneda(proy);
     const proyCell = real!==null
       ? `<span style="color:var(--teal);font-weight:700">${proyFmt}${d.isToday?'<span style="font-size:9px;color:var(--muted);margin-left:4px">parcial</span>':''}</span>`
       : `<span style="color:var(--muted)">${proyFmt}</span>`;
 
     // Real cell — solo días cerrados
     const realCell = real!==null
-      ? `<span style="color:var(--teal);font-weight:700">₡${Math.round(real).toLocaleString('es-CR')}</span>`
+      ? `<span style="color:var(--teal);font-weight:700">${fmtMoneda(real)}</span>`
       : '<span style="color:var(--muted)">—</span>';
 
     // Desv cells — real vs budget si cerrado, proyección vs budget si futuro
@@ -2516,10 +2520,10 @@ function renderProyTable(data){
   const desvTotPct = totBudget>0 ? (totReal-totBudget)/totBudget*100 : null;
   const tfoot = `<tr style="background:rgba(168,85,247,.08);font-weight:800">
     <td colspan="2" style="padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Total mes</td>
-    <td style="text-align:right;font-family:var(--mono)">${totBudget>0?'₡'+Math.round(totBudget).toLocaleString('es-CR'):'—'}</td>
-    <td style="text-align:right;font-family:var(--mono);color:var(--muted)">₡${Math.round(totProy).toLocaleString('es-CR')}</td>
-    <td style="text-align:right;font-family:var(--mono);color:var(--teal)">${totReal>0?'₡'+Math.round(totReal).toLocaleString('es-CR'):'—'}</td>
-    <td style="text-align:right;font-family:var(--mono)">${desvTotPct!==null?(desvTotPct>=0?'<span style="color:var(--teal)">':'<span style="color:var(--red)">') + '₡'+Math.abs(Math.round(totReal-totBudget)).toLocaleString('es-CR')+'</span>':'—'}</td>
+    <td style="text-align:right;font-family:var(--mono)">${totBudget>0?fmtMoneda(totBudget):'—'}</td>
+    <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${fmtMoneda(totProy)}</td>
+    <td style="text-align:right;font-family:var(--mono);color:var(--teal)">${totReal>0?fmtMoneda(totReal):'—'}</td>
+    <td style="text-align:right;font-family:var(--mono)">${desvTotPct!==null?(desvTotPct>=0?'<span style="color:var(--teal)">':'<span style="color:var(--red)">') + fmtMoneda(Math.abs(totReal-totBudget))+'</span>':'—'}</td>
     <td style="text-align:right">${desvTotPct!==null?fmtDesvPct(desvTotPct):'—'}</td>
   </tr>`;
   tbody.insertAdjacentHTML('beforeend', tfoot);
@@ -3277,6 +3281,9 @@ function setMoneda(moneda) {
   const seccion = document.querySelector('.section.active')?.id;
   if(seccion==='section-dashboard' && datosGlobales) renderDashboard(datosGlobales);
   else if(seccion==='section-reporteDiario' && datosReporte) generarTablaReporte(datosReporte);
+  else if(seccion==='section-proyeccion' && proyData) {
+    renderProyeccion(proyData);
+  }
   else if(seccion==='section-analisis' && anlDataCurr && anlDataRef) {
     const fi=document.getElementById('fechaFin').value;
     const ff=new Date(fi+'T12:00:00');
@@ -3440,11 +3447,27 @@ function renderEstac() {
 
   kpiDiv.innerHTML = totales.map(t => {
     const c = ESTAC_COLORS[t.yr];
-    const yoyStr = t.yoy!=null ? `<span style="font-size:11px;color:${t.yoy>=0?'#5af5c8':'#f55a5a'}">${t.yoy>=0?'+':''}${t.yoy.toFixed(1)}% YoY</span>` : '';
+    // Suprimir YoY si es absurdo (>200% = datos incompletos del año anterior)
+    const showYoY = t.yoy != null && Math.abs(t.yoy) <= 200;
+    const yoyColor  = t.yoy >= 0 ? '#5af5c8' : '#f55a5a';
+    const yoySign   = t.yoy >= 0 ? '+' : '';
+    const yoyBadge  = showYoY
+      ? `<span style="
+            display:inline-flex;align-items:center;gap:3px;
+            font-family:var(--font);font-size:11px;font-weight:600;
+            color:${yoyColor};
+            background:${yoyColor}18;
+            padding:2px 7px;border-radius:20px;
+            margin-left:4px">${yoySign}${t.yoy.toFixed(1)}% YoY</span>`
+      : '';
+    const ticketMedio = t.tr > 0 ? Math.round(t.tot / t.tr) : 0;
     return `<div class="kpi" style="padding:12px 14px;border-left:3px solid ${c.line}">
-      <div class="kpi-label" style="font-size:9px">${t.yr}</div>
-      <div class="kpi-value" style="font-size:18px;color:${c.line}">₡${(t.tot/1e6).toFixed(1)}M</div>
-      <div class="kpi-sub" style="font-size:10px">${t.tr.toLocaleString('es-CR')} trans · ${yoyStr}</div>
+      <div class="kpi-label" style="font-size:9px;font-family:var(--font);letter-spacing:.06em">${t.yr}</div>
+      <div class="kpi-value" style="font-size:19px;color:${c.line};font-family:var(--mono)">₡${(t.tot/1e6).toFixed(1)}M ${yoyBadge}</div>
+      <div class="kpi-sub" style="font-size:10px;font-family:var(--font);margin-top:5px;display:flex;gap:10px">
+        <span>${t.tr.toLocaleString('es-CR')} trans</span>
+        ${ticketMedio > 0 ? `<span style="color:var(--muted)">ticket ₡${ticketMedio.toLocaleString('es-CR')}</span>` : ''}
+      </div>
     </div>`;
   }).join('');
 
