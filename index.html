@@ -1244,6 +1244,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <button class="tab-pill active" onclick="estacToggleYear(2024)">2024</button>
           <button class="tab-pill active" onclick="estacToggleYear(2025)">2025</button>
           <button class="tab-pill active" onclick="estacToggleYear(2026)">2026</button>
+          <button class="tab-pill" onclick="estacToggleYear(2027)">2027</button>
         </div>
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
           <span class="ctrl-label">Mes inicio</span>
@@ -1295,12 +1296,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       </div>
 
       <!-- Chart 3: YoY -->
-      <div class="card-dark" style="padding:18px 20px">
+      <div class="card-dark" style="padding:18px 20px;margin-bottom:14px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
           Crecimiento YoY por mes (%)
+          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">barras sólidas = real · barras tenues = proyectado</span>
         </div>
         <div id="estacLegend4" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
-        <div style="position:relative;height:200px"><canvas id="estacChart4"></canvas></div>
+        <div style="position:relative;height:220px"><canvas id="estacChart4"></canvas></div>
+      </div>
+
+      <!-- Tabla YoY resumen -->
+      <div class="card-dark" style="padding:18px 20px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+          Tabla resumen — crecimiento YoY por mes
+          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">ᵉ = estimado</span>
+        </div>
+        <div id="estacTablaYoY"></div>
       </div>
 
     </div>
@@ -3384,7 +3395,14 @@ const ESTAC_COLORS = {
   2024: { line:'#5af5c8', fill:'rgba(90,245,200,.12)', dash:[4,3], label:'2024' },
   2025: { line:'#a855f7', fill:'rgba(168,85,247,.15)', dash:[],    label:'2025' },
   2026: { line:'#f5c85a', fill:'rgba(245,200,90,.15)', dash:[],    label:'2026' },
+  2027: { line:'#f55a8a', fill:'rgba(245,90,138,.12)', dash:[6,3], label:'2027' },
 };
+// Último mes real disponible por año (índice 0-11)
+function getLastRealMes(yr) {
+  const d = estacData[yr];
+  if(!d || !d.ventas) return -1;
+  return d.ventas.reduce((last,v,i)=>v!==null&&v>0?i:last,-1);
+}
 const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
 // Datos conocidos (de los tests) — se extienden si llegan datos del API
@@ -3717,25 +3735,63 @@ function renderEstac() {
   const ctx4 = document.getElementById('estacChart4')?.getContext('2d');
   if(ctx4) {
     const yearsYoY = years.filter(yr=>yr>Math.min(...years));
+
+    // Para cada año/mes: determinar si es real o proyectado
+    const datasets = yearsYoY.flatMap(yr=>{
+      const curr     = getEstacFiltered(yr);
+      const prev     = getEstacFiltered(yr-1);
+      const c        = ESTAC_COLORS[yr];
+      const lastReal = getLastRealMes(yr); // último mes con dato real
+      if(!curr || !prev) return [];
+
+      // Calcular YoY para cada mes
+      const allYoY = curr.ventas.slice(mesIni,mesFin+1).map((v,i)=>{
+        const globalIdx = mesIni+i;
+        // Usar proy si no hay real
+        const val = v || (estacData[yr]?.proy?.[globalIdx]) || null;
+        const pv  = prev.ventas[mesIni+i] || (estacData[yr-1]?.proy?.[mesIni+i]) || null;
+        return (val&&pv&&pv>0)?+(((val-pv)/pv)*100).toFixed(1):null;
+      });
+
+      // Dataset 1: meses reales — barra sólida
+      const realData = allYoY.map((v,i)=> (mesIni+i)<=lastReal ? v : null);
+      // Dataset 2: meses proyectados — barra con opacidad + borde punteado
+      const proyData = allYoY.map((v,i)=> (mesIni+i)>lastReal ? v : null);
+
+      const sets = [];
+      if(realData.some(v=>v!==null)) {
+        sets.push({
+          label: String(yr)+' vs '+(yr-1),
+          data: realData,
+          backgroundColor: realData.map(v=>v===null?'transparent':v>=0?c.line+'cc':c.line+'66'),
+          borderColor: realData.map(v=>v===null?'transparent':c.line),
+          borderWidth:1, borderRadius:3
+        });
+      }
+      if(proyData.some(v=>v!==null)) {
+        sets.push({
+          label: String(yr)+' proy',
+          data: proyData,
+          backgroundColor: proyData.map(v=>v===null?'transparent':v>=0?c.line+'44':c.line+'22'),
+          borderColor: proyData.map(v=>v===null?'transparent':c.line),
+          borderWidth:1.5, borderRadius:3,
+          borderDash:[4,3] // patrón punteado en el borde
+        });
+      }
+      return sets;
+    });
+
+    buildLegend('estacLegend4', yearsYoY);
+
+    if(estacCharts.c4) estacCharts.c4.destroy();
     estacCharts.c4 = new Chart(ctx4, {
       type:'bar',
-      data:{ labels, datasets: yearsYoY.map(yr=>{
-        const curr = getEstacFiltered(yr);
-        const prev = getEstacFiltered(yr-1);
-        const c = ESTAC_COLORS[yr];
-        const yoys = curr && prev ? curr.ventas.slice(mesIni,mesFin+1).map((v,i)=>{
-          const pv = prev.ventas[mesIni+i];
-          return (v&&pv&&pv>0)?+(((v-pv)/pv)*100).toFixed(1):null;
-        }) : [];
-        return { label:String(yr)+' vs '+(yr-1), data:yoys,
-          backgroundColor: yoys.map(v=>v===null?'transparent':v>=0?c.line+'99':c.line+'55'),
-          borderColor: yoys.map(v=>v===null?'transparent':c.line),
-          borderWidth:1, borderRadius:3 };
-      })},
+      data:{ labels, datasets },
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false},
           tooltip:{ mode:'index', intersect:false, backgroundColor:'#1a1a24',
-            callbacks:{ label:c=>c.raw!=null?` ${c.dataset.label}: ${c.raw>=0?'+':''}${c.raw}%`:' sin dato' } } },
+            callbacks:{ label:c=>c.raw!=null?` ${c.dataset.label}: ${c.raw>=0?'+':''}${c.raw}%`:null,
+                        filter:item=>item.raw!==null } } },
         scales:{
           x:{ grid:{color:gc}, ticks:{color:tc,font:{size:11}} },
           y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>v+'%'},
@@ -3744,6 +3800,65 @@ function renderEstac() {
       }
     });
   }
+
+  // ── Tabla resumen YoY por año ──
+  renderTablaYoY(years, mesIni, mesFin, labels);
+}
+
+function renderTablaYoY(years, mesIni, mesFin, labels) {
+  let cont = document.getElementById('estacTablaYoY');
+  if(!cont) return;
+
+  const yearsYoY = years.filter(yr=>yr>Math.min(...years));
+  if(!yearsYoY.length){ cont.innerHTML=''; return; }
+
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:11px">
+    <thead><tr>
+      <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;border-bottom:0.5px solid rgba(42,42,58,.6)">Mes</th>`;
+
+  yearsYoY.forEach(yr=>{
+    const c = ESTAC_COLORS[yr];
+    html += `<th style="text-align:right;padding:6px 8px;color:${c.line};font-weight:500;border-bottom:0.5px solid rgba(42,42,58,.6)">${yr} vs ${yr-1}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  labels.forEach((mes,i)=>{
+    html += `<tr style="border-bottom:0.5px solid rgba(42,42,58,.3)">
+      <td style="padding:5px 8px;color:var(--muted)">${mes}</td>`;
+    yearsYoY.forEach(yr=>{
+      const curr = getEstacFiltered(yr);
+      const prev = getEstacFiltered(yr-1);
+      const c    = ESTAC_COLORS[yr];
+      const lastReal = getLastRealMes(yr);
+      const globalIdx = mesIni+i;
+      const val = curr?.ventas[globalIdx] || estacData[yr]?.proy?.[globalIdx] || null;
+      const pv  = prev?.ventas[globalIdx] || estacData[yr-1]?.proy?.[globalIdx] || null;
+      const yoy = (val&&pv&&pv>0)?(val-pv)/pv*100:null;
+      const isReal = globalIdx<=lastReal;
+      const fmt = yoy!==null
+        ? `<span style="color:${yoy>=0?'#5af5c8':'#f55a5a'};${!isReal?'opacity:.55':''}">${yoy>=0?'+':''}${yoy.toFixed(1)}%${!isReal?'ᵉ':''}</span>`
+        : '<span style="color:var(--muted)">—</span>';
+      html += `<td style="text-align:right;padding:5px 8px;font-family:var(--mono)">${fmt}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  // Fila promedio
+  html += `<tr style="background:rgba(42,42,58,.3);font-weight:500"><td style="padding:6px 8px;color:var(--muted)">Prom.</td>`;
+  yearsYoY.forEach(yr=>{
+    const curr=getEstacFiltered(yr), prev=getEstacFiltered(yr-1);
+    const c=ESTAC_COLORS[yr];
+    const vals=labels.map((_,i)=>{
+      const gi=mesIni+i;
+      const v=curr?.ventas[gi]||estacData[yr]?.proy?.[gi]||null;
+      const p=prev?.ventas[gi]||estacData[yr-1]?.proy?.[gi]||null;
+      return (v&&p&&p>0)?(v-p)/p*100:null;
+    }).filter(v=>v!==null);
+    const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+    html+=`<td style="text-align:right;padding:6px 8px;font-family:var(--mono);color:${avg>=0?'#5af5c8':'#f55a5a'}">${avg!==null?(avg>=0?'+':'')+avg.toFixed(1)+'%':'—'}</td>`;
+  });
+  html+=`</tr></tbody></table>`;
+  cont.innerHTML = html;
 }
 
 window.addEventListener('load', () => {
