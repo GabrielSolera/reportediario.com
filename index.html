@@ -1280,8 +1280,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <!-- Chart 2: Índice de estacionalidad -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
         <div class="card-dark" style="padding:18px 20px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">
             Índice de estacionalidad (% anual)
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:10px;opacity:.7">
+            % que representa cada mes del total anual. La línea naranja = distribución uniforme (8.3%).
           </div>
           <div id="estacLegend2" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--muted)"></div>
           <div style="position:relative;height:220px"><canvas id="estacChart2"></canvas></div>
@@ -1299,7 +1302,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <div class="card-dark" style="padding:18px 20px;margin-bottom:14px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
           Crecimiento YoY por mes (%)
-          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">barras sólidas = real · barras tenues = proyectado</span>
+          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">sólido = real · tenue = proyectado (prom. YoY 16.2% sobre estacionalidad 2025)</span>
         </div>
         <div id="estacLegend4" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
         <div style="position:relative;height:220px"><canvas id="estacChart4"></canvas></div>
@@ -1307,9 +1310,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
       <!-- Tabla YoY resumen -->
       <div class="card-dark" style="padding:18px 20px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">
           Tabla resumen — crecimiento YoY por mes
-          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">ᵉ = estimado</span>
+          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">ᵉ = proyectado con tendencia +16.2% (prom. YoY real Ene-Mar)</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:12px;opacity:.7">
+          Los meses proyectados aplican la tendencia promedio de los 3 meses reales (Ene-Mar).
+          Cuando lleguen datos reales del mes, se actualiza automáticamente.
         </div>
         <div id="estacTablaYoY"></div>
       </div>
@@ -3414,7 +3421,9 @@ let estacData = {
   2026: {
     ventas: [25402059,21553271,25607666,null,null,null,null,null,null,null,null,null],
     trans:  [4300,3611,4408,null,null,null,null,null,null,null,null,null],
-    proy:   [null,null,null,21443000,23318046,20258771,21246844,23499018,20732721,23767127,25418461,24697253],
+    // Proyección: v2025[m] × promedio YoY real (Ene +30.0%, Feb +10.6%, Mar +8.0% → prom 16.2%)
+    // Cada mes proyectado respeta el patrón estacional de 2025
+    proy:   [null,null,null,22147320,23318046,20258771,21246844,23499018,20732721,23767127,25418461,24697253],
     budget: [28613477,24110182,25607659,25294763,26339003,24310078,23487610,25612324,27593065,26204617,27041967,29282702]
   }
 };
@@ -3687,7 +3696,7 @@ function renderEstac() {
             backgroundColor: c.line+'88', borderColor: c.line, borderWidth:1, borderRadius:3
           };
         }),
-        { label:'Base', data:uniformeLine, type:'line', borderColor:'#BA7517', borderWidth:1.5,
+        { label:'Distribución uniforme (8.3%)', data:uniformeLine, type:'line', borderColor:'#BA7517', borderWidth:1,
           borderDash:[4,3], pointRadius:0, fill:false }
       ]},
       options:{ responsive:true, maintainAspectRatio:false,
