@@ -1700,7 +1700,7 @@ async function cargarDatosDashboard() {
   const tienda = document.getElementById('tiendaSelect').value;
   showLoader(true,'Cargando datos...','Consultando Toteat');
   try {
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true${forzar?"&forzar=true":""}`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(data && !data.error && Array.isArray(data)) datosGlobales = data;
@@ -1736,20 +1736,21 @@ async function cargarDatos(forzar=false) {
   if(!forzar && cacheConsultas[clave] && (ahora-cacheConsultas[clave].ts)<5*60*1000){
     datosGlobales = cacheConsultas[clave].data;
     renderDashboard(datosGlobales);
+    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+' · desde caché local');
     return;
   }
 
   showLoader(true,'Cargando datos...','Consultando Toteat');
   document.getElementById('btnActualizar').disabled = true;
   try{
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true${forzar?"&forzar=true":""}`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(!data||data.error||!data.length){ alert('Sin datos: '+(data?.message||'—')); return; }
     datosGlobales = data;
     cacheConsultas[clave] = {data, ts:Date.now()};
     renderDashboard(data);
-    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR'));
+    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+' · desde Toteat');
   }catch(e){ alert('Error: '+e.message); }
   finally{ showLoader(false); document.getElementById('btnActualizar').disabled=false; }
 }
