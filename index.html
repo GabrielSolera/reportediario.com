@@ -1690,44 +1690,41 @@ function initDates() {
 // ═══════════════════════════════════════════════════════════
 //  DASHBOARD DATA LOAD
 // ═══════════════════════════════════════════════════════════
-async function cargarDatosDashboard(forzar=false) {
+async function cargarDatosDashboard() {
+  // Delega completamente a cargarDatos para evitar caché duplicado
+  if(datosGlobales) return; // ya cargado
   const fechaFinInput = document.getElementById('fechaFin').value;
   if(!fechaFinInput) return;
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
-
-  // Caché de 5 minutos — evitar re-fetches al cambiar de sección
-  const cacheKey = `dashboard-${day}-${month}-${year}`;
-  const cached   = cacheConsultas[cacheKey];
-  if(!forzar && cached && (Date.now()-cached.ts) < 5*60*1000) {
-    datosGlobales = cached.data;
-    return;
-  }
-
+  const tienda = document.getElementById('tiendaSelect').value;
   showLoader(true,'Cargando datos...','Consultando Toteat');
   try {
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=todas&modoRapido=true`;
+    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
     const resp = await fetch(url);
     const data = await resp.json();
-    if(data && !data.error && Array.isArray(data)) {
-      datosGlobales = data;
-      cacheConsultas[cacheKey] = { data, ts: Date.now() };
-    }
+    if(data && !data.error && Array.isArray(data)) datosGlobales = data;
   } catch(e) { console.error('cargarDatosDashboard:', e); }
   finally { showLoader(false); }
 }
 
-async function cargarDatos() {
+async function cargarDatos(forzar=false) {
   if (!getSession()) { doLogout(); return; }
   const fechaFinInput = document.getElementById('fechaFin').value;
   if(!fechaFinInput){ alert('Seleccioná la fecha'); return; }
+
+  // Si se fuerza (botón Actualizar), limpiar todo el caché
+  if(forzar) {
+    Object.keys(cacheConsultas).forEach(k => delete cacheConsultas[k]);
+    datosGlobales = null;
+  }
 
   const seccion = document.querySelector('.section.active')?.id;
   if(seccion === 'section-reporteDiario'){ await cargarReporteDiario(); return; }
   if(seccion === 'section-seguimiento'){ await cargarSeguimiento(); return; }
   if(seccion === 'section-productos'){ await cargarProductos(); return; }
-  if(seccion === 'section-estacionalidad'){ await cargarEstacionalidad(); return; }
-  if(seccion === 'section-analisis'){ await cargarAnalisis(); return; }
+  if(seccion === 'section-estacionalidad'){ estacLoaded=false; await cargarEstacionalidad(); return; }
+  if(seccion === 'section-analisis'){ anlLastTienda=null; await cargarAnalisis(); return; }
 
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
@@ -1735,7 +1732,8 @@ async function cargarDatos() {
   const clave = `${day}-${month}-${year}-${tienda}`;
   const ahora = Date.now();
 
-  if(cacheConsultas[clave] && (ahora-cacheConsultas[clave].ts)<5*60*1000){
+  // Usar caché solo si no se forzó
+  if(!forzar && cacheConsultas[clave] && (ahora-cacheConsultas[clave].ts)<5*60*1000){
     datosGlobales = cacheConsultas[clave].data;
     renderDashboard(datosGlobales);
     return;
@@ -1749,7 +1747,7 @@ async function cargarDatos() {
     const data = await resp.json();
     if(!data||data.error||!data.length){ alert('Sin datos: '+(data?.message||'—')); return; }
     datosGlobales = data;
-    cacheConsultas[clave] = {data,ts:ahora};
+    cacheConsultas[clave] = {data, ts:Date.now()};
     renderDashboard(data);
     setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR'));
   }catch(e){ alert('Error: '+e.message); }
