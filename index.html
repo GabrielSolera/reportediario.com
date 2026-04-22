@@ -1685,12 +1685,53 @@ async function cargarDatosDashboard() {
   finally { showLoader(false); }
 }
 
+// Lee el cache directo del Google Sheet — sin pasar por Apps Script
+// Sheets JSON API es pública para sheets compartidos (no requiere auth)
+const CACHE_SHEET_ID = '1Fk7ERtxjGSiXu2CmqrXKg88LAKHxysom-oUy-VA_UAI';
+
+async function leerCacheDesdeSheet(cacheKey) {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${CACHE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=CacheDiario`;
+    const resp = await fetch(url);
+    const text = await resp.text();
+    // Sheets devuelve JSONP — extraer JSON
+    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
+    const rows = json.table?.rows || [];
+    const TTL  = 35 * 60 * 1000; // 35 minutos (trigger cada 30)
+    const ahora = Date.now();
+
+    // Buscar la fila más reciente con el cacheKey correcto
+    for (let i = rows.length - 1; i >= 0; i--) {
+      const row = rows[i];
+      if (!row.c || row.c.length < 3) continue;
+      const key = row.c[1]?.v;
+      if (key !== cacheKey) continue;
+      // Sheets guarda fechas como Date(year,month,day,h,m,s) — parsear
+      const tsRaw = row.c[0]?.v || '';
+      const tsMatch = String(tsRaw).match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
+      if (!tsMatch) continue;
+      const ts = new Date(
+        parseInt(tsMatch[1]), parseInt(tsMatch[2]), parseInt(tsMatch[3]),
+        parseInt(tsMatch[4]), parseInt(tsMatch[5]), parseInt(tsMatch[6])
+      ).getTime();
+      if (ahora - ts > TTL) { console.log('Cache expirado:', Math.round((ahora-ts)/60000), 'min'); return null; }
+      const jsonStr = row.c[2]?.v;
+      if (!jsonStr || jsonStr.length < 100) continue;
+      console.log('⚡ Cache hit Sheet directo:', cacheKey, Math.round((ahora-ts)/60000)+'min');
+      return JSON.parse(jsonStr);
+    }
+    return null;
+  } catch(e) {
+    console.error('Error leyendo cache Sheet:', e);
+    return null;
+  }
+}
+
 async function cargarDatos(forzar=false) {
   if (!getSession()) { doLogout(); return; }
   const fechaFinInput = document.getElementById('fechaFin').value;
   if(!fechaFinInput){ alert('Seleccioná la fecha'); return; }
 
-  // Si se fuerza (botón Actualizar), limpiar todo el caché
   if(forzar) {
     Object.keys(cacheConsultas).forEach(k => delete cacheConsultas[k]);
     datosGlobales = null;
@@ -1706,29 +1747,44 @@ async function cargarDatos(forzar=false) {
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
   const tienda = document.getElementById('tiendaSelect').value;
-  const clave = `${day}-${month}-${year}-${tienda}`;
-  const ahora = Date.now();
+  const clave  = `${day}-${month}-${year}-${tienda}`;
+  const ahora  = Date.now();
 
-  // Usar caché solo si no se forzó
+  // 1. Caché local del navegador (5 min)
   if(!forzar && cacheConsultas[clave] && (ahora-cacheConsultas[clave].ts)<5*60*1000){
     datosGlobales = cacheConsultas[clave].data;
     renderDashboard(datosGlobales);
-    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+' · desde caché local');
+    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+' · caché navegador');
     return;
   }
 
-  showLoader(true,'Cargando datos...','Consultando Toteat');
+  showLoader(true,'Cargando datos...','Leyendo cache...');
   document.getElementById('btnActualizar').disabled = true;
-  try{
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true${forzar?"&forzar=true":""}`;
+  try {
+    // 2. Caché directo en Google Sheets (sin Apps Script — <1 segundo)
+    if(!forzar && tienda === 'todas') {
+      const sheetKey  = `${day}_${month}_${year}_todas`;
+      const cached    = await leerCacheDesdeSheet(sheetKey);
+      if(cached) {
+        datosGlobales = cached;
+        cacheConsultas[clave] = {data: cached, ts: Date.now()};
+        renderDashboard(cached);
+        setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+' · caché sheet ⚡');
+        return;
+      }
+    }
+
+    // 3. Fallback: Apps Script → Toteat (lento, solo si no hay cache)
+    showLoader(true,'Cargando datos...','Consultando Toteat...');
+    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true${forzar?"&forzar=true":""}`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(!data||data.error||!data.length){ alert('Sin datos: '+(data?.message||'—')); return; }
     datosGlobales = data;
-    cacheConsultas[clave] = {data, ts:Date.now()};
+    cacheConsultas[clave] = {data, ts: Date.now()};
     renderDashboard(data);
     setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+' · desde Toteat');
-  }catch(e){ alert('Error: '+e.message); }
+  } catch(e){ alert('Error: '+e.message); }
   finally{ showLoader(false); document.getElementById('btnActualizar').disabled=false; }
 }
 
