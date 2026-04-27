@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -38,67 +39,67 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
 /* ── SIDEBAR ── */
 .sidebar{
-  width:var(--sidebar-w);flex-shrink:0;
-  background:var(--bg);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  height:100vh;overflow-y:auto;overflow-x:hidden;
-  position:relative;z-index:50;
+width:var(–sidebar-w);flex-shrink:0;
+background:var(–bg);
+border-right:1px solid var(–border);
+display:flex;flex-direction:column;
+height:100vh;overflow-y:auto;overflow-x:hidden;
+position:relative;z-index:50;
 }
 .sidebar-logo{
-  padding:22px 18px 18px;
-  border-bottom:1px solid rgba(42,42,58,.6);
+padding:22px 18px 18px;
+border-bottom:1px solid rgba(42,42,58,.6);
 }
 .logo-mark{display:flex;align-items:center;gap:10px;margin-bottom:3px;}
 .logo-dot{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--lime);
-  box-shadow:0 0 8px var(--lime);
-  animation:pulse 2.5s ease-in-out infinite;
+width:7px;height:7px;border-radius:50%;
+background:var(–lime);
+box-shadow:0 0 8px var(–lime);
+animation:pulse 2.5s ease-in-out infinite;
 }
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.75);}}
-.logo-text{font-size:16px;font-weight:900;letter-spacing:.08em;color:var(--text);}
-.logo-sub{font-size:9px;color:var(--muted2);font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
+.logo-text{font-size:16px;font-weight:900;letter-spacing:.08em;color:var(–text);}
+.logo-sub{font-size:9px;color:var(–muted2);font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
 .sidebar-nav{padding:8px 0 16px;flex:1;}
 .nav-section{
-  padding:20px 16px 5px;
-  font-size:8.5px;font-weight:700;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--muted2);
+padding:20px 16px 5px;
+font-size:8.5px;font-weight:700;letter-spacing:.18em;
+text-transform:uppercase;color:var(–muted2);
 }
 .nav-item{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 14px 9px 16px;
-  cursor:pointer;font-size:12.5px;font-weight:600;
-  color:var(--muted);
-  transition:all .15s;
-  position:relative;
-  margin:1px 10px 1px 10px;
-  border-radius:10px;
+display:flex;align-items:center;gap:10px;
+padding:9px 14px 9px 16px;
+cursor:pointer;font-size:12.5px;font-weight:600;
+color:var(–muted);
+transition:all .15s;
+position:relative;
+margin:1px 10px 1px 10px;
+border-radius:10px;
 }
 .nav-item::before{
-  content:'';
-  position:absolute;left:0;top:0;bottom:0;width:3px;
-  border-radius:0 3px 3px 0;
-  background:transparent;
-  transition:background .15s;
-  margin-left:-10px;
+content:’’;
+position:absolute;left:0;top:0;bottom:0;width:3px;
+border-radius:0 3px 3px 0;
+background:transparent;
+transition:background .15s;
+margin-left:-10px;
 }
 .nav-item:hover{
-  background:rgba(255,255,255,.04);
-  color:var(--text);
+background:rgba(255,255,255,.04);
+color:var(–text);
 }
 .nav-item.active{
-  background:rgba(168,85,247,.12);
-  color:var(--text);
+background:rgba(168,85,247,.12);
+color:var(–text);
 }
-.nav-item.active::before{ background:var(--accent); }
+.nav-item.active::before{ background:var(–accent); }
 .nav-item .nav-icon{
-  width:30px;height:30px;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-  background:rgba(255,255,255,.04);
-  border-radius:8px;
-  transition:background .15s;
+width:30px;height:30px;
+display:flex;align-items:center;justify-content:center;
+flex-shrink:0;
+background:rgba(255,255,255,.04);
+border-radius:8px;
+transition:background .15s;
 }
 .nav-item .nav-icon svg{ color:#7070a0; transition:color .15s; }
 .nav-item.active .nav-icon{ background:rgba(168,85,247,.2); }
@@ -112,121 +113,121 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .nav-item.active .ph-regular{ display:none; }
 .nav-label{flex:1;line-height:1;}
 .nav-badge{
-  font-size:8px;font-weight:800;
-  background:linear-gradient(135deg,var(--accent),#7c3aed);
-  color:#fff;
-  padding:2px 7px;border-radius:20px;letter-spacing:.06em;
-  text-transform:uppercase;
+font-size:8px;font-weight:800;
+background:linear-gradient(135deg,var(–accent),#7c3aed);
+color:#fff;
+padding:2px 7px;border-radius:20px;letter-spacing:.06em;
+text-transform:uppercase;
 }
 /* Modo toggle neto/bruto en sidebar footer */
 .sidebar-footer{
-  padding:12px 14px 16px;
-  border-top:1px solid rgba(42,42,58,.6);
+padding:12px 14px 16px;
+border-top:1px solid rgba(42,42,58,.6);
 }
 .mode-toggle{
-  display:flex;background:var(--surface2);
-  border-radius:8px;padding:3px;gap:2px;
+display:flex;background:var(–surface2);
+border-radius:8px;padding:3px;gap:2px;
 }
 .mode-btn{
-  flex:1;font-size:10px;font-weight:700;
-  padding:5px 0;border-radius:6px;border:none;
-  cursor:pointer;transition:all .15s;
-  font-family:var(--font);letter-spacing:.04em;
-  color:var(--muted);background:transparent;
+flex:1;font-size:10px;font-weight:700;
+padding:5px 0;border-radius:6px;border:none;
+cursor:pointer;transition:all .15s;
+font-family:var(–font);letter-spacing:.04em;
+color:var(–muted);background:transparent;
 }
 .mode-btn.active{
-  background:var(--surface);
-  color:var(--text);
-  box-shadow:0 1px 4px rgba(0,0,0,.4);
+background:var(–surface);
+color:var(–text);
+box-shadow:0 1px 4px rgba(0,0,0,.4);
 }
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .topbar{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:0 28px;height:60px;
-  display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;gap:16px;flex-wrap:nowrap;
+background:var(–surface);border-bottom:1px solid var(–border);
+padding:0 28px;height:60px;
+display:flex;align-items:center;justify-content:space-between;
+flex-shrink:0;gap:16px;flex-wrap:nowrap;
 }
 .topbar-left{display:flex;align-items:center;gap:16px;flex-shrink:0;}
-.page-title{font-size:16px;font-weight:800;color:var(--text);}
-.page-sub{font-size:11px;color:var(--muted);margin-top:1px;font-family:var(--mono);}
+.page-title{font-size:16px;font-weight:800;color:var(–text);}
+.page-sub{font-size:11px;color:var(–muted);margin-top:1px;font-family:var(–mono);}
 .topbar-controls{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
-.ctrl-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;}
+.ctrl-label{font-size:10px;font-weight:700;color:var(–muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;}
 .ctrl-input,.ctrl-select{
-  font-family:var(--font);font-size:12px;font-weight:600;
-  background:var(--surface2);color:var(--text);
-  border:1px solid var(--border2);
-  padding:7px 12px;border-radius:8px;
-  outline:none;cursor:pointer;
-  transition:border-color .15s;
+font-family:var(–font);font-size:12px;font-weight:600;
+background:var(–surface2);color:var(–text);
+border:1px solid var(–border2);
+padding:7px 12px;border-radius:8px;
+outline:none;cursor:pointer;
+transition:border-color .15s;
 }
-.ctrl-input:hover,.ctrl-select:hover,.ctrl-input:focus,.ctrl-select:focus{border-color:var(--accent);}
-.ctrl-divider{width:1px;height:24px;background:var(--border2);}
+.ctrl-input:hover,.ctrl-select:hover,.ctrl-input:focus,.ctrl-select:focus{border-color:var(–accent);}
+.ctrl-divider{width:1px;height:24px;background:var(–border2);}
 .btn{
-  font-family:var(--font);font-size:12px;font-weight:700;
-  padding:8px 18px;border-radius:8px;border:none;cursor:pointer;
-  transition:all .18s;display:flex;align-items:center;gap:6px;white-space:nowrap;
+font-family:var(–font);font-size:12px;font-weight:700;
+padding:8px 18px;border-radius:8px;border:none;cursor:pointer;
+transition:all .18s;display:flex;align-items:center;gap:6px;white-space:nowrap;
 }
-.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary{background:var(–accent);color:#fff;}
 .btn-primary:hover{background:#b56ef8;box-shadow:0 0 18px rgba(168,85,247,.35);}
 .btn-primary:disabled{opacity:.45;cursor:not-allowed;}
-.btn-ghost{background:var(--surface3);color:var(--muted);border:1px solid var(--border2);}
-.btn-ghost:hover{color:var(--text);border-color:var(--border2);}
-.btn-lime{background:rgba(200,245,90,.12);color:var(--lime);border:1px solid rgba(200,245,90,.25);}
+.btn-ghost{background:var(–surface3);color:var(–muted);border:1px solid var(–border2);}
+.btn-ghost:hover{color:var(–text);border-color:var(–border2);}
+.btn-lime{background:rgba(200,245,90,.12);color:var(–lime);border:1px solid rgba(200,245,90,.25);}
 .btn-lime:hover{background:rgba(200,245,90,.2);box-shadow:0 0 14px rgba(200,245,90,.15);}
 
 /* ── CONTENT ── */
 .content{flex:1;overflow-y:auto;padding:24px 28px;}
 .content::-webkit-scrollbar{width:5px;}
-.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.content::-webkit-scrollbar-thumb{background:var(–border2);border-radius:3px;}
 .section{display:none;animation:fadeUp .25s ease;}
 .section.active{display:block;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
 /* ── CARDS ── */
 .card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);overflow:hidden;
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);overflow:hidden;
 }
 .card-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;border-bottom:1px solid var(--border);
+display:flex;align-items:center;justify-content:space-between;
+padding:14px 18px;border-bottom:1px solid var(–border);
 }
-.card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);}
-.card-tag{font-size:10px;font-weight:600;background:var(--surface3);color:var(--muted);padding:3px 10px;border-radius:20px;font-family:var(--mono);}
+.card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(–muted);}
+.card-tag{font-size:10px;font-weight:600;background:var(–surface3);color:var(–muted);padding:3px 10px;border-radius:20px;font-family:var(–mono);}
 .card-body{padding:18px;}
 
 /* ── KPI GRID ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
 .kpi{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:18px;
-  position:relative;overflow:hidden;
-  transition:border-color .2s;
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);padding:18px;
+position:relative;overflow:hidden;
+transition:border-color .2s;
 }
 .kpi::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  opacity:0;transition:opacity .2s;
+content:’’;position:absolute;top:0;left:0;right:0;height:2px;
+opacity:0;transition:opacity .2s;
 }
 .kpi:hover::before{opacity:1;}
-.kpi:hover{border-color:var(--border2);}
-.kpi.k-purple::before{background:linear-gradient(90deg,var(--accent),transparent);}
-.kpi.k-lime::before{background:linear-gradient(90deg,var(--lime),transparent);}
-.kpi.k-teal::before{background:linear-gradient(90deg,var(--teal),transparent);}
-.kpi.k-amber::before{background:linear-gradient(90deg,var(--amber),transparent);}
-.kpi.k-red::before{background:linear-gradient(90deg,var(--red),transparent);}
-.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;}
-.kpi-value{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--text);}
-.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.kpi:hover{border-color:var(–border2);}
+.kpi.k-purple::before{background:linear-gradient(90deg,var(–accent),transparent);}
+.kpi.k-lime::before{background:linear-gradient(90deg,var(–lime),transparent);}
+.kpi.k-teal::before{background:linear-gradient(90deg,var(–teal),transparent);}
+.kpi.k-amber::before{background:linear-gradient(90deg,var(–amber),transparent);}
+.kpi.k-red::before{background:linear-gradient(90deg,var(–red),transparent);}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(–muted);margin-bottom:10px;}
+.kpi-value{font-family:var(–mono);font-size:24px;font-weight:600;color:var(–text);}
+.kpi-sub{font-size:11px;color:var(–muted);margin-top:4px;}
 .kpi-delta{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:11px;font-weight:700;font-family:var(--mono);
-  padding:2px 8px;border-radius:20px;margin-top:6px;
+display:inline-flex;align-items:center;gap:4px;
+font-size:11px;font-weight:700;font-family:var(–mono);
+padding:2px 8px;border-radius:20px;margin-top:6px;
 }
-.d-pos{background:rgba(90,245,200,.1);color:var(--teal);}
-.d-neg{background:rgba(245,90,90,.1);color:var(--red);}
-.d-neu{background:var(--surface2);color:var(--muted);}
+.d-pos{background:rgba(90,245,200,.1);color:var(–teal);}
+.d-neg{background:rgba(245,90,90,.1);color:var(–red);}
+.d-neu{background:var(–surface2);color:var(–muted);}
 
 /* ── 2-COL GRID ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
@@ -235,185 +236,185 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 /* ── STORE TABLE ── */
 .store-table{width:100%;border-collapse:collapse;}
 .store-table thead th{
-  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
-  color:var(--muted);padding:10px 12px;text-align:right;
-  border-bottom:1px solid var(--border);
-  white-space:nowrap;
+font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+color:var(–muted);padding:10px 12px;text-align:right;
+border-bottom:1px solid var(–border);
+white-space:nowrap;
 }
 .store-table thead th:first-child{text-align:left;}
 .store-table tbody tr{border-bottom:1px solid rgba(42,42,58,.5);transition:background .12s;}
-.store-table tbody tr:hover{background:var(--surface2);}
-.store-table tbody td{padding:11px 12px;font-size:13px;text-align:right;font-family:var(--mono);}
-.store-table tbody td:first-child{text-align:left;font-family:var(--font);font-weight:700;font-size:13px;}
+.store-table tbody tr:hover{background:var(–surface2);}
+.store-table tbody td{padding:11px 12px;font-size:13px;text-align:right;font-family:var(–mono);}
+.store-table tbody td:first-child{text-align:left;font-family:var(–font);font-weight:700;font-size:13px;}
 .store-table .total-row{background:rgba(168,85,247,.07);}
 .store-table .total-row td{font-weight:700;}
-.pos{color:var(--teal);}
-.neg{color:var(--red);}
+.pos{color:var(–teal);}
+.neg{color:var(–red);}
 
 /* ── CHART WRAPPER ── */
 .chart-wrap{position:relative;height:240px;}
 .chart-wrap-tall{position:relative;height:300px;}
 
 /* ── TABS ── */
-.tab-pills{display:flex;gap:4px;background:var(--surface2);padding:3px;border-radius:8px;}
+.tab-pills{display:flex;gap:4px;background:var(–surface2);padding:3px;border-radius:8px;}
 .tab-pill{
-  font-size:11px;font-weight:700;padding:5px 14px;border-radius:6px;
-  cursor:pointer;border:none;background:none;color:var(--muted);
-  transition:all .15s;
+font-size:11px;font-weight:700;padding:5px 14px;border-radius:6px;
+cursor:pointer;border:none;background:none;color:var(–muted);
+transition:all .15s;
 }
-.tab-pill.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
+.tab-pill.active{background:var(–surface);color:var(–text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
 
 /* ── PROYECCIÓN: Calendar grid ── */
 .cal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .cal-item{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:10px;padding:10px 12px;
+background:var(–surface2);border:1px solid var(–border);
+border-radius:10px;padding:10px 12px;
 }
-.cal-item-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+.cal-item-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(–muted);margin-bottom:6px;}
 .cal-compare{display:flex;align-items:baseline;gap:6px;}
-.cal-prev{font-size:15px;font-weight:700;color:var(--muted2);}
-.cal-arr{font-size:13px;color:var(--border2);}
-.cal-next{font-size:21px;font-weight:900;color:var(--text);}
-.arr-up{color:var(--teal) !important;}
-.arr-dn{color:var(--red) !important;}
+.cal-prev{font-size:15px;font-weight:700;color:var(–muted2);}
+.cal-arr{font-size:13px;color:var(–border2);}
+.cal-next{font-size:21px;font-weight:900;color:var(–text);}
+.arr-up{color:var(–teal) !important;}
+.arr-dn{color:var(–red) !important;}
 
 /* ── STORE BREAKDOWN BARS ── */
 .store-list{display:flex;flex-direction:column;gap:8px;}
-.store-bar-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;}
+.store-bar-item{background:var(–surface2);border:1px solid var(–border);border-radius:10px;padding:11px 13px;}
 .store-bar-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
 .store-bar-name{font-size:12px;font-weight:700;}
-.store-bar-amt{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);}
-.store-bar-pct{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:6px;}
-.bar-track{height:3px;background:var(--border);border-radius:2px;}
+.store-bar-amt{font-family:var(–mono);font-size:13px;font-weight:600;color:var(–accent);}
+.store-bar-pct{font-family:var(–mono);font-size:10px;color:var(–muted);margin-left:6px;}
+.bar-track{height:3px;background:var(–border);border-radius:2px;}
 .bar-fill{height:100%;border-radius:2px;transition:width .9s cubic-bezier(.4,0,.2,1);}
 
 /* ── PROY TABLE ── */
 .proy-table{width:100%;border-collapse:collapse;}
 .proy-table thead th{
-  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
-  color:var(--muted);padding:10px 12px;text-align:left;
-  border-bottom:1px solid var(--border);background:var(--surface2);
-  white-space:nowrap;
+font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+color:var(–muted);padding:10px 12px;text-align:left;
+border-bottom:1px solid var(–border);background:var(–surface2);
+white-space:nowrap;
 }
 .proy-table tbody tr{border-bottom:1px solid rgba(42,42,58,.4);transition:background .12s;}
-.proy-table tbody tr:hover{background:var(--surface2);}
+.proy-table tbody tr:hover{background:var(–surface2);}
 .proy-table tbody td{padding:9px 12px;font-size:12px;}
 .row-weekend{background:rgba(168,85,247,.03);}
 .row-holiday{background:rgba(245,90,90,.04);}
 .row-today{background:rgba(90,245,200,.05) !important;}
 .badge-sm{display:inline-block;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px;margin-left:5px;}
-.b-sat{background:rgba(168,85,247,.15);color:var(--accent);}
-.b-sun{background:rgba(245,200,90,.15);color:var(--amber);}
-.b-hol{background:rgba(245,90,90,.15);color:var(--red);}
-.b-hoy{background:rgba(90,245,200,.15);color:var(--teal);}
+.b-sat{background:rgba(168,85,247,.15);color:var(–accent);}
+.b-sun{background:rgba(245,200,90,.15);color:var(–amber);}
+.b-hol{background:rgba(245,90,90,.15);color:var(–red);}
+.b-hoy{background:rgba(90,245,200,.15);color:var(–teal);}
 .conf-row{display:flex;gap:3px;align-items:center;}
 .conf-seg{width:12px;height:3px;border-radius:2px;}
 
 /* ── LOADER ── */
 .global-loader{
-  position:fixed;inset:0;background:rgba(12,12,16,.88);
-  display:none;align-items:center;justify-content:center;
-  flex-direction:column;gap:14px;z-index:9999;backdrop-filter:blur(4px);
+position:fixed;inset:0;background:rgba(12,12,16,.88);
+display:none;align-items:center;justify-content:center;
+flex-direction:column;gap:14px;z-index:9999;backdrop-filter:blur(4px);
 }
 .loader-ring{
-  width:44px;height:44px;
-  border:3px solid var(--border);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .75s linear infinite;
+width:44px;height:44px;
+border:3px solid var(–border);border-top-color:var(–accent);
+border-radius:50%;animation:spin .75s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
-.loader-txt{font-size:14px;font-weight:700;color:var(--accent);}
-.loader-step{font-size:12px;color:var(--muted);font-family:var(--mono);}
+.loader-txt{font-size:14px;font-weight:700;color:var(–accent);}
+.loader-step{font-size:12px;color:var(–muted);font-family:var(–mono);}
 
 /* ── EMPTY STATE ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:12px;text-align:center;}
 .empty-icon{font-size:40px;opacity:.3;}
-.empty-txt{font-size:13px;color:var(--muted);}
+.empty-txt{font-size:13px;color:var(–muted);}
 
 /* ── SCROLLABLE CONTAINER ── */
 .scroll-box{overflow-x:auto;}
 .scroll-box::-webkit-scrollbar{height:4px;}
-.scroll-box::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.scroll-box::-webkit-scrollbar-thumb{background:var(–border2);border-radius:2px;}
 .table-scroll{max-height:400px;overflow-y:auto;}
 .table-scroll::-webkit-scrollbar{width:4px;}
-.table-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.table-scroll::-webkit-scrollbar-thumb{background:var(–border2);border-radius:2px;}
 
 /* ── PROY CONTROLS BAR ── */
 .proy-controls{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:16px 20px;
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  margin-bottom:20px;
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);padding:16px 20px;
+display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+margin-bottom:20px;
 }
 
 /* ── DATE RANGE PILL ── */
 .date-range-group{display:flex;align-items:center;gap:6px;}
-.date-sep{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.date-sep{font-size:11px;color:var(–muted);font-family:var(–mono);}
 
 /* ── ANÁLISIS: Ranking cards ── */
 .rank-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);padding:16px;
-  position:relative;overflow:hidden;
-  transition:border-color .2s, transform .2s;
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);padding:16px;
+position:relative;overflow:hidden;
+transition:border-color .2s, transform .2s;
 }
-.rank-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.rank-card:hover{border-color:var(–border2);transform:translateY(-2px);}
 .rank-card::after{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+content:’’;position:absolute;top:0;left:0;right:0;height:3px;
 }
 .rank-1::after{background:linear-gradient(90deg,#f5c85a,#f5a85a);}
 .rank-2::after{background:linear-gradient(90deg,#c8c8d0,#a8a8b8);}
 .rank-3::after{background:linear-gradient(90deg,#c87040,#b06030);}
-.rank-4::after{background:linear-gradient(90deg,var(--border2),transparent);}
+.rank-4::after{background:linear-gradient(90deg,var(–border2),transparent);}
 .rank-medal{font-size:22px;margin-bottom:8px;}
-.rank-name{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em;}
-.rank-value{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--text);margin-bottom:4px;}
-.rank-delta{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;}
-.rank-bar-wrap{height:2px;background:var(--border);border-radius:1px;margin-top:10px;}
+.rank-name{font-size:12px;font-weight:700;color:var(–muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em;}
+.rank-value{font-family:var(–mono);font-size:20px;font-weight:600;color:var(–text);margin-bottom:4px;}
+.rank-delta{font-family:var(–mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;}
+.rank-bar-wrap{height:2px;background:var(–border);border-radius:1px;margin-top:10px;}
 .rank-bar{height:100%;border-radius:1px;transition:width .9s ease;}
 
 /* ── Canal pills ── */
 .canal-kpi{
-  padding:16px 18px;border-right:1px solid var(--border);
-  display:flex;flex-direction:column;gap:4px;
+padding:16px 18px;border-right:1px solid var(–border);
+display:flex;flex-direction:column;gap:4px;
 }
 .canal-kpi:last-child{border-right:none;}
 .canal-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;}
-.canal-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);display:flex;align-items:center;}
-.canal-value{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--text);}
-.canal-pct{font-family:var(--mono);font-size:20px;font-weight:800;margin-bottom:2px;}
-.canal-sub{font-size:10px;color:var(--muted);}
-.canal-delta{font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:2px;display:inline-block;}
+.canal-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(–muted);display:flex;align-items:center;}
+.canal-value{font-family:var(–mono);font-size:18px;font-weight:600;color:var(–text);}
+.canal-pct{font-family:var(–mono);font-size:20px;font-weight:800;margin-bottom:2px;}
+.canal-sub{font-size:10px;color:var(–muted);}
+.canal-delta{font-family:var(–mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:2px;display:inline-block;}
 
 /* ── Métrica mini row ── */
 .metrica-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(42,42,58,.4);}
 .metrica-row:last-child{border-bottom:none;}
-.metrica-label{font-size:11px;color:var(--muted);font-weight:600;}
-.metrica-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);}
-.metrica-delta{font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
+.metrica-label{font-size:11px;color:var(–muted);font-weight:600;}
+.metrica-val{font-family:var(–mono);font-size:13px;font-weight:700;color:var(–text);}
+.metrica-delta{font-family:var(–mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
 
 /* ── Trend legend ── */
 .trend-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
-.trend-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);}
+.trend-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(–muted);}
 .trend-leg-line{width:18px;height:2px;border-radius:1px;}
 
 /* ═══════════════════════════════════════════
-   RESPONSIVE
+RESPONSIVE
 ═══════════════════════════════════════════ */
 
 /* ── Hamburger button ── */
 .hamburger{
-  display:none;
-  flex-direction:column;justify-content:center;align-items:center;
-  width:38px;height:38px;cursor:pointer;gap:5px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:10px;flex-shrink:0;
-  transition:background .15s;
+display:none;
+flex-direction:column;justify-content:center;align-items:center;
+width:38px;height:38px;cursor:pointer;gap:5px;
+background:var(–surface2);border:1px solid var(–border);
+border-radius:10px;flex-shrink:0;
+transition:background .15s;
 }
-.hamburger:hover{background:var(--surface3);}
+.hamburger:hover{background:var(–surface3);}
 .hamburger span{
-  display:block;width:16px;height:2px;
-  background:var(--text);border-radius:2px;
-  transition:all .25s;
+display:block;width:16px;height:2px;
+background:var(–text);border-radius:2px;
+transition:all .25s;
 }
 .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
 .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
@@ -421,297 +422,299 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
 /* ── Sidebar overlay ── */
 .sidebar-overlay{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.6);backdrop-filter:blur(2px);
-  z-index:150;opacity:0;transition:opacity .3s;
-  pointer-events:none;
+display:none;position:fixed;inset:0;
+background:rgba(0,0,0,.6);backdrop-filter:blur(2px);
+z-index:150;opacity:0;transition:opacity .3s;
+pointer-events:none;
 }
 .sidebar-overlay.visible{opacity:1;pointer-events:all;}
 
 /* ─────────────────────────────────────────
-   1200px — tablet landscape
+1200px — tablet landscape
 ───────────────────────────────────────── */
 @media(max-width:1200px){
-  .kpi-grid{grid-template-columns:repeat(2,1fr);}
-  :root{--sidebar-w:200px;}
+.kpi-grid{grid-template-columns:repeat(2,1fr);}
+:root{–sidebar-w:200px;}
 }
 
 /* ─────────────────────────────────────────
-   900px — tablet portrait / large phone
+900px — tablet portrait / large phone
 ───────────────────────────────────────── */
 @media(max-width:900px){
-  /* Sidebar off-canvas */
-  .hamburger{display:flex;}
-  .sidebar{
-    position:fixed;left:-260px;top:0;
-    transition:left .28s cubic-bezier(.4,0,.2,1);
-    z-index:200;height:100dvh;width:240px;
-  }
-  .sidebar.open{left:0;}
-  .sidebar-overlay{display:block;}
-  .main{margin-left:0;}
+/* Sidebar off-canvas */
+.hamburger{display:flex;}
+.sidebar{
+position:fixed;left:-260px;top:0;
+transition:left .28s cubic-bezier(.4,0,.2,1);
+z-index:200;height:100dvh;width:240px;
+}
+.sidebar.open{left:0;}
+.sidebar-overlay{display:block;}
+.main{margin-left:0;}
 
-  /* Topbar — two rows */
-  .topbar{
-    padding:10px 14px;height:auto;
-    flex-wrap:wrap;gap:6px;
-  }
-  .topbar-left{flex:1;min-width:0;}
-  .topbar-controls{
-    width:100%;order:3;
-    display:flex;flex-wrap:wrap;gap:6px;
-    padding:8px 0 4px;
-    border-top:1px solid var(--border);
-  }
-  .ctrl-label{display:none;}
-  .ctrl-input,.ctrl-select{font-size:12px;padding:6px 10px;height:34px;}
-  #fechaInicio,#fechaFin{width:118px;}
-  .ctrl-divider{display:none;}
-  #btnActualizar{margin-left:auto;}
-  #tiendaSelect{flex:1;min-width:120px;}
+/* Topbar — two rows */
+.topbar{
+padding:10px 14px;height:auto;
+flex-wrap:wrap;gap:6px;
+}
+.topbar-left{flex:1;min-width:0;}
+.topbar-controls{
+width:100%;order:3;
+display:flex;flex-wrap:wrap;gap:6px;
+padding:8px 0 4px;
+border-top:1px solid var(–border);
+}
+.ctrl-label{display:none;}
+.ctrl-input,.ctrl-select{font-size:12px;padding:6px 10px;height:34px;}
+#fechaInicio,#fechaFin{width:118px;}
+.ctrl-divider{display:none;}
+#btnActualizar{margin-left:auto;}
+#tiendaSelect{flex:1;min-width:120px;}
 
-  /* Content */
-  .content{padding:14px 12px;}
+/* Content */
+.content{padding:14px 12px;}
 
-  /* KPIs */
-  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
-  .kpi{padding:14px;}
-  .kpi-value{font-size:20px;}
-  .kpi-sub{font-size:10px;}
+/* KPIs */
+.kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.kpi{padding:14px;}
+.kpi-value{font-size:20px;}
+.kpi-sub{font-size:10px;}
 
-  /* Grids */
-  .grid-2,.grid-3{grid-template-columns:1fr;gap:10px;}
-  .card-body{padding:12px;}
+/* Grids */
+.grid-2,.grid-3{grid-template-columns:1fr;gap:10px;}
+.card-body{padding:12px;}
 
-  /* Charts — slightly smaller */
-  .chart-wrap{height:200px;}
-  .chart-wrap-tall{height:240px;}
+/* Charts — slightly smaller */
+.chart-wrap{height:200px;}
+.chart-wrap-tall{height:240px;}
 
-  /* All tables need horizontal scroll */
-  .scroll-box{-webkit-overflow-scrolling:touch;}
-  .store-table{font-size:12px;}
-  .store-table th,.store-table td{padding:9px 10px;}
+/* All tables need horizontal scroll */
+.scroll-box{-webkit-overflow-scrolling:touch;}
+.store-table{font-size:12px;}
+.store-table th,.store-table td{padding:9px 10px;}
 
-  /* Canal pills — wrap */
-  .canal-kpi{border-right:none;border-bottom:1px solid var(--border);padding:10px 14px;}
-  .canal-kpi:last-child{border-bottom:none;}
-  [style*="display:flex"][style*="canal"]{flex-wrap:wrap;}
+/* Canal pills — wrap */
+.canal-kpi{border-right:none;border-bottom:1px solid var(–border);padding:10px 14px;}
+.canal-kpi:last-child{border-bottom:none;}
+[style*=“display:flex”][style*=“canal”]{flex-wrap:wrap;}
 
-  /* Proyección calendar */
-  .cal-grid{grid-template-columns:1fr;}
+/* Proyección calendar */
+.cal-grid{grid-template-columns:1fr;}
 
-  /* Proyección controls */
-  .proy-controls{gap:8px;}
-  .proy-controls .ctrl-select{flex:1;}
+/* Proyección controls */
+.proy-controls{gap:8px;}
+.proy-controls .ctrl-select{flex:1;}
 
-  /* Seguimiento */
-  #segKpis{grid-template-columns:repeat(2,1fr) !important;gap:8px !important;}
-  .seg-controls{flex-wrap:wrap;gap:6px;}
-  #segStore,#segMes{flex:1;min-width:120px;}
+/* Seguimiento */
+#segKpis{grid-template-columns:repeat(2,1fr) !important;gap:8px !important;}
+.seg-controls{flex-wrap:wrap;gap:6px;}
+#segStore,#segMes{flex:1;min-width:120px;}
 
-  /* Rank cards */
-  .rank-cards-grid{grid-template-columns:repeat(2,1fr) !important;}
+/* Rank cards */
+.rank-cards-grid{grid-template-columns:repeat(2,1fr) !important;}
 }
 
 /* ─────────────────────────────────────────
-   600px — phone
+600px — phone
 ───────────────────────────────────────── */
 @media(max-width:600px){
-  /* Topbar tighter */
-  .topbar{padding:8px 10px;gap:4px;}
-  .page-title{font-size:14px;}
-  .page-sub{font-size:10px;}
-  #fechaInicio,#fechaFin{width:102px;font-size:11px;}
-  .topbar-controls{gap:4px;}
-  .btn{padding:7px 12px;font-size:11px;}
+/* Topbar tighter */
+.topbar{padding:8px 10px;gap:4px;}
+.page-title{font-size:14px;}
+.page-sub{font-size:10px;}
+#fechaInicio,#fechaFin{width:102px;font-size:11px;}
+.topbar-controls{gap:4px;}
+.btn{padding:7px 12px;font-size:11px;}
 
-  /* Content */
-  .content{padding:10px 8px;}
+/* Content */
+.content{padding:10px 8px;}
 
-  /* KPIs — 2 cols tight */
-  .kpi-grid{grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
-  .kpi{padding:12px 10px;}
-  .kpi-value{font-size:16px;}
-  .kpi-label{font-size:9px;letter-spacing:.06em;}
-  .kpi-sub{font-size:9px;}
-  .kpi-delta{font-size:9px;padding:2px 6px;}
+/* KPIs — 2 cols tight */
+.kpi-grid{grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.kpi{padding:12px 10px;}
+.kpi-value{font-size:16px;}
+.kpi-label{font-size:9px;letter-spacing:.06em;}
+.kpi-sub{font-size:9px;}
+.kpi-delta{font-size:9px;padding:2px 6px;}
 
-  /* Cards */
-  .card-header{padding:10px 12px;}
-  .card-title{font-size:10px;}
-  .card-body{padding:8px;}
+/* Cards */
+.card-header{padding:10px 12px;}
+.card-title{font-size:10px;}
+.card-body{padding:8px;}
 
-  /* Charts */
-  .chart-wrap{height:180px;}
-  .chart-wrap-tall{height:200px;}
+/* Charts */
+.chart-wrap{height:180px;}
+.chart-wrap-tall{height:200px;}
 
-  /* Tables */
-  .store-table{font-size:11px;}
-  .store-table th{padding:8px 7px;font-size:9px;}
-  .store-table td{padding:8px 7px;}
+/* Tables */
+.store-table{font-size:11px;}
+.store-table th{padding:8px 7px;font-size:9px;}
+.store-table td{padding:8px 7px;}
 
-  /* Seguimiento: 2x2 KPIs */
-  #segKpis{grid-template-columns:1fr 1fr !important;gap:6px !important;}
-  #segKpis .kpi{padding:10px;}
+/* Seguimiento: 2x2 KPIs */
+#segKpis{grid-template-columns:1fr 1fr !important;gap:6px !important;}
+#segKpis .kpi{padding:10px;}
 
-  /* Seguimiento table — hide less important cols on very small */
-  #segTable th:nth-child(8),
-  #segTable td:nth-child(8),
-  #segTable th:nth-child(9),
-  #segTable td:nth-child(9){ display:none; }
+/* Seguimiento table — hide less important cols on very small */
+#segTable th:nth-child(8),
+#segTable td:nth-child(8),
+#segTable th:nth-child(9),
+#segTable td:nth-child(9){ display:none; }
 
-  /* Proyección */
-  .proy-table{font-size:11px;}
-  .proy-table th,.proy-table td{padding:7px 8px;}
-  .badge-sm{display:none;}
+/* Proyección */
+.proy-table{font-size:11px;}
+.proy-table th,.proy-table td{padding:7px 8px;}
+.badge-sm{display:none;}
 
-  /* Rank cards — 1 col */
-  .rank-cards-grid{grid-template-columns:1fr !important;}
-  .rank-value{font-size:16px;}
+/* Rank cards — 1 col */
+.rank-cards-grid{grid-template-columns:1fr !important;}
+.rank-value{font-size:16px;}
 
-  /* Hide trend legend labels */
-  .trend-legend{gap:8px;}
-  .trend-leg-item{font-size:9px;}
+/* Hide trend legend labels */
+.trend-legend{gap:8px;}
+.trend-leg-item{font-size:9px;}
 
-  /* Análisis section KPIs */
-  .metrica-label{font-size:10px;}
-  .metrica-val{font-size:12px;}
+/* Análisis section KPIs */
+.metrica-label{font-size:10px;}
+.metrica-val{font-size:12px;}
 }
 
 /* ─────────────────────────────────────────
-   400px — small phone
+400px — small phone
 ───────────────────────────────────────── */
 @media(max-width:400px){
-  #fechaInicio,#fechaFin{width:88px;font-size:10px;}
-  .kpi-value{font-size:14px;}
-  .chart-wrap{height:160px;}
-  .topbar-controls .ctrl-select{font-size:11px;}
+#fechaInicio,#fechaFin{width:88px;font-size:10px;}
+.kpi-value{font-size:14px;}
+.chart-wrap{height:160px;}
+.topbar-controls .ctrl-select{font-size:11px;}
 
-  /* Seguimiento table — show only essential cols */
-  #segTable th:nth-child(5),
-  #segTable td:nth-child(5),
-  #segTable th:nth-child(10),
-  #segTable td:nth-child(10),
-  #segTable th:nth-child(11),
-  #segTable td:nth-child(11){ display:none; }
+/* Seguimiento table — show only essential cols */
+#segTable th:nth-child(5),
+#segTable td:nth-child(5),
+#segTable th:nth-child(10),
+#segTable td:nth-child(10),
+#segTable th:nth-child(11),
+#segTable td:nth-child(11){ display:none; }
 }
 
 /* ══════════════════════════════════════
-   LOGIN SCREEN
+LOGIN SCREEN
 ══════════════════════════════════════ */
 #loginScreen {
-  position:fixed;inset:0;z-index:10000;
-  background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:0;
+position:fixed;inset:0;z-index:10000;
+background:var(–bg);
+display:flex;align-items:center;justify-content:center;
+flex-direction:column;gap:0;
 }
 #loginScreen.hidden { display:none; }
 
 .login-wrap {
-  width:100%;max-width:380px;
-  padding:0 20px;
-  animation:fadeUp .35s ease;
+width:100%;max-width:380px;
+padding:0 20px;
+animation:fadeUp .35s ease;
 }
 .login-logo {
-  text-align:center;margin-bottom:32px;
+text-align:center;margin-bottom:32px;
 }
 .login-logo-mark {
-  display:inline-flex;align-items:center;gap:10px;margin-bottom:6px;
+display:inline-flex;align-items:center;gap:10px;margin-bottom:6px;
 }
 .login-logo-dot {
-  width:10px;height:10px;border-radius:50%;
-  background:var(--lime);box-shadow:0 0 14px var(--lime);
-  animation:pulse 2.5s ease-in-out infinite;
+width:10px;height:10px;border-radius:50%;
+background:var(–lime);box-shadow:0 0 14px var(–lime);
+animation:pulse 2.5s ease-in-out infinite;
 }
 .login-logo-text {
-  font-size:22px;font-weight:900;letter-spacing:.06em;color:var(--text);
+font-size:22px;font-weight:900;letter-spacing:.06em;color:var(–text);
 }
 .login-logo-sub {
-  font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.15em;text-transform:uppercase;
+font-size:10px;color:var(–muted);font-weight:600;letter-spacing:.15em;text-transform:uppercase;
 }
 .login-card {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:32px 28px;
+background:var(–surface);
+border:1px solid var(–border);
+border-radius:16px;
+padding:32px 28px;
 }
 .login-title {
-  font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;
+font-size:18px;font-weight:800;color:var(–text);margin-bottom:4px;
 }
 .login-sub {
-  font-size:12px;color:var(--muted);margin-bottom:28px;
+font-size:12px;color:var(–muted);margin-bottom:28px;
 }
 .login-field {
-  margin-bottom:16px;
+margin-bottom:16px;
 }
 .login-label {
-  display:block;font-size:10px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.09em;color:var(--muted);margin-bottom:6px;
+display:block;font-size:10px;font-weight:700;text-transform:uppercase;
+letter-spacing:.09em;color:var(–muted);margin-bottom:6px;
 }
 .login-input {
-  width:100%;font-family:var(--font);font-size:14px;font-weight:600;
-  background:var(--surface2);color:var(--text);
-  border:1px solid var(--border2);
-  padding:11px 14px;border-radius:10px;
-  outline:none;transition:border-color .15s,box-shadow .15s;
+width:100%;font-family:var(–font);font-size:14px;font-weight:600;
+background:var(–surface2);color:var(–text);
+border:1px solid var(–border2);
+padding:11px 14px;border-radius:10px;
+outline:none;transition:border-color .15s,box-shadow .15s;
 }
 .login-input:focus {
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(168,85,247,.12);
+border-color:var(–accent);
+box-shadow:0 0 0 3px rgba(168,85,247,.12);
 }
-.login-input.error { border-color:var(--red); }
+.login-input.error { border-color:var(–red); }
 .login-btn {
-  width:100%;margin-top:8px;
-  font-family:var(--font);font-size:14px;font-weight:800;
-  padding:12px;border-radius:10px;border:none;cursor:pointer;
-  background:var(--accent);color:#fff;
-  transition:all .18s;letter-spacing:.02em;
-  display:flex;align-items:center;justify-content:center;gap:8px;
+width:100%;margin-top:8px;
+font-family:var(–font);font-size:14px;font-weight:800;
+padding:12px;border-radius:10px;border:none;cursor:pointer;
+background:var(–accent);color:#fff;
+transition:all .18s;letter-spacing:.02em;
+display:flex;align-items:center;justify-content:center;gap:8px;
 }
 .login-btn:hover { background:#b56ef8;box-shadow:0 0 22px rgba(168,85,247,.4); }
 .login-btn:disabled { opacity:.5;cursor:not-allowed;box-shadow:none; }
 .login-error {
-  margin-top:14px;padding:10px 14px;
-  background:rgba(245,90,90,.08);border:1px solid rgba(245,90,90,.25);
-  border-radius:8px;font-size:12px;color:var(--red);
-  display:none;
+margin-top:14px;padding:10px 14px;
+background:rgba(245,90,90,.08);border:1px solid rgba(245,90,90,.25);
+border-radius:8px;font-size:12px;color:var(–red);
+display:none;
 }
 .login-error.visible { display:block; }
 .login-footer {
-  text-align:center;margin-top:20px;
-  font-size:11px;color:var(--muted2);
+text-align:center;margin-top:20px;
+font-size:11px;color:var(–muted2);
 }
 
 /* User chip en topbar */
 .user-chip {
-  display:flex;align-items:center;gap:8px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:20px;padding:5px 12px 5px 8px;
-  cursor:pointer;transition:border-color .15s;
-  flex-shrink:0;
+display:flex;align-items:center;gap:8px;
+background:var(–surface2);border:1px solid var(–border);
+border-radius:20px;padding:5px 12px 5px 8px;
+cursor:pointer;transition:border-color .15s;
+flex-shrink:0;
 }
-.user-chip:hover { border-color:var(--border2); }
+.user-chip:hover { border-color:var(–border2); }
 .user-avatar {
-  width:24px;height:24px;border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:800;color:#fff;flex-shrink:0;
+width:24px;height:24px;border-radius:50%;
+background:linear-gradient(135deg,var(–accent),var(–accent2));
+display:flex;align-items:center;justify-content:center;
+font-size:11px;font-weight:800;color:#fff;flex-shrink:0;
 }
 .user-name {
-  font-size:12px;font-weight:700;color:var(--text);
+font-size:12px;font-weight:700;color:var(–text);
 }
 .logout-btn {
-  font-size:10px;color:var(--muted);margin-left:2px;
-  border:none;background:none;cursor:pointer;padding:0;
-  font-family:var(--font);font-weight:700;
-  transition:color .15s;
+font-size:10px;color:var(–muted);margin-left:2px;
+border:none;background:none;cursor:pointer;padding:0;
+font-family:var(–font);font-weight:700;
+transition:color .15s;
 }
-.logout-btn:hover { color:var(--red); }
+.logout-btn:hover { color:var(–red); }
 </style>
+
 </head>
 <body>
 
 <!-- ══════════════ LOGIN SCREEN ══════════════ -->
+
 <div id="loginScreen">
   <div class="login-wrap">
     <div class="login-logo">
@@ -725,29 +728,32 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <div class="login-title">Bienvenido</div>
       <div class="login-sub">Ingresá tus credenciales para continuar</div>
 
-      <div class="login-field">
-        <label class="login-label" for="loginUser">Usuario</label>
-        <input class="login-input" id="loginUser" type="text"
-          placeholder="tu.usuario" autocomplete="username" autocapitalize="off" />
-      </div>
-      <div class="login-field">
-        <label class="login-label" for="loginPass">Contraseña</label>
-        <input class="login-input" id="loginPass" type="password"
-          placeholder="••••••••" autocomplete="current-password" />
-      </div>
+```
+  <div class="login-field">
+    <label class="login-label" for="loginUser">Usuario</label>
+    <input class="login-input" id="loginUser" type="text"
+      placeholder="tu.usuario" autocomplete="username" autocapitalize="off" />
+  </div>
+  <div class="login-field">
+    <label class="login-label" for="loginPass">Contraseña</label>
+    <input class="login-input" id="loginPass" type="password"
+      placeholder="••••••••" autocomplete="current-password" />
+  </div>
 
-      <button class="login-btn" id="loginBtn" onclick="doLogin()">
-        <span id="loginBtnTxt">Ingresar</span>
-      </button>
+  <button class="login-btn" id="loginBtn" onclick="doLogin()">
+    <span id="loginBtnTxt">Ingresar</span>
+  </button>
 
-      <div class="login-error" id="loginError"></div>
-    </div>
-    <div class="login-footer">Oakberry · Sistema interno · v2.0</div>
+  <div class="login-error" id="loginError"></div>
+</div>
+<div class="login-footer">Oakberry · Sistema interno · v2.0</div>
+```
+
   </div>
 </div>
 
-
 <!-- LOADER -->
+
 <div class="global-loader" id="globalLoader">
   <div class="loader-ring"></div>
   <div class="loader-txt" id="loaderTxt">Cargando...</div>
@@ -755,9 +761,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 </div>
 
 <!-- SIDEBAR OVERLAY -->
+
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <!-- SIDEBAR -->
+
 <div class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-mark">
@@ -776,31 +784,35 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 176H48V112h160zm0-112H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 48H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zM136 160h48a8 8 0 000-16h-48a8 8 0 000 16zm0 32h48a8 8 0 000-16h-48a8 8 0 000 16zM72 160h16a8 8 0 000-16H72a8 8 0 000 16zm0 32h16a8 8 0 000-16H72a8 8 0 000 16z" fill="currentColor"/></svg></span><span class="nav-label">Reporte Diario</span>
     </div>
 
-    <div class="nav-section">Análisis</div>
-    <div class="nav-item" data-section="analisis">
-      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M232 56v48a8 8 0 01-16 0V75.3l-82.3 82.4a8 8 0 01-11.4 0L96 131.3l-74.3 74.4a8 8 0 01-11.4-11.4l80-80a8 8 0 0111.4 0L128 140.7l76.7-76.7H184a8 8 0 010-16h48v8z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M240 56v48a8 8 0 01-16 0V75.3l-82.3 82.4a8 8 0 01-11.4 0L104 131.3 30.6 204.7a8 8 0 01-11.2-11.4l80-80a8 8 0 0111.4 0L136 139.3l76.7-76.7H192a8 8 0 010-16h48z" fill="currentColor"/></svg></span><span class="nav-label">Análisis</span>
-    </div>
-    <div class="nav-item" data-section="descuentos">
-      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M243.3 143l-96.5 96.4a16.1 16.1 0 01-22.6 0L19.3 134.5A15.9 15.9 0 0114 123.1V48a16 16 0 0116-16h75.1a15.9 15.9 0 0111.4 4.7L221.4 141a16 16 0 011.9 2zm-176.6-79a20 20 0 1020 20 20 20 0 00-20-20z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M243.3 143l-96.5 96.4a16.1 16.1 0 01-22.6 0L19.3 134.5A15.9 15.9 0 0114 123.1V48a16 16 0 0116-16h75.1a15.9 15.9 0 0111.4 4.7L221.4 141a16 16 0 011.9 2zM66.7 104a20 20 0 1020-20 20 20 0 00-20 20z" fill="currentColor"/></svg></span><span class="nav-label">Descuentos</span>
-    </div>
-    <div class="nav-item" data-section="seguimiento">
-      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 176H48V112h160zm0-112H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zM164 148l-50 49.6-26-27.4a8 8 0 0111.6-11l14.4 15.1 38.4-38a8 8 0 0111.6 11.7z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 48H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zm-43.8 104.8l-49.8 48.4a8 8 0 01-11.2-.4l-26-27.4a8 8 0 0111.6-11l20 21.1 43.8-42.5a8 8 0 0111.6 11.8z" fill="currentColor"/></svg></span><span class="nav-label">Seguimiento</span>
-    </div>
-    <div class="nav-item" data-section="productos">
-      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M224 128a96 96 0 11-192 0h192zM88 64a24 24 0 100 48 24 24 0 000-48zm80 0a24 24 0 100 48 24 24 0 000-48zM32 112h192a96 96 0 00-192 0z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M224 120H32a8 8 0 00-8 8 104 104 0 00208 0 8 8 0 00-8-8zM88 56a32 32 0 110 64 32 32 0 010-64zm80 0a32 32 0 110 64 32 32 0 010-64z" fill="currentColor"/></svg></span><span class="nav-label">Ventas Producto</span>
-    </div>
+```
+<div class="nav-section">Análisis</div>
+<div class="nav-item" data-section="analisis">
+  <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M232 56v48a8 8 0 01-16 0V75.3l-82.3 82.4a8 8 0 01-11.4 0L96 131.3l-74.3 74.4a8 8 0 01-11.4-11.4l80-80a8 8 0 0111.4 0L128 140.7l76.7-76.7H184a8 8 0 010-16h48v8z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M240 56v48a8 8 0 01-16 0V75.3l-82.3 82.4a8 8 0 01-11.4 0L104 131.3 30.6 204.7a8 8 0 01-11.2-11.4l80-80a8 8 0 0111.4 0L136 139.3l76.7-76.7H192a8 8 0 010-16h48z" fill="currentColor"/></svg></span><span class="nav-label">Análisis</span>
+</div>
+<div class="nav-item" data-section="descuentos">
+  <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M243.3 143l-96.5 96.4a16.1 16.1 0 01-22.6 0L19.3 134.5A15.9 15.9 0 0114 123.1V48a16 16 0 0116-16h75.1a15.9 15.9 0 0111.4 4.7L221.4 141a16 16 0 011.9 2zm-176.6-79a20 20 0 1020 20 20 20 0 00-20-20z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M243.3 143l-96.5 96.4a16.1 16.1 0 01-22.6 0L19.3 134.5A15.9 15.9 0 0114 123.1V48a16 16 0 0116-16h75.1a15.9 15.9 0 0111.4 4.7L221.4 141a16 16 0 011.9 2zM66.7 104a20 20 0 1020-20 20 20 0 00-20 20z" fill="currentColor"/></svg></span><span class="nav-label">Descuentos</span>
+</div>
+<div class="nav-item" data-section="seguimiento">
+  <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 176H48V112h160zm0-112H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zM164 148l-50 49.6-26-27.4a8 8 0 0111.6-11l14.4 15.1 38.4-38a8 8 0 0111.6 11.7z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 48H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zm-43.8 104.8l-49.8 48.4a8 8 0 01-11.2-.4l-26-27.4a8 8 0 0111.6-11l20 21.1 43.8-42.5a8 8 0 0111.6 11.8z" fill="currentColor"/></svg></span><span class="nav-label">Seguimiento</span>
+</div>
+<div class="nav-item" data-section="productos">
+  <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M224 128a96 96 0 11-192 0h192zM88 64a24 24 0 100 48 24 24 0 000-48zm80 0a24 24 0 100 48 24 24 0 000-48zM32 112h192a96 96 0 00-192 0z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M224 120H32a8 8 0 00-8 8 104 104 0 00208 0 8 8 0 00-8-8zM88 56a32 32 0 110 64 32 32 0 010-64zm80 0a32 32 0 110 64 32 32 0 010-64z" fill="currentColor"/></svg></span><span class="nav-label">Ventas Producto</span>
+</div>
 
-    <div class="nav-section">Inteligencia</div>
-    <div class="nav-item" data-section="estacionalidad">
-      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M224 200H40V56a8 8 0 00-16 0v152a8 8 0 008 8h192a8 8 0 000-16zm-160-40a8 8 0 005.7-2.3l50.3-50.4 34.3 34.4a8 8 0 0011.4 0l64-64a8 8 0 00-11.4-11.4L171 128.7l-34.3-34.4a8 8 0 00-11.4 0l-56 56A8 8 0 0064 160z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M232 208H48V56a8 8 0 00-16 0v160a8 8 0 008 8h192a8 8 0 000-16zm-72-72l-34.3-34.4a8 8 0 00-11.4 0l-56 56a8 8 0 0011.4 11.4l50.3-50.3 34.3 34.3a8 8 0 0011.4 0l64-64a8 8 0 00-11.4-11.4z" fill="currentColor"/></svg></span><span class="nav-label">Estacionalidad</span>
-    </div>
-    <div class="nav-item" data-section="proyeccion">
-      <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M197.6 110.4l-21.2-4.8-4.8-21.2a6 6 0 00-11.6 0l-4.8 21.2-21.2 4.8a6 6 0 000 11.6l21.2 4.8 4.8 21.2a6 6 0 0011.6 0l4.8-21.2 21.2-4.8a6 6 0 000-11.6zM88 152l-13.4-3-3-13.5a6 6 0 00-11.6 0L57 152l-13.4 3a6 6 0 000 11.6l13.4 3 3 13.4a6 6 0 0011.6 0l3-13.4 13.4-3a6 6 0 000-11.6zM148 32l-13.4 3-3 13.4a6 6 0 01-11.6 0L117 35l-13.4-3a6 6 0 010-11.6L117 17l3-13.4a6 6 0 0111.6 0l3 13.4 13.4 3a6 6 0 010 11.6z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M197.6 107l-21.2-4.7L171.7 81a6 6 0 00-11.6 0l-4.7 21.3L134.2 107a6 6 0 000 11.6l21.2 4.7 4.7 21.3a6 6 0 0011.6 0l4.7-21.3 21.2-4.7a6 6 0 000-11.6zM88 149l-13.4-3-3-13.5a6 6 0 00-11.6 0l-3 13.5-13.4 3a6 6 0 000 11.6l13.4 3 3 13.4a6 6 0 0011.6 0l3-13.4 13.4-3a6 6 0 000-11.6zM148 29l-13.4 3-3 13.4a6 6 0 01-11.6 0l-3-13.4L103.6 29a6 6 0 010-11.6l13.4-3 3-13.4a6 6 0 0111.6 0l3 13.4 13.4 3a6 6 0 010 11.6z" fill="currentColor"/></svg></span><span class="nav-label">Proyección</span>
-      <span class="nav-badge">AI</span>
-    </div>
+<div class="nav-section">Inteligencia</div>
+<div class="nav-item" data-section="estacionalidad">
+  <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M224 200H40V56a8 8 0 00-16 0v152a8 8 0 008 8h192a8 8 0 000-16zm-160-40a8 8 0 005.7-2.3l50.3-50.4 34.3 34.4a8 8 0 0011.4 0l64-64a8 8 0 00-11.4-11.4L171 128.7l-34.3-34.4a8 8 0 00-11.4 0l-56 56A8 8 0 0064 160z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M232 208H48V56a8 8 0 00-16 0v160a8 8 0 008 8h192a8 8 0 000-16zm-72-72l-34.3-34.4a8 8 0 00-11.4 0l-56 56a8 8 0 0011.4 11.4l50.3-50.3 34.3 34.3a8 8 0 0011.4 0l64-64a8 8 0 00-11.4-11.4z" fill="currentColor"/></svg></span><span class="nav-label">Estacionalidad</span>
+</div>
+<div class="nav-item" data-section="proyeccion">
+  <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M197.6 110.4l-21.2-4.8-4.8-21.2a6 6 0 00-11.6 0l-4.8 21.2-21.2 4.8a6 6 0 000 11.6l21.2 4.8 4.8 21.2a6 6 0 0011.6 0l4.8-21.2 21.2-4.8a6 6 0 000-11.6zM88 152l-13.4-3-3-13.5a6 6 0 00-11.6 0L57 152l-13.4 3a6 6 0 000 11.6l13.4 3 3 13.4a6 6 0 0011.6 0l3-13.4 13.4-3a6 6 0 000-11.6zM148 32l-13.4 3-3 13.4a6 6 0 01-11.6 0L117 35l-13.4-3a6 6 0 010-11.6L117 17l3-13.4a6 6 0 0111.6 0l3 13.4 13.4 3a6 6 0 010 11.6z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M197.6 107l-21.2-4.7L171.7 81a6 6 0 00-11.6 0l-4.7 21.3L134.2 107a6 6 0 000 11.6l21.2 4.7 4.7 21.3a6 6 0 0011.6 0l4.7-21.3 21.2-4.7a6 6 0 000-11.6zM88 149l-13.4-3-3-13.5a6 6 0 00-11.6 0l-3 13.5-13.4 3a6 6 0 000 11.6l13.4 3 3 13.4a6 6 0 0011.6 0l3-13.4 13.4-3a6 6 0 000-11.6zM148 29l-13.4 3-3 13.4a6 6 0 01-11.6 0l-3-13.4L103.6 29a6 6 0 010-11.6l13.4-3 3-13.4a6 6 0 0111.6 0l3 13.4 13.4 3a6 6 0 010 11.6z" fill="currentColor"/></svg></span><span class="nav-label">Proyección</span>
+  <span class="nav-badge">AI</span>
+</div>
+```
+
   </div>
 
   <!-- Toggle Neto / Bruto -->
+
   <div class="sidebar-footer">
     <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin-bottom:7px">Modo de venta</div>
     <div class="mode-toggle">
@@ -809,16 +821,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     </div>
     <div style="font-size:9px;color:var(--muted2);margin-top:6px;text-align:center" id="modoVentaHint">Sin impuestos</div>
 
-    <!-- Toggle CRC / USD -->
-    <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin:14px 0 7px">Moneda</div>
-    <div class="mode-toggle">
-      <button class="mode-btn active" id="monedaCRCBtn" onclick="setMoneda('CRC')">₡ CRC</button>
-      <button class="mode-btn" id="monedaUSDBtn" onclick="setMoneda('USD')">$ USD</button>
-    </div>
-    <div style="font-size:9px;color:var(--muted2);margin-top:6px;text-align:center;cursor:pointer" id="tcDisplay" onclick="mostrarConfigTC()" title="Click para editar tipo de cambio">TC: cargando...</div>
+```
+<!-- Toggle CRC / USD -->
+<div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin:14px 0 7px">Moneda</div>
+<div class="mode-toggle">
+  <button class="mode-btn active" id="monedaCRCBtn" onclick="setMoneda('CRC')">₡ CRC</button>
+  <button class="mode-btn" id="monedaUSDBtn" onclick="setMoneda('USD')">$ USD</button>
+</div>
+<div style="font-size:9px;color:var(--muted2);margin-top:6px;text-align:center;cursor:pointer" id="tcDisplay" onclick="mostrarConfigTC()" title="Click para editar tipo de cambio">TC: cargando...</div>
+```
+
   </div>
 
   <!-- Modal tipo de cambio -->
+
   <div id="tcModal" style="display:none;position:absolute;bottom:0;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:16px;z-index:300">
     <div style="font-size:11px;font-weight:700;margin-bottom:10px;color:var(--muted)">TIPO DE CAMBIO (₡/$)</div>
     <input type="number" id="tcInput" style="width:100%;font-family:var(--font);font-size:14px;font-weight:600;background:var(--surface2);color:var(--text);border:1px solid var(--border2);padding:8px 12px;border-radius:8px;outline:none;margin-bottom:8px" placeholder="520.00">
@@ -831,6 +847,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 </div>
 
 <!-- MAIN -->
+
 <div class="main">
   <!-- TOPBAR -->
   <div class="topbar">
@@ -867,673 +884,687 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   </div>
 
   <!-- CONTENT -->
+
   <div class="content">
 
-    <!-- ═══════════ DASHBOARD ═══════════ -->
-    <div class="section active" id="section-dashboard">
-      <div class="kpi-grid" id="dashKpis">
-        <div class="kpi k-purple">
-          <div class="kpi-label">Ventas del Día</div>
-          <div class="kpi-value" id="kVentasDia">₡0</div>
-          <div class="kpi-sub">Forecast: <span id="kForecast">₡0</span></div>
-          <div class="kpi-delta d-neu" id="kDesvForecast">—</div>
-        </div>
-        <div class="kpi k-teal">
-          <div class="kpi-label">Crecimiento Día</div>
-          <div class="kpi-value" id="kCrec">+0%</div>
-          <div class="kpi-sub">vs <span id="kFechaRef">—</span></div>
-        </div>
-        <div class="kpi k-lime">
-          <div class="kpi-label">Ventas Acumuladas</div>
-          <div class="kpi-value" id="kAcum">₡0</div>
-          <div class="kpi-delta d-neu" id="kCrecAcum">—</div>
-        </div>
-        <div class="kpi k-amber">
-          <div class="kpi-label">Transacciones</div>
-          <div class="kpi-value" id="kTrans">0</div>
-          <div class="kpi-sub">Acum: <span id="kTransAcum">0</span> · Ticket: <span id="kTicket">₡0</span></div>
-        </div>
-      </div>
-
-      <!-- Charts row -->
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Ventas por Tienda — Día</span>
-            <div class="tab-pills">
-              <button class="tab-pill active" onclick="switchDashChart('bar',this,'chartTiendas')">Barras</button>
-              <button class="tab-pill" onclick="switchDashChart('horizontalBar',this,'chartTiendas')">Horizontal</button>
-            </div>
-          </div>
-          <div class="card-body"><div class="chart-wrap"><canvas id="chartTiendas"></canvas></div></div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Canales de Venta</span>
-            <span class="card-tag" id="canalesTag">Día</span>
-          </div>
-          <div class="card-body"><div class="chart-wrap"><canvas id="chartCanales"></canvas></div></div>
-        </div>
-      </div>
-
-      <div class="grid-3">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Métodos de Pago</span>
-          </div>
-          <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="chartPagos"></canvas></div></div>
-        </div>
-        <div class="card" style="grid-column:span 2">
-          <div class="card-header">
-            <span class="card-title">Detalle por Tienda</span>
-          </div>
-          <div class="card-body" style="padding:0">
-            <div class="scroll-box">
-              <table class="store-table">
-                <thead>
-                  <tr>
-                    <th style="padding-left:16px">Tienda</th>
-                    <th>Ventas</th><th>Forecast</th><th>Desv%</th><th>Crec%</th>
-                    <th style="border-left:1px solid var(--border)">Acum</th>
-                    <th>Fcst Acum</th><th>Desv%</th><th style="padding-right:16px">SSS%</th>
-                  </tr>
-                </thead>
-                <tbody id="tablaTiendas">
-                  <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-txt">Cargando...</div></div></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
+```
+<!-- ═══════════ DASHBOARD ═══════════ -->
+<div class="section active" id="section-dashboard">
+  <div class="kpi-grid" id="dashKpis">
+    <div class="kpi k-purple">
+      <div class="kpi-label">Ventas del Día</div>
+      <div class="kpi-value" id="kVentasDia">₡0</div>
+      <div class="kpi-sub">Forecast: <span id="kForecast">₡0</span></div>
+      <div class="kpi-delta d-neu" id="kDesvForecast">—</div>
     </div>
+    <div class="kpi k-teal">
+      <div class="kpi-label">Crecimiento Día</div>
+      <div class="kpi-value" id="kCrec">+0%</div>
+      <div class="kpi-sub">vs <span id="kFechaRef">—</span></div>
+    </div>
+    <div class="kpi k-lime">
+      <div class="kpi-label">Ventas Acumuladas</div>
+      <div class="kpi-value" id="kAcum">₡0</div>
+      <div class="kpi-delta d-neu" id="kCrecAcum">—</div>
+    </div>
+    <div class="kpi k-amber">
+      <div class="kpi-label">Transacciones</div>
+      <div class="kpi-value" id="kTrans">0</div>
+      <div class="kpi-sub">Acum: <span id="kTransAcum">0</span> · Ticket: <span id="kTicket">₡0</span></div>
+    </div>
+  </div>
 
-    <!-- ═══════════ REPORTE DIARIO ═══════════ -->
-    <div class="section" id="section-reporteDiario">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-        <div>
-          <div style="font-size:18px;font-weight:800;margin-bottom:4px">Reporte Diario</div>
-          <div style="font-size:12px;color:var(--muted)" id="reporteSubtitle">Ventas por día, por tienda, en el rango seleccionado</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-
-          <button class="btn btn-lime" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
+  <!-- Charts row -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Ventas por Tienda — Día</span>
+        <div class="tab-pills">
+          <button class="tab-pill active" onclick="switchDashChart('bar',this,'chartTiendas')">Barras</button>
+          <button class="tab-pill" onclick="switchDashChart('horizontalBar',this,'chartTiendas')">Horizontal</button>
         </div>
       </div>
-      <div class="card">
+      <div class="card-body"><div class="chart-wrap"><canvas id="chartTiendas"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Canales de Venta</span>
+        <span class="card-tag" id="canalesTag">Día</span>
+      </div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="chartCanales"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Métodos de Pago</span>
+      </div>
+      <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="chartPagos"></canvas></div></div>
+    </div>
+    <div class="card" style="grid-column:span 2">
+      <div class="card-header">
+        <span class="card-title">Detalle por Tienda</span>
+      </div>
+      <div class="card-body" style="padding:0">
         <div class="scroll-box">
-          <div class="scroll-box" style="-webkit-overflow-scrolling:touch"><table id="tablaReporteDiario" style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
-            <thead><tr id="headerReporte" style="background:var(--surface2)">
-              <th style="padding:12px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;left:0;background:var(--surface2);z-index:5">Local</th>
-            </tr></thead>
-            <tbody id="bodyReporte"><tr><td colspan="100"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Seleccioná un rango y presioná Actualizar</div></div></td></tr></tbody>
-          </table></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════ ANÁLISIS ═══════════ -->
-    <div class="section" id="section-analisis">
-
-      <!-- Controls bar -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-        <div>
-          <div style="font-size:18px;font-weight:800">Análisis de Desempeño</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px" id="anlSubtitle">Cargá datos desde el topbar para ver el análisis</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="ctrl-label">Comparar vs</span>
-          <div class="tab-pills" id="anlPeriodTabs">
-            <button class="tab-pill active" onclick="setAnlPeriod(-7,this)">−7 días</button>
-            <button class="tab-pill" onclick="setAnlPeriod(-15,this)">−15 días</button>
-            <button class="tab-pill" onclick="setAnlPeriod('mes',this)">Mes anterior</button>
-          </div>
-          <button class="btn btn-lime" onclick="cargarAnalisis()" id="btnAnalisis">↻ Analizar</button>
-        </div>
-      </div>
-
-      <!-- Estado vacío -->
-      <div id="anlEmpty" class="card">
-        <div class="card-body">
-          <div class="empty-state" style="padding:56px">
-            <div class="empty-icon">📈</div>
-            <div class="empty-txt">Seleccioná una fecha en el topbar y presioná <strong>Analizar</strong></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Contenido análisis (oculto hasta cargar) -->
-      <div id="anlContent" style="display:none">
-
-        <!-- ① RANKING TIENDAS -->
-        <div style="margin-bottom:20px">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">🏆 Ranking de Tiendas</div>
-          <div id="anlRanking" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"></div>
-        </div>
-
-        <!-- ② COMPARATIVO POR PERÍODO -->
-        <div class="grid-2" style="margin-bottom:20px">
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Ventas por Tienda vs Período</span>
-              <span class="card-tag" id="anlPeriodTag">—</span>
-            </div>
-            <div class="card-body"><div class="chart-wrap-tall"><canvas id="anlChartComp"></canvas></div></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Mes Actual vs Mes Anterior</span>
-              <span class="card-tag" id="anlTrendTag">por tienda</span>
-            </div>
-            <div class="card-body"><div class="chart-wrap-tall"><canvas id="anlChartTrend"></canvas></div></div>
-          </div>
-        </div>
-
-        <!-- ③ CANALES DE VENTA -->
-        <div class="card" style="margin-bottom:20px">
-          <div class="card-header">
-            <span class="card-title">Canales de Venta — Peso en la Venta Total</span>
-            <span class="card-tag" id="anlCanalesTag">Acumulado del mes</span>
-          </div>
-          <div class="card-body" style="padding:0">
-            <div id="anlCanalesGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)"></div>
-            <div style="display:grid;grid-template-columns:1fr 360px;gap:0">
-              <div style="padding:18px;border-right:1px solid var(--border)">
-                <div class="chart-wrap" style="height:220px"><canvas id="anlChartCanales"></canvas></div>
-              </div>
-              <div style="padding:18px">
-                <div id="anlCanalesDetalle"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ④ MÉTRICAS PROFUNDAS -->
-        <div class="grid-3" style="margin-bottom:20px">
-          <!-- Descuentos -->
-          <div class="card">
-            <div class="card-header"><span class="card-title">💰 Descuentos</span></div>
-            <div class="card-body">
-              <div id="anlDescGrid"></div>
-              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartDesc"></canvas></div></div>
-            </div>
-          </div>
-          <!-- Transacciones -->
-          <div class="card">
-            <div class="card-header"><span class="card-title">🔢 Transacciones</span></div>
-            <div class="card-body">
-              <div id="anlTransGrid"></div>
-              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartTrans"></canvas></div></div>
-            </div>
-          </div>
-          <!-- Ticket Medio -->
-          <div class="card">
-            <div class="card-header"><span class="card-title">🎫 Ticket Medio</span></div>
-            <div class="card-body">
-              <div id="anlTicketGrid"></div>
-              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartTicket"></canvas></div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ⑤ COSTO Y MARGEN -->
-        <div class="grid-2" style="margin-bottom:20px">
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">💲 Costo Neto de Productos</span>
-              <span class="card-tag" id="anlCostoTag">del día</span>
-            </div>
-            <div class="card-body">
-              <div id="anlCostoGrid"></div>
-              <div style="margin-top:14px"><div class="chart-wrap" style="height:160px"><canvas id="anlChartCosto"></canvas></div></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">📈 Top Productos del Día</span>
-              <span class="card-tag" id="anlTopProdTag">por unidades</span>
-            </div>
-            <div class="card-body" style="padding:0">
-              <div id="anlTopProdList"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ⑥ CRECIMIENTO POR CANAL -->
-        <div class="card" style="margin-bottom:20px">
-          <div class="card-header">
-            <span class="card-title">📡 Crecimiento por Canal</span>
-            <span class="card-tag" id="anlCanalCrecTag">vs período anterior</span>
-          </div>
-          <div class="card-body" style="padding:0">
-            <div id="anlCanalCrecGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)"></div>
-            <div class="card-body">
-              <div class="chart-wrap" style="height:200px"><canvas id="anlChartCanalCrec"></canvas></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ⑦ TABLA COMPARATIVA COMPLETA -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Tabla Comparativa Completa</span>
-            <span class="card-tag" id="anlTablaTag">—</span>
-          </div>
-          <div class="card-body" style="padding:0">
-            <div class="scroll-box">
-              <table class="store-table" id="anlTablaComp">
-                <thead>
-                  <tr>
-                    <th style="padding-left:16px;min-width:160px">Tienda</th>
-                    <th>Ventas período</th><th>Ref. anterior</th><th>Δ %</th>
-                    <th style="border-left:1px solid var(--border)">Transacc.</th><th>Ticket medio</th>
-                    <th style="border-left:1px solid var(--border)">Descuentos</th><th>% sobre venta</th>
-                    <th style="border-left:1px solid var(--border)">Canal top</th>
-                  </tr>
-                </thead>
-                <tbody id="anlTablaBody">
-                  <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-txt">Sin datos</div></div></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /anlContent -->
-    </div>
-
-    <!-- ═══════════ DESCUENTOS ═══════════ -->
-    <div class="section" id="section-descuentos">
-      <div style="font-size:18px;font-weight:800;margin-bottom:20px">Descuentos</div>
-      <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);max-width:500px">
-        <div class="kpi k-amber"><div class="kpi-label">Descuentos Día</div><div class="kpi-value" id="descDia">₡0</div></div>
-        <div class="kpi k-amber"><div class="kpi-label">Descuentos Acum.</div><div class="kpi-value" id="descAcum">₡0</div></div>
-      </div>
-    </div>
-
-    <!-- ═══════════ TICKET MEDIO ═══════════ -->
-        <!-- ═══════════ DETALLE PAGOS ═══════════ -->
-    <!-- ═══════════ SEGUIMIENTO MENSUAL ═══════════ -->
-    <div class="section" id="section-seguimiento">
-
-      <!-- Controles: solo mes (sucursal viene del topbar) -->
-      <div class="proy-controls" style="gap:10px;margin-bottom:20px">
-        <span class="ctrl-label">Mes</span>
-        <input type="month" class="ctrl-input" id="segMes" style="font-family:var(--mono);font-size:13px">
-        <button class="btn btn-primary" id="segRunBtn" onclick="cargarSeguimiento()">
-          <span>▶</span> Cargar
-        </button>
-        <button class="btn btn-ghost" id="segExcelBtn" onclick="exportSeguimientoExcel()" style="display:none">
-          <span>⬇</span> Excel
-        </button>
-        <div id="segStatus" style="font-size:12px;color:var(--muted)"></div>
-      </div>
-
-      <!-- KPI row -->
-      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px" id="segKpis">
-        <div class="kpi k-purple"><div class="kpi-label">Ventas Netas Mes</div><div class="kpi-value" id="skTotal">₡0</div><div class="kpi-sub" id="skTotalSub">—</div></div>
-        <div class="kpi k-teal"><div class="kpi-label">vs Año Anterior</div><div class="kpi-value" id="skCrecimiento">—</div><div class="kpi-sub" id="skCrecimientoSub">—</div></div>
-        <div class="kpi k-lime"><div class="kpi-label">vs Presupuesto</div><div class="kpi-value" id="skDesvPpto">—</div><div class="kpi-sub" id="skDesvPptoSub">—</div></div>
-        <div class="kpi"><div class="kpi-label">Pedidos Totales</div><div class="kpi-value" id="skPedidos">0</div><div class="kpi-sub" id="skPedidosSub">—</div></div>
-        <div class="kpi"><div class="kpi-label">Ticket Medio</div><div class="kpi-value" id="skTicket">₡0</div><div class="kpi-sub" id="skTicketSub">—</div></div>
-      </div>
-
-      <!-- Tabla -->
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-          <div style="font-weight:700;font-size:14px">Detalle Diario — <span id="segTableTag">—</span></div>
-          <div style="font-size:11px;color:var(--muted)">Ventas Netas (sin IVA)</div>
-        </div>
-        <div class="scroll-box" style="-webkit-overflow-scrolling:touch">
-          <table id="segTable" class="store-table" style="width:100%;min-width:760px">
+          <table class="store-table">
             <thead>
-              <tr id="segThead">
-                <th style="width:42px;text-align:center">Día</th>
-                <th style="width:80px">Día semana</th>
-                <th style="text-align:right">Budget</th>
-                <th style="text-align:right;color:var(--accent)">Ventas Netas</th>
-                <th style="text-align:right">% vs Ppto Acum.</th>
-                <th style="text-align:right">Pedidos</th>
-                <th style="text-align:right;color:var(--muted)" title="Mismo día de semana, misma semana del mes — año anterior">Año Ant. (≡dow)</th>
-                <th style="text-align:right;color:var(--muted)">Pedidos A.A.</th>
-                <th style="text-align:right">Crec. %</th>
-                <th style="text-align:right">Crec. Pedidos %</th>
-                <th style="text-align:right">Ticket Medio</th>
+              <tr>
+                <th style="padding-left:16px">Tienda</th>
+                <th>Ventas</th><th>Forecast</th><th>Desv%</th><th>Crec%</th>
+                <th style="border-left:1px solid var(--border)">Acum</th>
+                <th>Fcst Acum</th><th>Desv%</th><th style="padding-right:16px">SSS%</th>
               </tr>
             </thead>
-            <tbody id="segTbody">
-              <tr><td colspan="13"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-txt">Seleccioná sucursal y mes, luego Cargar</div></div></td></tr>
+            <tbody id="tablaTiendas">
+              <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-txt">Cargando...</div></div></td></tr>
             </tbody>
-            <tfoot id="segTfoot"></tfoot>
           </table>
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
+<!-- ═══════════ REPORTE DIARIO ═══════════ -->
+<div class="section" id="section-reporteDiario">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">Reporte Diario</div>
+      <div style="font-size:12px;color:var(--muted)" id="reporteSubtitle">Ventas por día, por tienda, en el rango seleccionado</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+
+      <button class="btn btn-lime" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="scroll-box">
+      <div class="scroll-box" style="-webkit-overflow-scrolling:touch"><table id="tablaReporteDiario" style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
+        <thead><tr id="headerReporte" style="background:var(--surface2)">
+          <th style="padding:12px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;left:0;background:var(--surface2);z-index:5">Local</th>
+        </tr></thead>
+        <tbody id="bodyReporte"><tr><td colspan="100"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Seleccioná un rango y presioná Actualizar</div></div></td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ANÁLISIS ═══════════ -->
+<div class="section" id="section-analisis">
+
+  <!-- Controls bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:18px;font-weight:800">Análisis de Desempeño</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px" id="anlSubtitle">Cargá datos desde el topbar para ver el análisis</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="ctrl-label">Comparar vs</span>
+      <div class="tab-pills" id="anlPeriodTabs">
+        <button class="tab-pill active" onclick="setAnlPeriod(-7,this)">−7 días</button>
+        <button class="tab-pill" onclick="setAnlPeriod(-15,this)">−15 días</button>
+        <button class="tab-pill" onclick="setAnlPeriod('mes',this)">Mes anterior</button>
+      </div>
+      <span class="ctrl-label" style="margin-left:4px">Día</span>
+      <div class="tab-pills" id="anlDowTabs">
+        <button class="tab-pill active" onclick="setAnlDow(null,this)">Todos</button>
+        <button class="tab-pill" onclick="setAnlDow(1,this)">Lun</button>
+        <button class="tab-pill" onclick="setAnlDow(2,this)">Mar</button>
+        <button class="tab-pill" onclick="setAnlDow(3,this)">Mié</button>
+        <button class="tab-pill" onclick="setAnlDow(4,this)">Jue</button>
+        <button class="tab-pill" onclick="setAnlDow(5,this)">Vie</button>
+        <button class="tab-pill" onclick="setAnlDow(6,this)">Sáb</button>
+        <button class="tab-pill" onclick="setAnlDow(0,this)">Dom</button>
+      </div>
+      <button class="btn btn-lime" onclick="cargarAnalisis()" id="btnAnalisis">↻ Analizar</button>
+    </div>
+  </div>
+
+  <!-- Estado vacío -->
+  <div id="anlEmpty" class="card">
+    <div class="card-body">
+      <div class="empty-state" style="padding:56px">
+        <div class="empty-icon">📈</div>
+        <div class="empty-txt">Seleccioná una fecha en el topbar y presioná <strong>Analizar</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido análisis (oculto hasta cargar) -->
+  <div id="anlContent" style="display:none">
+
+    <!-- ① RANKING TIENDAS -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">🏆 Ranking de Tiendas</div>
+      <div id="anlRanking" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"></div>
     </div>
 
-    <!-- ═══════════ ESTACIONALIDAD ═══════════ -->
-    <div class="section" id="section-estacionalidad">
-
-      <!-- Controles -->
-      <div class="proy-controls" style="margin-bottom:16px;flex-wrap:wrap;gap:10px;align-items:center">
-        <span class="ctrl-label">Años</span>
-        <div id="estacYearsFilters" style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="tab-pill active" onclick="estacToggleYear(2024)">2024</button>
-          <button class="tab-pill active" onclick="estacToggleYear(2025)">2025</button>
-          <button class="tab-pill active" onclick="estacToggleYear(2026)">2026</button>
-          <button class="tab-pill" onclick="estacToggleYear(2027)">2027</button>
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-          <span class="ctrl-label">Mes inicio</span>
-          <select id="estacMesIni" class="ctrl-select" onchange="renderEstac()">
-            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
-            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
-            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
-            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-          </select>
-          <span class="ctrl-label">Mes fin</span>
-          <select id="estacMesFin" class="ctrl-select" onchange="renderEstac()">
-            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
-            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
-            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
-            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-            <option value="12" selected>Diciembre</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- KPIs resumen -->
-      <div id="estacKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
-
-      <!-- Chart 1: Ventas mensuales -->
-      <div class="card-dark" style="margin-bottom:14px;padding:18px 20px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
-          Ventas mensuales — comparativo anual
-        </div>
-        <div id="estacLegend1" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
-        <div style="position:relative;height:280px"><canvas id="estacChart1"></canvas></div>
-      </div>
-
-      <!-- Chart 2: Índice de estacionalidad -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-        <div class="card-dark" style="padding:18px 20px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">
-            Índice de estacionalidad (% anual)
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:10px;opacity:.7">
-            % que representa cada mes del total anual. La línea naranja = distribución uniforme (8.3%).
-          </div>
-          <div id="estacLegend2" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--muted)"></div>
-          <div style="position:relative;height:220px"><canvas id="estacChart2"></canvas></div>
-        </div>
-        <div class="card-dark" style="padding:18px 20px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
-            Ticket medio mensual (₡)
-          </div>
-          <div id="estacLegend3" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--muted)"></div>
-          <div style="position:relative;height:220px"><canvas id="estacChart3"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Chart 3: YoY -->
-      <div class="card-dark" style="padding:18px 20px;margin-bottom:14px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
-          Crecimiento YoY por mes (%)
-          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">sólido = real · tenue = proyectado (prom. YoY 16.2% sobre estacionalidad 2025)</span>
-        </div>
-        <div id="estacLegend4" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
-        <div style="position:relative;height:220px"><canvas id="estacChart4"></canvas></div>
-      </div>
-
-      <!-- Tabla YoY resumen -->
-      <div class="card-dark" style="padding:18px 20px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">
-          Tabla resumen — crecimiento YoY por mes
-          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">ᵉ = proyectado con tendencia +16.2% (prom. YoY real Ene-Mar)</span>
-        </div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:12px;opacity:.7">
-          Los meses proyectados aplican la tendencia promedio de los 3 meses reales (Ene-Mar).
-          Cuando lleguen datos reales del mes, se actualiza automáticamente.
-        </div>
-        <div id="estacTablaYoY"></div>
-      </div>
-
-    </div>
-
-    <!-- ═══════════ PROYECCIÓN ═══════════ -->
-    <div class="section" id="section-proyeccion">
-
-      <!-- Controles proyección: sucursal viene del topbar -->
-      <div class="proy-controls">
-        <span class="ctrl-label">Proyectar</span>
-        <select class="ctrl-select" id="proyMonth"></select>
-        <div class="ctrl-divider"></div>
-        <span class="ctrl-label">Historial</span>
-        <input type="date" class="ctrl-input" id="proyHistFrom" style="width:130px">
-        <span class="date-sep">→</span>
-        <input type="date" class="ctrl-input" id="proyHistTo" style="width:130px">
-        <div class="ctrl-divider"></div>
-        <button class="btn btn-primary" id="proyRunBtn" onclick="runProjection()">▶ Proyectar</button>
-        <button class="btn btn-lime" id="proyExcelBtn" onclick="exportProyExcel()" style="display:none">⬇ Excel</button>
-      </div>
-
-      <!-- KPIs proyección -->
-      <div class="kpi-grid" id="proyKpis">
-        <div class="kpi k-purple">
-          <div class="kpi-label">Proyección del Mes</div>
-          <div class="kpi-value" id="pkTotal">—</div>
-          <div class="kpi-sub" id="pkTotalSub">Ejecutá la proyección</div>
-        </div>
-        <div class="kpi k-lime">
-          <div class="kpi-label">Promedio Diario</div>
-          <div class="kpi-value" id="pkAvg">—</div>
-          <div class="kpi-sub" id="pkAvgSub">—</div>
-        </div>
-        <div class="kpi k-amber">
-          <div class="kpi-label">Mejor Día Esperado</div>
-          <div class="kpi-value" id="pkBest">—</div>
-          <div class="kpi-sub" id="pkBestSub">—</div>
-        </div>
-        <div class="kpi k-teal">
-          <div class="kpi-label">Efecto Calendario</div>
-          <div class="kpi-value" id="pkCal" style="font-size:17px">—</div>
-          <div class="kpi-sub" id="pkCalSub">vs mes anterior</div>
-        </div>
-      </div>
-
-      <!-- Chart + Calendar -->
-      <div class="grid-2" style="align-items:start">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Proyección día a día</span>
-            <div class="tab-pills">
-              <button class="tab-pill active" onclick="switchProyChart('bar',this)">Barras</button>
-              <button class="tab-pill" onclick="switchProyChart('line',this)">Línea</button>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="chart-wrap-tall">
-              <canvas id="proyChart"></canvas>
-              <div class="empty-state" id="proyChartEmpty">
-                <div class="empty-icon">📊</div>
-                <div class="empty-txt">Seleccioná opciones y presioná Proyectar</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <!-- Efecto calendario -->
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">⚡ Efecto Calendario</span>
-              <span class="card-tag" id="calTag">—</span>
-            </div>
-            <div class="card-body">
-              <div class="cal-grid">
-                <div class="cal-item"><div class="cal-item-label">Lunes</div><div class="cal-compare"><span class="cal-prev" id="calL1">—</span><span class="cal-arr" id="calA1">→</span><span class="cal-next" id="calN1">—</span></div></div>
-                <div class="cal-item"><div class="cal-item-label">Martes</div><div class="cal-compare"><span class="cal-prev" id="calL2">—</span><span class="cal-arr" id="calA2">→</span><span class="cal-next" id="calN2">—</span></div></div>
-                <div class="cal-item"><div class="cal-item-label">Miércoles</div><div class="cal-compare"><span class="cal-prev" id="calL3">—</span><span class="cal-arr" id="calA3">→</span><span class="cal-next" id="calN3">—</span></div></div>
-                <div class="cal-item"><div class="cal-item-label">Jueves</div><div class="cal-compare"><span class="cal-prev" id="calL4">—</span><span class="cal-arr" id="calA4">→</span><span class="cal-next" id="calN4">—</span></div></div>
-                <div class="cal-item"><div class="cal-item-label">Viernes</div><div class="cal-compare"><span class="cal-prev" id="calL5">—</span><span class="cal-arr" id="calA5">→</span><span class="cal-next" id="calN5">—</span></div></div>
-                <div class="cal-item" style="border-color:rgba(168,85,247,.3)"><div class="cal-item-label" style="color:var(--accent)">Sábado</div><div class="cal-compare"><span class="cal-prev" id="calL6">—</span><span class="cal-arr" id="calA6">→</span><span class="cal-next" id="calN6">—</span></div></div>
-                <div class="cal-item" style="border-color:rgba(245,200,90,.3)"><div class="cal-item-label" style="color:var(--amber)">Domingo</div><div class="cal-compare"><span class="cal-prev" id="calL0">—</span><span class="cal-arr" id="calA0">→</span><span class="cal-next" id="calN0">—</span></div></div>
-                <div class="cal-item" style="border-color:rgba(245,90,90,.25)"><div class="cal-item-label" style="color:var(--red)">Feriados</div><div class="cal-compare"><span class="cal-prev" id="calLH">—</span><span class="cal-arr" id="calAH">→</span><span class="cal-next" id="calNH">—</span></div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Store breakdown -->
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Por Sucursal</span>
-              <span class="card-tag" id="storeBreakTag">—</span>
-            </div>
-            <div class="card-body">
-              <div class="store-list" id="storeBreakList">
-                <div class="empty-state" style="padding:20px"><div class="empty-icon">🏪</div><div class="empty-txt">Sin datos</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tabla detalle diario -->
+    <!-- ② COMPARATIVO POR PERÍODO -->
+    <div class="grid-2" style="margin-bottom:20px">
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Detalle Diario</span>
-          <span class="card-tag" id="proyTableTag">—</span>
+          <span class="card-title">Ventas por Tienda vs Período</span>
+          <span class="card-tag" id="anlPeriodTag">—</span>
         </div>
-        <div class="table-scroll">
-          <table class="proy-table">
-            <thead><tr>
-              <th style="text-align:left">Fecha</th>
-              <th style="text-align:left">Día</th>
-              <th style="text-align:right;color:#7070a0">Budget</th>
-              <th style="text-align:right">Venta</th>
-              <th style="text-align:right">Desv. ₡</th>
-              <th style="text-align:right">Desv. %</th>
-            </tr></thead>
-            <tbody id="proyTableBody">
-              <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Sin datos</div></div></td></tr>
+        <div class="card-body"><div class="chart-wrap-tall"><canvas id="anlChartComp"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Mes Actual vs Mes Anterior</span>
+          <span class="card-tag" id="anlTrendTag">por tienda</span>
+        </div>
+        <div class="card-body"><div class="chart-wrap-tall"><canvas id="anlChartTrend"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ③ CANALES DE VENTA -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <span class="card-title">Canales de Venta — Peso en la Venta Total</span>
+        <span class="card-tag" id="anlCanalesTag">Acumulado del mes</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div id="anlCanalesGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)"></div>
+        <div style="display:grid;grid-template-columns:1fr 360px;gap:0">
+          <div style="padding:18px;border-right:1px solid var(--border)">
+            <div class="chart-wrap" style="height:220px"><canvas id="anlChartCanales"></canvas></div>
+          </div>
+          <div style="padding:18px">
+            <div id="anlCanalesDetalle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ MÉTRICAS PROFUNDAS -->
+    <div class="grid-3" style="margin-bottom:20px">
+      <!-- Descuentos -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">💰 Descuentos</span></div>
+        <div class="card-body">
+          <div id="anlDescGrid"></div>
+          <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartDesc"></canvas></div></div>
+        </div>
+      </div>
+      <!-- Transacciones -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">🔢 Transacciones</span></div>
+        <div class="card-body">
+          <div id="anlTransGrid"></div>
+          <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartTrans"></canvas></div></div>
+        </div>
+      </div>
+      <!-- Ticket Medio -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">🎫 Ticket Medio</span></div>
+        <div class="card-body">
+          <div id="anlTicketGrid"></div>
+          <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartTicket"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ COSTO Y MARGEN -->
+    <div class="grid-2" style="margin-bottom:20px">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">💲 Costo Neto de Productos</span>
+          <span class="card-tag" id="anlCostoTag">del día</span>
+        </div>
+        <div class="card-body">
+          <div id="anlCostoGrid"></div>
+          <div style="margin-top:14px"><div class="chart-wrap" style="height:160px"><canvas id="anlChartCosto"></canvas></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📈 Top Productos del Día</span>
+          <span class="card-tag" id="anlTopProdTag">por unidades</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div id="anlTopProdList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑥ CRECIMIENTO POR CANAL -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+        <span class="card-title">📡 Crecimiento por Canal</span>
+        <span class="card-tag" id="anlCanalCrecTag">vs período anterior</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div id="anlCanalCrecGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)"></div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:200px"><canvas id="anlChartCanalCrec"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑦ TABLA COMPARATIVA COMPLETA -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Tabla Comparativa Completa</span>
+        <span class="card-tag" id="anlTablaTag">—</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="scroll-box">
+          <table class="store-table" id="anlTablaComp">
+            <thead>
+              <tr>
+                <th style="padding-left:16px;min-width:160px">Tienda</th>
+                <th>Ventas período</th><th>Ref. anterior</th><th>Δ %</th>
+                <th style="border-left:1px solid var(--border)">Transacc.</th><th>Ticket medio</th>
+                <th style="border-left:1px solid var(--border)">Descuentos</th><th>% sobre venta</th>
+                <th style="border-left:1px solid var(--border)">Canal top</th>
+              </tr>
+            </thead>
+            <tbody id="anlTablaBody">
+              <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-txt">Sin datos</div></div></td></tr>
             </tbody>
           </table>
         </div>
       </div>
-
     </div>
-    <!-- ═══════════ FIN PROYECCIÓN ═══════════ -->
 
-    <!-- ═══════════ VENTAS POR PRODUCTO ═══════════ -->
-    <div class="section" id="section-productos">
+  </div><!-- /anlContent -->
+</div>
 
-      <!-- ── Filtros ── -->
-      <div class="proy-controls" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
-        <span class="ctrl-label">Categoría</span>
-        <div id="prodCatFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+<!-- ═══════════ DESCUENTOS ═══════════ -->
+<div class="section" id="section-descuentos">
+  <div style="font-size:18px;font-weight:800;margin-bottom:20px">Descuentos</div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);max-width:500px">
+    <div class="kpi k-amber"><div class="kpi-label">Descuentos Día</div><div class="kpi-value" id="descDia">₡0</div></div>
+    <div class="kpi k-amber"><div class="kpi-label">Descuentos Acum.</div><div class="kpi-value" id="descAcum">₡0</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ TICKET MEDIO ═══════════ -->
+    <!-- ═══════════ DETALLE PAGOS ═══════════ -->
+<!-- ═══════════ SEGUIMIENTO MENSUAL ═══════════ -->
+<div class="section" id="section-seguimiento">
+
+  <!-- Controles: solo mes (sucursal viene del topbar) -->
+  <div class="proy-controls" style="gap:10px;margin-bottom:20px">
+    <span class="ctrl-label">Mes</span>
+    <input type="month" class="ctrl-input" id="segMes" style="font-family:var(--mono);font-size:13px">
+    <button class="btn btn-primary" id="segRunBtn" onclick="cargarSeguimiento()">
+      <span>▶</span> Cargar
+    </button>
+    <button class="btn btn-ghost" id="segExcelBtn" onclick="exportSeguimientoExcel()" style="display:none">
+      <span>⬇</span> Excel
+    </button>
+    <div id="segStatus" style="font-size:12px;color:var(--muted)"></div>
+  </div>
+
+  <!-- KPI row -->
+  <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px" id="segKpis">
+    <div class="kpi k-purple"><div class="kpi-label">Ventas Netas Mes</div><div class="kpi-value" id="skTotal">₡0</div><div class="kpi-sub" id="skTotalSub">—</div></div>
+    <div class="kpi k-teal"><div class="kpi-label">vs Año Anterior</div><div class="kpi-value" id="skCrecimiento">—</div><div class="kpi-sub" id="skCrecimientoSub">—</div></div>
+    <div class="kpi k-lime"><div class="kpi-label">vs Presupuesto</div><div class="kpi-value" id="skDesvPpto">—</div><div class="kpi-sub" id="skDesvPptoSub">—</div></div>
+    <div class="kpi"><div class="kpi-label">Pedidos Totales</div><div class="kpi-value" id="skPedidos">0</div><div class="kpi-sub" id="skPedidosSub">—</div></div>
+    <div class="kpi"><div class="kpi-label">Ticket Medio</div><div class="kpi-value" id="skTicket">₡0</div><div class="kpi-sub" id="skTicketSub">—</div></div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-weight:700;font-size:14px">Detalle Diario — <span id="segTableTag">—</span></div>
+      <div style="font-size:11px;color:var(--muted)">Ventas Netas (sin IVA)</div>
+    </div>
+    <div class="scroll-box" style="-webkit-overflow-scrolling:touch">
+      <table id="segTable" class="store-table" style="width:100%;min-width:760px">
+        <thead>
+          <tr id="segThead">
+            <th style="width:42px;text-align:center">Día</th>
+            <th style="width:80px">Día semana</th>
+            <th style="text-align:right">Budget</th>
+            <th style="text-align:right;color:var(--accent)">Ventas Netas</th>
+            <th style="text-align:right">% vs Ppto Acum.</th>
+            <th style="text-align:right">Pedidos</th>
+            <th style="text-align:right;color:var(--muted)" title="Mismo día de semana, misma semana del mes — año anterior">Año Ant. (≡dow)</th>
+            <th style="text-align:right;color:var(--muted)">Pedidos A.A.</th>
+            <th style="text-align:right">Crec. %</th>
+            <th style="text-align:right">Crec. Pedidos %</th>
+            <th style="text-align:right">Ticket Medio</th>
+          </tr>
+        </thead>
+        <tbody id="segTbody">
+          <tr><td colspan="13"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-txt">Seleccioná sucursal y mes, luego Cargar</div></div></td></tr>
+        </tbody>
+        <tfoot id="segTfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════ ESTACIONALIDAD ═══════════ -->
+<div class="section" id="section-estacionalidad">
+
+  <!-- Controles -->
+  <div class="proy-controls" style="margin-bottom:16px;flex-wrap:wrap;gap:10px;align-items:center">
+    <span class="ctrl-label">Años</span>
+    <div id="estacYearsFilters" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="tab-pill active" onclick="estacToggleYear(2024)">2024</button>
+      <button class="tab-pill active" onclick="estacToggleYear(2025)">2025</button>
+      <button class="tab-pill active" onclick="estacToggleYear(2026)">2026</button>
+      <button class="tab-pill" onclick="estacToggleYear(2027)">2027</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <span class="ctrl-label">Mes inicio</span>
+      <select id="estacMesIni" class="ctrl-select" onchange="renderEstac()">
+        <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+        <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+        <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <span class="ctrl-label">Mes fin</span>
+      <select id="estacMesFin" class="ctrl-select" onchange="renderEstac()">
+        <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+        <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+        <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        <option value="12" selected>Diciembre</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- KPIs resumen -->
+  <div id="estacKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
+
+  <!-- Chart 1: Ventas mensuales -->
+  <div class="card-dark" style="margin-bottom:14px;padding:18px 20px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+      Ventas mensuales — comparativo anual
+    </div>
+    <div id="estacLegend1" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
+    <div style="position:relative;height:280px"><canvas id="estacChart1"></canvas></div>
+  </div>
+
+  <!-- Chart 2: Índice de estacionalidad -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card-dark" style="padding:18px 20px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">
+        Índice de estacionalidad (% anual)
       </div>
-      <div class="proy-controls" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <span class="ctrl-label">Canal</span>
-        <div id="prodCanalFilters" style="display:flex;gap:6px;flex-wrap:wrap">
-          <div class="tab-pills">
-            <button class="tab-pill active" onclick="prodFiltrarCanal('TODOS')">Todos</button>
-            <button class="tab-pill" onclick="prodFiltrarCanal('uber')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#06C167;display:inline-block"></span>Uber Eats</button>
-            <button class="tab-pill" onclick="prodFiltrarCanal('peya')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#FF6244;display:inline-block"></span>Pedidos Ya</button>
-            <button class="tab-pill" onclick="prodFiltrarCanal('didi')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#FF6600;display:inline-block"></span>Didi Food</button>
-            <button class="tab-pill" onclick="prodFiltrarCanal('olo')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#5af5c8;display:inline-block"></span>Mercat/OLO</button>
-            <button class="tab-pill" onclick="prodFiltrarCanal('otros')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#a855f7;display:inline-block"></span>Mostrador</button>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;opacity:.7">
+        % que representa cada mes del total anual. La línea naranja = distribución uniforme (8.3%).
+      </div>
+      <div id="estacLegend2" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--muted)"></div>
+      <div style="position:relative;height:220px"><canvas id="estacChart2"></canvas></div>
+    </div>
+    <div class="card-dark" style="padding:18px 20px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+        Ticket medio mensual (₡)
+      </div>
+      <div id="estacLegend3" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--muted)"></div>
+      <div style="position:relative;height:220px"><canvas id="estacChart3"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Chart 3: YoY -->
+  <div class="card-dark" style="padding:18px 20px;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
+      Crecimiento YoY por mes (%)
+      <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">sólido = real · tenue = proyectado (prom. YoY 16.2% sobre estacionalidad 2025)</span>
+    </div>
+    <div id="estacLegend4" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
+    <div style="position:relative;height:220px"><canvas id="estacChart4"></canvas></div>
+  </div>
+
+  <!-- Tabla YoY resumen -->
+  <div class="card-dark" style="padding:18px 20px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">
+      Tabla resumen — crecimiento YoY por mes
+      <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">ᵉ = proyectado con tendencia +16.2% (prom. YoY real Ene-Mar)</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:12px;opacity:.7">
+      Los meses proyectados aplican la tendencia promedio de los 3 meses reales (Ene-Mar).
+      Cuando lleguen datos reales del mes, se actualiza automáticamente.
+    </div>
+    <div id="estacTablaYoY"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════ PROYECCIÓN ═══════════ -->
+<div class="section" id="section-proyeccion">
+
+  <!-- Controles proyección: sucursal viene del topbar -->
+  <div class="proy-controls">
+    <span class="ctrl-label">Proyectar</span>
+    <select class="ctrl-select" id="proyMonth"></select>
+    <div class="ctrl-divider"></div>
+    <span class="ctrl-label">Historial</span>
+    <input type="date" class="ctrl-input" id="proyHistFrom" style="width:130px">
+    <span class="date-sep">→</span>
+    <input type="date" class="ctrl-input" id="proyHistTo" style="width:130px">
+    <div class="ctrl-divider"></div>
+    <button class="btn btn-primary" id="proyRunBtn" onclick="runProjection()">▶ Proyectar</button>
+    <button class="btn btn-lime" id="proyExcelBtn" onclick="exportProyExcel()" style="display:none">⬇ Excel</button>
+  </div>
+
+  <!-- KPIs proyección -->
+  <div class="kpi-grid" id="proyKpis">
+    <div class="kpi k-purple">
+      <div class="kpi-label">Proyección del Mes</div>
+      <div class="kpi-value" id="pkTotal">—</div>
+      <div class="kpi-sub" id="pkTotalSub">Ejecutá la proyección</div>
+    </div>
+    <div class="kpi k-lime">
+      <div class="kpi-label">Promedio Diario</div>
+      <div class="kpi-value" id="pkAvg">—</div>
+      <div class="kpi-sub" id="pkAvgSub">—</div>
+    </div>
+    <div class="kpi k-amber">
+      <div class="kpi-label">Mejor Día Esperado</div>
+      <div class="kpi-value" id="pkBest">—</div>
+      <div class="kpi-sub" id="pkBestSub">—</div>
+    </div>
+    <div class="kpi k-teal">
+      <div class="kpi-label">Efecto Calendario</div>
+      <div class="kpi-value" id="pkCal" style="font-size:17px">—</div>
+      <div class="kpi-sub" id="pkCalSub">vs mes anterior</div>
+    </div>
+  </div>
+
+  <!-- Chart + Calendar -->
+  <div class="grid-2" style="align-items:start">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Proyección día a día</span>
+        <div class="tab-pills">
+          <button class="tab-pill active" onclick="switchProyChart('bar',this)">Barras</button>
+          <button class="tab-pill" onclick="switchProyChart('line',this)">Línea</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap-tall">
+          <canvas id="proyChart"></canvas>
+          <div class="empty-state" id="proyChartEmpty">
+            <div class="empty-icon">📊</div>
+            <div class="empty-txt">Seleccioná opciones y presioná Proyectar</div>
           </div>
         </div>
-        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-          <button class="btn btn-lime" id="prodExcelBtn" onclick="exportProductosExcel()" style="display:none">⬇ Excel</button>
-        </div>
       </div>
-      <div id="prodCanalBanner" style="display:none;padding:8px 14px;margin-bottom:12px;background:rgba(245,200,90,.08);border:1px solid rgba(245,200,90,.2);border-radius:8px;font-size:12px;color:var(--amber)">
-        ⚠️ El filtro de canal requiere redeploy del Apps Script. Recargá los datos después de hacer deploy.
-      </div>
+    </div>
 
-      <!-- ── Panel superior: 6 KPIs compactos + Chart ── -->
-      <div class="grid-2" style="margin-bottom:16px;align-items:start">
-
-        <!-- 6 KPIs en grilla 2x3 -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-
-          <div class="kpi k-purple" style="padding:12px 14px">
-            <div class="kpi-label" id="pkLabel1" style="font-size:9px">Total</div>
-            <div class="kpi-value" id="pkVal1" style="font-size:20px">—</div>
-            <div class="kpi-sub" id="pkSub1" style="font-size:10px">—</div>
-          </div>
-
-          <div class="kpi k-teal" style="padding:12px 14px">
-            <div class="kpi-label" style="font-size:9px">#1 del período</div>
-            <div class="kpi-value" id="pkVal2" style="font-size:16px;line-height:1.2">—</div>
-            <div class="kpi-sub" id="pkSub2" style="font-size:10px">—</div>
-          </div>
-
-          <div class="kpi k-amber" style="padding:12px 14px">
-            <div class="kpi-label" style="font-size:9px">vs Sem. Anterior</div>
-            <div class="kpi-value" id="pkVal3" style="font-size:20px">—</div>
-            <div class="kpi-sub" id="pkSub3" style="font-size:10px">—</div>
-          </div>
-
-          <div class="kpi k-lime" style="padding:12px 14px">
-            <div class="kpi-label" style="font-size:9px">Promedio / día</div>
-            <div class="kpi-value" id="pkVal4" style="font-size:20px">—</div>
-            <div class="kpi-sub" id="pkSub4" style="font-size:10px">—</div>
-          </div>
-
-          <div class="kpi k-purple" style="padding:12px 14px">
-            <div class="kpi-label" style="font-size:9px">Venta Neta</div>
-            <div class="kpi-value" id="pkVal5" style="font-size:17px">—</div>
-            <div class="kpi-sub" id="pkSub5" style="font-size:10px">del filtro activo</div>
-          </div>
-
-          <div class="kpi k-teal" style="padding:12px 14px">
-            <div class="kpi-label" style="font-size:9px">Ticket Medio</div>
-            <div class="kpi-value" id="pkVal6" style="font-size:17px">—</div>
-            <div class="kpi-sub" id="pkSub6" style="font-size:10px">venta / unidad</div>
-          </div>
-
-        </div>
-
-        <!-- Bar Chart -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title" id="prodChartTitle">Distribución</span>
-            <span class="card-tag" id="prodChartTag">—</span>
-          </div>
-          <div class="card-body">
-            <div style="position:relative;width:100%;height:220px" id="prodChartWrap">
-              <canvas id="prodPieChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ── Tabla de productos ── -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Efecto calendario -->
       <div class="card">
-        <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <div>
-            <div style="font-weight:700;font-size:14px" id="prodTableTitle">Detalle de Productos</div>
-            <div style="font-size:11px;color:var(--muted)" id="prodSubtitle">Seleccioná rango y cargá</div>
-          </div>
+        <div class="card-header">
+          <span class="card-title">⚡ Efecto Calendario</span>
+          <span class="card-tag" id="calTag">—</span>
         </div>
-        <div class="card-body" style="padding:0">
-          <div class="scroll-box">
-            <table class="store-table" id="prodMainTable" style="min-width:600px">
-              <thead id="prodMainThead"></thead>
-              <tbody id="prodMainTbody">
-                <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🥣</div><div class="empty-txt">Cargá datos para ver ventas por producto</div></div></td></tr>
-              </tbody>
-              <tfoot id="prodMainTfoot"></tfoot>
-            </table>
+        <div class="card-body">
+          <div class="cal-grid">
+            <div class="cal-item"><div class="cal-item-label">Lunes</div><div class="cal-compare"><span class="cal-prev" id="calL1">—</span><span class="cal-arr" id="calA1">→</span><span class="cal-next" id="calN1">—</span></div></div>
+            <div class="cal-item"><div class="cal-item-label">Martes</div><div class="cal-compare"><span class="cal-prev" id="calL2">—</span><span class="cal-arr" id="calA2">→</span><span class="cal-next" id="calN2">—</span></div></div>
+            <div class="cal-item"><div class="cal-item-label">Miércoles</div><div class="cal-compare"><span class="cal-prev" id="calL3">—</span><span class="cal-arr" id="calA3">→</span><span class="cal-next" id="calN3">—</span></div></div>
+            <div class="cal-item"><div class="cal-item-label">Jueves</div><div class="cal-compare"><span class="cal-prev" id="calL4">—</span><span class="cal-arr" id="calA4">→</span><span class="cal-next" id="calN4">—</span></div></div>
+            <div class="cal-item"><div class="cal-item-label">Viernes</div><div class="cal-compare"><span class="cal-prev" id="calL5">—</span><span class="cal-arr" id="calA5">→</span><span class="cal-next" id="calN5">—</span></div></div>
+            <div class="cal-item" style="border-color:rgba(168,85,247,.3)"><div class="cal-item-label" style="color:var(--accent)">Sábado</div><div class="cal-compare"><span class="cal-prev" id="calL6">—</span><span class="cal-arr" id="calA6">→</span><span class="cal-next" id="calN6">—</span></div></div>
+            <div class="cal-item" style="border-color:rgba(245,200,90,.3)"><div class="cal-item-label" style="color:var(--amber)">Domingo</div><div class="cal-compare"><span class="cal-prev" id="calL0">—</span><span class="cal-arr" id="calA0">→</span><span class="cal-next" id="calN0">—</span></div></div>
+            <div class="cal-item" style="border-color:rgba(245,90,90,.25)"><div class="cal-item-label" style="color:var(--red)">Feriados</div><div class="cal-compare"><span class="cal-prev" id="calLH">—</span><span class="cal-arr" id="calAH">→</span><span class="cal-next" id="calNH">—</span></div></div>
           </div>
         </div>
       </div>
 
+      <!-- Store breakdown -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Por Sucursal</span>
+          <span class="card-tag" id="storeBreakTag">—</span>
+        </div>
+        <div class="card-body">
+          <div class="store-list" id="storeBreakList">
+            <div class="empty-state" style="padding:20px"><div class="empty-icon">🏪</div><div class="empty-txt">Sin datos</div></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <!-- ═══════════ FIN VENTAS POR PRODUCTO ═══════════ -->
+  </div>
+
+  <!-- Tabla detalle diario -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Detalle Diario</span>
+      <span class="card-tag" id="proyTableTag">—</span>
+    </div>
+    <div class="table-scroll">
+      <table class="proy-table">
+        <thead><tr>
+          <th style="text-align:left">Fecha</th>
+          <th style="text-align:left">Día</th>
+          <th style="text-align:right;color:#7070a0">Budget</th>
+          <th style="text-align:right">Venta</th>
+          <th style="text-align:right">Desv. ₡</th>
+          <th style="text-align:right">Desv. %</th>
+        </tr></thead>
+        <tbody id="proyTableBody">
+          <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Sin datos</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<!-- ═══════════ FIN PROYECCIÓN ═══════════ -->
+
+<!-- ═══════════ VENTAS POR PRODUCTO ═══════════ -->
+<div class="section" id="section-productos">
+
+  <!-- ── Filtros ── -->
+  <div class="proy-controls" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
+    <span class="ctrl-label">Categoría</span>
+    <div id="prodCatFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+  <div class="proy-controls" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <span class="ctrl-label">Canal</span>
+    <div id="prodCanalFilters" style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="tab-pills">
+        <button class="tab-pill active" onclick="prodFiltrarCanal('TODOS')">Todos</button>
+        <button class="tab-pill" onclick="prodFiltrarCanal('uber')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#06C167;display:inline-block"></span>Uber Eats</button>
+        <button class="tab-pill" onclick="prodFiltrarCanal('peya')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#FF6244;display:inline-block"></span>Pedidos Ya</button>
+        <button class="tab-pill" onclick="prodFiltrarCanal('didi')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#FF6600;display:inline-block"></span>Didi Food</button>
+        <button class="tab-pill" onclick="prodFiltrarCanal('olo')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#5af5c8;display:inline-block"></span>Mercat/OLO</button>
+        <button class="tab-pill" onclick="prodFiltrarCanal('otros')" style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#a855f7;display:inline-block"></span>Mostrador</button>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-lime" id="prodExcelBtn" onclick="exportProductosExcel()" style="display:none">⬇ Excel</button>
+    </div>
+  </div>
+  <div id="prodCanalBanner" style="display:none;padding:8px 14px;margin-bottom:12px;background:rgba(245,200,90,.08);border:1px solid rgba(245,200,90,.2);border-radius:8px;font-size:12px;color:var(--amber)">
+    ⚠️ El filtro de canal requiere redeploy del Apps Script. Recargá los datos después de hacer deploy.
+  </div>
+
+  <!-- ── Panel superior: 6 KPIs compactos + Chart ── -->
+  <div class="grid-2" style="margin-bottom:16px;align-items:start">
+
+    <!-- 6 KPIs en grilla 2x3 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+      <div class="kpi k-purple" style="padding:12px 14px">
+        <div class="kpi-label" id="pkLabel1" style="font-size:9px">Total</div>
+        <div class="kpi-value" id="pkVal1" style="font-size:20px">—</div>
+        <div class="kpi-sub" id="pkSub1" style="font-size:10px">—</div>
+      </div>
+
+      <div class="kpi k-teal" style="padding:12px 14px">
+        <div class="kpi-label" style="font-size:9px">#1 del período</div>
+        <div class="kpi-value" id="pkVal2" style="font-size:16px;line-height:1.2">—</div>
+        <div class="kpi-sub" id="pkSub2" style="font-size:10px">—</div>
+      </div>
+
+      <div class="kpi k-amber" style="padding:12px 14px">
+        <div class="kpi-label" style="font-size:9px">vs Sem. Anterior</div>
+        <div class="kpi-value" id="pkVal3" style="font-size:20px">—</div>
+        <div class="kpi-sub" id="pkSub3" style="font-size:10px">—</div>
+      </div>
+
+      <div class="kpi k-lime" style="padding:12px 14px">
+        <div class="kpi-label" style="font-size:9px">Promedio / día</div>
+        <div class="kpi-value" id="pkVal4" style="font-size:20px">—</div>
+        <div class="kpi-sub" id="pkSub4" style="font-size:10px">—</div>
+      </div>
+
+      <div class="kpi k-purple" style="padding:12px 14px">
+        <div class="kpi-label" style="font-size:9px">Venta Neta</div>
+        <div class="kpi-value" id="pkVal5" style="font-size:17px">—</div>
+        <div class="kpi-sub" id="pkSub5" style="font-size:10px">del filtro activo</div>
+      </div>
+
+      <div class="kpi k-teal" style="padding:12px 14px">
+        <div class="kpi-label" style="font-size:9px">Ticket Medio</div>
+        <div class="kpi-value" id="pkVal6" style="font-size:17px">—</div>
+        <div class="kpi-sub" id="pkSub6" style="font-size:10px">venta / unidad</div>
+      </div>
+
+    </div>
+
+    <!-- Bar Chart -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title" id="prodChartTitle">Distribución</span>
+        <span class="card-tag" id="prodChartTag">—</span>
+      </div>
+      <div class="card-body">
+        <div style="position:relative;width:100%;height:220px" id="prodChartWrap">
+          <canvas id="prodPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Tabla de productos ── -->
+  <div class="card">
+    <div class="card-header" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-weight:700;font-size:14px" id="prodTableTitle">Detalle de Productos</div>
+        <div style="font-size:11px;color:var(--muted)" id="prodSubtitle">Seleccioná rango y cargá</div>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="scroll-box">
+        <table class="store-table" id="prodMainTable" style="min-width:600px">
+          <thead id="prodMainThead"></thead>
+          <tbody id="prodMainTbody">
+            <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🥣</div><div class="empty-txt">Cargá datos para ver ventas por producto</div></div></td></tr>
+          </tbody>
+          <tfoot id="prodMainTfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- ═══════════ FIN VENTAS POR PRODUCTO ═══════════ -->
+```
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -2800,7 +2831,7 @@ async function cargarAnalisis(){
     renderAnalisis(anlDataCurr, anlDataRef, anlTrendData, fechaFinInput, fechaRef);
     document.getElementById('anlEmpty').style.display   = 'none';
     document.getElementById('anlContent').style.display = 'block';
-    setTxt('anlSubtitle', `Fecha: ${fechaFinInput} · Comparando ${anlPeriodLabel()}`);
+    setTxt('anlSubtitle', `Fecha: ${fechaFinInput} · Comparando ${anlPeriodLabel()}${anlDow!==null?' · Solo '+['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][anlDow]:''}`);
 
   }catch(e){ alert('Error en análisis: '+e.message); console.error(e); }
   finally{ showLoader(false); document.getElementById('btnAnalisis').disabled=false; }
@@ -4815,5 +4846,6 @@ function setModoVenta(modo) {
 }
 
 </script>
+
 </body>
 </html>
