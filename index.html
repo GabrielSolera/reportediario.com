@@ -1679,16 +1679,22 @@ function initDates() {
 //  DASHBOARD DATA LOAD
 // ═══════════════════════════════════════════════════════════
 async function cargarDatosDashboard() {
-  // Delega completamente a cargarDatos para evitar caché duplicado
-  if(datosGlobales) return; // ya cargado
+  if(datosGlobales) return;
   const fechaFinInput = document.getElementById('fechaFin').value;
   if(!fechaFinInput) return;
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
   const tienda = document.getElementById('tiendaSelect').value;
-  showLoader(true,'Cargando datos...','Consultando Toteat');
+  showLoader(true,'Cargando datos...','Leyendo cache...');
   try {
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true${forzar?"&forzar=true":""}`;
+    // Intentar cache de Sheets primero
+    if(tienda === 'todas') {
+      const sheetKey = `${day}_${month}_${year}_todas`;
+      const cached   = await leerCacheDesdeSheet(sheetKey);
+      if(cached){ datosGlobales = cached; return; }
+    }
+    showLoader(true,'Cargando datos...','Consultando Toteat...');
+    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(data && !data.error && Array.isArray(data)) datosGlobales = data;
@@ -1696,44 +1702,20 @@ async function cargarDatosDashboard() {
   finally { showLoader(false); }
 }
 
-// Lee el cache directo del Google Sheet — sin pasar por Apps Script
-// Sheets JSON API es pública para sheets compartidos (no requiere auth)
-const CACHE_SHEET_ID = '1Fk7ERtxjGSiXu2CmqrXKg88LAKHxysom-oUy-VA_UAI';
-
+// Lee el cache via Apps Script (que tiene CORS habilitado)
 async function leerCacheDesdeSheet(cacheKey) {
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${CACHE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=CacheDiario`;
+    const url  = `${APPS_SCRIPT_URL}?action=leerCache&cacheKey=${encodeURIComponent(cacheKey)}`;
     const resp = await fetch(url);
-    const text = await resp.text();
-    // Sheets devuelve JSONP — extraer JSON
-    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''));
-    const rows = json.table?.rows || [];
-    const TTL  = 35 * 60 * 1000; // 35 minutos (trigger cada 30)
-    const ahora = Date.now();
-
-    // Buscar la fila más reciente con el cacheKey correcto
-    for (let i = rows.length - 1; i >= 0; i--) {
-      const row = rows[i];
-      if (!row.c || row.c.length < 3) continue;
-      const key = row.c[1]?.v;
-      if (key !== cacheKey) continue;
-      // Sheets guarda fechas como Date(year,month,day,h,m,s) — parsear
-      const tsRaw = row.c[0]?.v || '';
-      const tsMatch = String(tsRaw).match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
-      if (!tsMatch) continue;
-      const ts = new Date(
-        parseInt(tsMatch[1]), parseInt(tsMatch[2]), parseInt(tsMatch[3]),
-        parseInt(tsMatch[4]), parseInt(tsMatch[5]), parseInt(tsMatch[6])
-      ).getTime();
-      if (ahora - ts > TTL) { console.log('Cache expirado:', Math.round((ahora-ts)/60000), 'min'); return null; }
-      const jsonStr = row.c[2]?.v;
-      if (!jsonStr || jsonStr.length < 100) continue;
-      console.log('⚡ Cache hit Sheet directo:', cacheKey, Math.round((ahora-ts)/60000)+'min');
-      return JSON.parse(jsonStr);
+    if(!resp.ok) return null;
+    const data = await resp.json();
+    if(data && data.hit && Array.isArray(data.datos)) {
+      console.log('⚡ Cache hit:', cacheKey, data.age+'min');
+      return data.datos;
     }
     return null;
   } catch(e) {
-    console.error('Error leyendo cache Sheet:', e);
+    console.error('Error leyendo cache:', e);
     return null;
   }
 }
@@ -2683,9 +2665,29 @@ function exportProyExcel(){
 //  MÓDULO ANÁLISIS
 // ═══════════════════════════════════════════════════════════
 let anlPeriod      = -7;
+let anlDow         = null; // null=todos, 0=Dom, 1=Lun...6=Sab
 let anlCharts      = {};
 let anlDataCurr    = null, anlDataRef = null, anlTrendData = null;
-let anlLastTienda  = null; // para detectar cambio de tienda
+let anlLastTienda  = null;
+
+function setAnlDow(dow, btn) {
+  anlDow = dow;
+  document.querySelectorAll('#anlDowTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(anlDataCurr && anlDataRef && anlTrendData) {
+    const fi = document.getElementById('fechaFin').value;
+    const ff = new Date(fi+'T12:00:00');
+    let fechaRef;
+    if(anlPeriod==='mes'){
+      const p=ff.getMonth()===0?new Date(ff.getFullYear()-1,11,ff.getDate()):new Date(ff.getFullYear(),ff.getMonth()-1,ff.getDate());
+      fechaRef=p.toISOString().split('T')[0];
+    } else {
+      const r=new Date(ff); r.setDate(r.getDate()+anlPeriod); fechaRef=r.toISOString().split('T')[0];
+    }
+    renderAnalisis(anlDataCurr, anlDataRef, anlTrendData, fi, fechaRef);
+    setTxt('anlSubtitle', 'Fecha: '+fi+' - Comparando '+anlPeriodLabel()+(anlDow!==null?' - Solo '+['Dom','Lun','Mar','Mie','Jue','Vie','Sab'][anlDow]:''));
+  }
+}
 
 const CANAL_CFG = [
   { key:'uber',    label:'Uber Eats',   color:'#06C167', keyAcum:'uberAcum'  },
