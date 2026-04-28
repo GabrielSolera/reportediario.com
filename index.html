@@ -2991,18 +2991,34 @@ function renderTrendChart(dailyData, fechaCurr, curr, ref){
     return;
   }
 
-  const actData = dailyData.actual;
-  const refData = dailyData.ref || [];
-  const daysInMonth = actData.length > 0 ? Math.max(...actData.map(d=>new Date(d.fecha+'T12:00:00').getDate())) : 31;
+  // Aplicar filtro DOW
+  function dowFilter(arr) {
+    if(anlDow === null) return arr;
+    return arr.filter(d => new Date(d.fecha+'T12:00:00').getDay() === anlDow);
+  }
+  const actData = dowFilter(dailyData.actual || []);
+  const refData = dowFilter(dailyData.ref    || []);
 
-  // Construir arrays indexados por día del mes (1-31)
-  const actByDay = {}; actData.forEach(d=>{ actByDay[new Date(d.fecha+'T12:00:00').getDate()] = d.ventasNetas||0; });
-  const refByDay = {}; refData.forEach(d=>{ refByDay[new Date(d.fecha+'T12:00:00').getDate()] = d.ventasNetas||0; });
+  const DIAS_NOMBRE = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
-  const maxDay = Math.max(daysInMonth, refData.length>0 ? Math.max(...refData.map(d=>new Date(d.fecha+'T12:00:00').getDate())) : 0);
-  const labels = Array.from({length:maxDay},(_,i)=>String(i+1));
-  const actVals = labels.map((_,i)=>actByDay[i+1]||null);
-  const refVals = labels.map((_,i)=>refByDay[i+1]||null);
+  let labels, actVals, refVals;
+
+  if(anlDow !== null) {
+    // Modo DOW: eje X = fecha del día (ej: "Sáb 4", "Sáb 11", "Sáb 18", "Sáb 25")
+    labels  = actData.map(d => { const dt=new Date(d.fecha+'T12:00:00'); return DIAS_NOMBRE[dt.getDay()]+' '+dt.getDate(); });
+    actVals = actData.map(d => d.ventasNetas||0);
+    // Para ref: emparejar por índice (mismo nº de ocurrencia del DOW)
+    refVals = actData.map((_,i) => refData[i] ? refData[i].ventasNetas||0 : null);
+  } else {
+    // Modo normal: eje X = día del mes (1-31)
+    const daysInMonth = actData.length>0 ? Math.max(...actData.map(d=>new Date(d.fecha+'T12:00:00').getDate())) : 31;
+    const actByDay = {}; actData.forEach(d=>{ actByDay[new Date(d.fecha+'T12:00:00').getDate()] = d.ventasNetas||0; });
+    const refByDay = {}; refData.forEach(d=>{ refByDay[new Date(d.fecha+'T12:00:00').getDate()] = d.ventasNetas||0; });
+    const maxDay = Math.max(daysInMonth, refData.length>0 ? Math.max(...refData.map(d=>new Date(d.fecha+'T12:00:00').getDate())) : 0);
+    labels  = Array.from({length:maxDay},(_,i)=>String(i+1));
+    actVals = labels.map((_,i)=>actByDay[i+1]||null);
+    refVals = labels.map((_,i)=>refByDay[i+1]||null);
+  }
 
   // Colores
   const actColor = '#a855f7';
