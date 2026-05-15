@@ -707,6 +707,76 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   transition:color .15s;
 }
 .logout-btn:hover { color:var(--red); }
+  /* ── PANAMÁ ── */
+.pa-kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.pa-store-row {
+  display:grid;
+  grid-template-columns: 140px repeat(3, 1fr) repeat(2, 100px);
+  gap:0;
+  align-items:center;
+  padding:12px 16px;
+  border-bottom:1px solid rgba(42,42,58,.4);
+  transition:background .12s;
+}
+.pa-store-row:hover { background:var(--surface2); }
+.pa-store-row.header { background:var(--surface2); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); border-bottom:1px solid var(--border); }
+.pa-store-row.total  { background:rgba(168,85,247,.07); font-weight:700; border-top:1px solid var(--border); }
+.pa-cell { font-family:var(--mono); font-size:13px; text-align:right; }
+.pa-cell.name { font-family:var(--font); font-weight:700; text-align:left; font-size:13px; }
+.pa-cell.header { font-family:var(--font); }
+.pa-budget-modal {
+  position:fixed; inset:0; z-index:9000;
+  background:rgba(0,0,0,.7); backdrop-filter:blur(4px);
+  display:none; align-items:center; justify-content:center;
+}
+.pa-budget-modal.open { display:flex; }
+.pa-budget-box {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:28px; width:100%; max-width:480px;
+  animation:fadeUp .2s ease;
+}
+.pa-budget-title { font-size:16px; font-weight:800; margin-bottom:4px; }
+.pa-budget-sub   { font-size:12px; color:var(--muted); margin-bottom:24px; }
+.pa-field { margin-bottom:16px; }
+.pa-label { display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin-bottom:6px; }
+.pa-input {
+  width:100%; font-family:var(--mono); font-size:16px; font-weight:600;
+  background:var(--surface2); color:var(--text);
+  border:1px solid var(--border2); padding:11px 14px; border-radius:10px;
+  outline:none; transition:border-color .15s;
+}
+.pa-input:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(90,245,200,.1); }
+.pa-pesos-preview {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:14px; margin:14px 0; font-size:11px;
+}
+.pa-pesos-row { display:flex; justify-content:space-between; padding:3px 0; }
+.pa-pesos-label { color:var(--muted); }
+.pa-pesos-val   { font-family:var(--mono); font-weight:600; }
+.pa-dist-preview {
+  max-height:220px; overflow-y:auto;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px;
+  font-size:11px; font-family:var(--mono); margin:14px 0;
+}
+.pa-dist-preview::-webkit-scrollbar { width:4px; }
+.pa-dist-preview::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+.pa-dist-row { display:flex; justify-content:space-between; padding:2px 0; border-bottom:1px solid rgba(42,42,58,.3); }
+.pa-dist-row:last-child { border-bottom:none; }
+.pa-dist-fecha { color:var(--muted); }
+.pa-dist-monto { font-weight:600; color:var(--teal); }
+.pa-dist-dia   { color:var(--muted2); font-size:10px; width:28px; text-align:right; }
+@media(max-width:900px) {
+  .pa-kpi-grid { grid-template-columns:1fr 1fr; }
+  .pa-store-row { grid-template-columns:120px 1fr 1fr 1fr; gap:6px; }
+  .pa-store-row .pa-cell:nth-child(5),
+  .pa-store-row .pa-cell:nth-child(6) { display:none; }
+}
+@media(max-width:600px) {
+  .pa-kpi-grid { grid-template-columns:1fr; }
+  .pa-store-row { grid-template-columns:1fr 1fr 1fr; }
+  .pa-store-row .pa-cell.name { grid-column:1/-1; font-size:12px; margin-bottom:4px; }
+}
 </style>
 </head>
 <body>
@@ -775,6 +845,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <div class="nav-item" data-section="reporteDiario">
       <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 176H48V112h160zm0-112H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-24v-8a8 8 0 00-16 0v8H88v-8a8 8 0 00-16 0v8H48a16 16 0 00-16 16v160a16 16 0 0016 16h160a16 16 0 0016-16V48a16 16 0 00-16-16zm0 48H48V48h24v8a8 8 0 0016 0v-8h80v8a8 8 0 0016 0v-8h24zM136 160h48a8 8 0 000-16h-48a8 8 0 000 16zm0 32h48a8 8 0 000-16h-48a8 8 0 000 16zM72 160h16a8 8 0 000-16H72a8 8 0 000 16zm0 32h16a8 8 0 000-16H72a8 8 0 000 16z" fill="currentColor"/></svg></span><span class="nav-label">Reporte Diario</span>
     </div>
+    <div class="nav-item" data-section="panama">
+  <span class="nav-icon">🇵🇦</span>
+  <span class="nav-label">🇵🇦 Panamá</span>
+  <span class="nav-badge">PA</span>
+  </div>
 
     <div class="nav-section">Análisis</div>
     <div class="nav-item" data-section="analisis">
@@ -1545,6 +1620,63 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     </div>
     <!-- ═══════════ FIN VENTAS POR PRODUCTO ═══════════ -->
+    <!-- MODAL BUDGET PANAMÁ -->
+<div class="pa-budget-modal" id="paBudgetModal">
+  <div class="pa-budget-box">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div>
+        <div class="pa-budget-title">🇵🇦 Budget Panamá</div>
+        <div class="pa-budget-sub">Ingresá el monto mensual y el sistema distribuye automáticamente</div>
+      </div>
+      <button onclick="paCerrarBudgetModal()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="pa-field">
+        <label class="pa-label">Mes a proyectar</label>
+        <select class="pa-input" id="paBudgetMes" onchange="paCargarPesos()" style="font-family:var(--font);font-size:13px"></select>
+      </div>
+      <div class="pa-field">
+        <label class="pa-label">Budget mensual (USD)</label>
+        <input class="pa-input" id="paBudgetTotal" type="number" placeholder="0.00" min="0" step="0.01" oninput="paPreviewDistribucion()">
+      </div>
+    </div>
+    <div id="paPesosWrap" style="display:none">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px">
+        Pesos calculados desde mes anterior (InvuPOS)
+        <span id="paPesosStatus" style="font-weight:400;color:var(--muted2);margin-left:6px"></span>
+      </div>
+      <div class="pa-pesos-preview" id="paPesosPreview"></div>
+    </div>
+    <div id="paDistWrap" style="display:none">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px">Distribución diaria</div>
+      <div class="pa-dist-preview" id="paDistPreview"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn btn-primary" id="paBudgetSaveBtn" onclick="paGuardarBudget()" style="flex:1" disabled>
+        <span id="paBudgetSaveTxt">💾 Guardar Budget</span>
+      </button>
+      <button class="btn btn-ghost" onclick="paCerrarBudgetModal()">Cancelar</button>
+    </div>
+    <div id="paBudgetMsg" style="margin-top:12px;font-size:12px;text-align:center;display:none"></div>
+  </div>
+</div>
+
+<!-- SECCIÓN PANAMÁ -->
+<div class="section" id="section-panama">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:3px">🇵🇦 Panamá</div>
+      <div style="font-size:12px;color:var(--muted)" id="paSubtitle">InvuPOS · San Francisco</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <input type="date" class="ctrl-input" id="paFecha" style="width:140px">
+      <button class="btn btn-primary" onclick="paCargarVentas()">↻ Actualizar</button>
+      <button class="btn btn-lime" onclick="paAbrirBudgetModal()">⚙ Budget</button>
+    </div>
+  </div>
+  <div class="pa-kpi-grid">
+    <div class="kpi k-teal">
+      <div class="kpi-la
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -4844,5 +4976,287 @@ function setModoVenta(modo) {
 }
 
 </script>
+      // ═══════════════════════════════════════════════════════════
+//  MÓDULO PANAMÁ
+// ═══════════════════════════════════════════════════════════
+
+var paData       = null;
+var paBudgetData = null;
+var paPesos      = null;
+var paCharts     = {};
+
+var fmtUSD = function(n) {
+  return '$' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+var fmtUSDShort = function(n) {
+  var v = parseFloat(n || 0);
+  if (v >= 1000) return '$' + (v / 1000).toFixed(1) + 'K';
+  return '$' + v.toFixed(0);
+};
+var fmtPctPA = function(pct) {
+  if (pct === null || isNaN(pct)) return '—';
+  return (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+};
+
+function paInitFecha() {
+  var now = new Date(Date.now() - 5 * 60 * 60 * 1000);
+  document.getElementById('paFecha').value = now.toISOString().split('T')[0];
+}
+
+async function paCargarVentas() {
+  if (!getSession()) return;
+  var fecha = document.getElementById('paFecha').value;
+  if (!fecha) { paInitFecha(); fecha = document.getElementById('paFecha').value; }
+  document.getElementById('paSubtitle').textContent = 'Cargando...';
+  showLoader(true, 'Cargando Panamá...', 'Consultando InvuPOS...');
+  try {
+    var data = await fetch(APPS_SCRIPT_URL + '?action=panamaVentas&fecha=' + fecha).then(r => r.json());
+    if (data.error) throw new Error(data.message);
+    paData = data;
+
+    var d    = new Date(fecha + 'T12:00:00');
+    paBudgetData = await fetch(APPS_SCRIPT_URL + '?action=panamaBudget&year=' + d.getFullYear() + '&month=' + (d.getMonth()+1)).then(r => r.json());
+
+    var primerDia = fecha.substring(0,8) + '01';
+    var tData = await fetch(APPS_SCRIPT_URL + '?action=panamaHistorial&fechaInicio=' + primerDia + '&fechaFin=' + fecha).then(r => r.json());
+
+    paRenderVentas(data, paBudgetData);
+    paRenderTrend(Array.isArray(tData) ? tData : []);
+
+    var fd = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('paSubtitle').textContent = 'InvuPOS · ' + fd;
+    document.getElementById('paTablaDia').textContent = fecha;
+  } catch(e) {
+    document.getElementById('paSubtitle').textContent = 'Error: ' + e.message;
+    console.error('paCargarVentas:', e);
+  } finally { showLoader(false); }
+}
+
+function paRenderVentas(data, budget) {
+  var totalDia   = data.total.dia.ventas;
+  var totalMes   = data.total.mes.ventas;
+  var totalProy  = data.proyeccion || 0;
+  var totalTrans = data.total.dia.trans;
+  var ticket     = totalTrans > 0 ? totalDia / totalTrans : 0;
+  var d          = new Date(data.fecha + 'T12:00:00');
+  var diaNum     = d.getDate();
+
+  var budgDia = budget.porDia && budget.porDia[diaNum] ? budget.porDia[diaNum] : 0;
+  var budgAcum = 0;
+  if (budget.porDia) { for (var dd=1; dd<=diaNum; dd++) budgAcum += budget.porDia[dd] || 0; }
+  var budgTotal = budget.totalMensual || 0;
+
+  var pctDia  = budgDia   > 0 ? ((totalDia  - budgDia)   / budgDia)   * 100 : null;
+  var pctMes  = budgAcum  > 0 ? ((totalMes  - budgAcum)  / budgAcum)  * 100 : null;
+  var pctProy = budgTotal > 0 ? ((totalProy - budgTotal)  / budgTotal) * 100 : null;
+
+  document.getElementById('paKVentasDia').textContent  = fmtUSD(totalDia);
+  document.getElementById('paKVentasMes').textContent  = fmtUSD(totalMes);
+  document.getElementById('paKProy').textContent       = fmtUSD(totalProy);
+  document.getElementById('paKBudgetDia').textContent   = budgDia   > 0 ? fmtUSD(budgDia)   : '—';
+  document.getElementById('paKBudgetMes').textContent   = budgAcum  > 0 ? fmtUSD(budgAcum)  : '—';
+  document.getElementById('paKBudgetTotal').textContent = budgTotal > 0 ? fmtUSD(budgTotal)  : '—';
+
+  var setDelta = function(id, pct) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (pct === null) { el.textContent = '—'; el.className = 'kpi-delta d-neu'; return; }
+    el.textContent = fmtPctPA(pct) + ' vs budget';
+    el.className   = 'kpi-delta ' + (pct >= 0 ? 'd-pos' : 'd-neg');
+  };
+  setDelta('paKDesvDia', pctDia);
+  setDelta('paKDesvMes', pctMes);
+  setDelta('paKDesvProy', pctProy);
+
+  var tbody = document.getElementById('paTablaBody');
+  tbody.innerHTML = '';
+  data.sucursales.forEach(function(s) {
+    var proy = s.mes.ventas > 0 && diaNum > 0 ? Math.round((s.mes.ventas / diaNum) * data.diasMes) : 0;
+    var tkt  = s.dia.trans > 0 ? s.dia.ventas / s.dia.trans : 0;
+    var row  = document.createElement('div');
+    row.className = 'pa-store-row';
+    row.innerHTML =
+      '<div class="pa-cell name" style="color:var(--teal)">' + s.nombre + (s.error ? ' ⚠️' : '') + '</div>' +
+      '<div class="pa-cell" style="color:var(--text)">'   + fmtUSD(s.dia.ventas) + '</div>' +
+      '<div class="pa-cell" style="color:var(--lime)">'   + fmtUSD(s.mes.ventas) + '</div>' +
+      '<div class="pa-cell" style="color:var(--accent)">' + fmtUSD(proy)          + '</div>' +
+      '<div class="pa-cell" style="color:var(--muted)">'  + s.dia.trans           + '</div>' +
+      '<div class="pa-cell" style="color:var(--muted)">'  + fmtUSD(tkt)           + '</div>';
+    tbody.appendChild(row);
+  });
+
+  var totalEl = document.getElementById('paTablaTotal');
+  totalEl.style.display = '';
+  document.getElementById('paTotalDia').textContent   = fmtUSD(totalDia);
+  document.getElementById('paTotalMes').textContent   = fmtUSD(totalMes);
+  document.getElementById('paTotalProy').textContent  = fmtUSD(totalProy);
+  document.getElementById('paTotalTrans').textContent = totalTrans;
+  document.getElementById('paTotalTicket').textContent = fmtUSD(ticket);
+
+  paRenderPagos(data.total.pagos);
+}
+
+function paRenderPagos(pagos) {
+  if (paCharts.pagos) paCharts.pagos.destroy();
+  var ctx    = document.getElementById('paChartPagos').getContext('2d');
+  var labels = Object.keys(pagos);
+  var values = labels.map(function(k) { return pagos[k]; });
+  var colors = ['#a855f7','#5af5c8','#f5c85a','#5ab4f5','#f55a5a','#7070a0'];
+  paCharts.pagos = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0, hoverOffset:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom',labels:{color:'#7070a0',font:{size:10},padding:10}},
+        datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',callbacks:{label:function(c){return ' '+fmtUSD(c.raw);}}} }}
+  });
+}
+
+function paRenderTrend(historial) {
+  if (paCharts.trend) paCharts.trend.destroy();
+  var ctx = document.getElementById('paChartTrend').getContext('2d');
+  if (!historial.length) { document.getElementById('paTrendTag').textContent='sin datos'; return; }
+  var labels = historial.map(function(h) { return h.fecha.slice(8); });
+  var values = historial.map(function(h) { return h.ventasNetas; });
+  var budgetVals = null;
+  if (paBudgetData && paBudgetData.porFecha) {
+    budgetVals = historial.map(function(h) { return paBudgetData.porFecha[h.fecha] || null; });
+  }
+  var datasets = [{ label:'Ventas reales', data:values, borderColor:'#5af5c8', borderWidth:2,
+    backgroundColor:'rgba(90,245,200,.1)', fill:true, pointRadius:3, pointBackgroundColor:'#5af5c8', tension:0.3 }];
+  if (budgetVals) datasets.push({ label:'Budget', data:budgetVals, borderColor:'#a855f766',
+    borderWidth:1.5, borderDash:[5,4], fill:false, pointRadius:0, tension:0.3 });
+  paCharts.trend = new Chart(ctx, { type:'line', data:{ labels:labels, datasets:datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#7070a0',font:{size:10}}}, datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',callbacks:{label:function(c){return ' '+fmtUSD(c.raw);}}} },
+      scales:{ x:{grid:{color:'rgba(42,42,58,.4)'},ticks:{color:'#7070a0',font:{size:9}}},
+               y:{grid:{color:'rgba(42,42,58,.4)'},ticks:{color:'#7070a0',font:{size:9},callback:function(v){return fmtUSDShort(v);}}} } }
+  });
+  document.getElementById('paTrendTag').textContent = historial[0] ? historial[0].fecha.substring(0,7) : '';
+}
+
+// ── MODAL BUDGET ────────────────────────────────────────────
+function paAbrirBudgetModal() {
+  var sel = document.getElementById('paBudgetMes');
+  sel.innerHTML = '';
+  var now = new Date();
+  for (var i=0; i<6; i++) {
+    var d   = new Date(now.getFullYear(), now.getMonth()+i, 1);
+    var val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    var lbl = d.toLocaleDateString('es-CR',{month:'long',year:'numeric'});
+    lbl = lbl.charAt(0).toUpperCase() + lbl.slice(1);
+    sel.appendChild(new Option(lbl, val));
+  }
+  document.getElementById('paBudgetTotal').value      = '';
+  document.getElementById('paPesosWrap').style.display = 'none';
+  document.getElementById('paDistWrap').style.display  = 'none';
+  document.getElementById('paBudgetSaveBtn').disabled  = true;
+  document.getElementById('paBudgetMsg').style.display = 'none';
+  document.getElementById('paBudgetModal').classList.add('open');
+  paCargarPesos();
+}
+
+function paCerrarBudgetModal() {
+  document.getElementById('paBudgetModal').classList.remove('open');
+}
+
+async function paCargarPesos() {
+  var mesVal = document.getElementById('paBudgetMes').value;
+  if (!mesVal) return;
+  var parts = mesVal.split('-');
+  document.getElementById('paPesosStatus').textContent = 'calculando...';
+  document.getElementById('paPesosWrap').style.display = 'block';
+  try {
+    var data = await fetch(APPS_SCRIPT_URL + '?action=panamaPesos&year=' + parts[0] + '&month=' + parts[1]).then(r => r.json());
+    paPesos  = data.pesos || [1.35,1.00,0.88,0.90,0.95,1.15,1.25];
+    var dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    var html = '';
+    paPesos.forEach(function(p,i) {
+      var color = p > 1.1 ? 'var(--teal)' : p < 0.85 ? 'var(--red)' : 'var(--muted)';
+      var bar   = Math.round(p * 60);
+      html += '<div class="pa-pesos-row"><span class="pa-pesos-label">' + dias[i] + '</span>' +
+        '<span style="display:flex;align-items:center;gap:8px">' +
+        '<div style="width:' + bar + 'px;height:3px;background:' + color + ';border-radius:2px;opacity:.7"></div>' +
+        '<span class="pa-pesos-val" style="color:' + color + '">' + p.toFixed(2) + 'x</span></span></div>';
+    });
+    document.getElementById('paPesosPreview').innerHTML = html;
+    document.getElementById('paPesosStatus').textContent = 'desde mes anterior';
+  } catch(e) {
+    paPesos = [1.35,1.00,0.88,0.90,0.95,1.15,1.25];
+    document.getElementById('paPesosStatus').textContent = 'usando defaults';
+  }
+  paPreviewDistribucion();
+}
+
+function paPreviewDistribucion() {
+  var total = parseFloat(document.getElementById('paBudgetTotal').value);
+  if (!total || total <= 0 || !paPesos) {
+    document.getElementById('paDistWrap').style.display  = 'none';
+    document.getElementById('paBudgetSaveBtn').disabled  = true;
+    return;
+  }
+  var mesVal  = document.getElementById('paBudgetMes').value;
+  var parts   = mesVal.split('-');
+  var year    = parseInt(parts[0]), month = parseInt(parts[1]);
+  var diasMes = new Date(year, month, 0).getDate();
+  var diasNom = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var totalPeso = 0;
+  for (var d=1; d<=diasMes; d++) totalPeso += paPesos[new Date(year,month-1,d).getDay()];
+  var html = '', acum = 0;
+  for (var d2=1; d2<=diasMes; d2++) {
+    var dow   = new Date(year,month-1,d2).getDay();
+    var monto = d2 < diasMes ? Math.round(total * paPesos[dow] / totalPeso * 100)/100 : Math.round((total-acum)*100)/100;
+    acum += monto;
+    var fecha = year + '-' + String(month).padStart(2,'0') + '-' + String(d2).padStart(2,'0');
+    html += '<div class="pa-dist-row"><span class="pa-dist-fecha">' + fecha + '</span>' +
+      '<span class="pa-dist-dia">' + diasNom[dow] + '</span>' +
+      '<span class="pa-dist-monto">' + fmtUSD(monto) + '</span></div>';
+  }
+  document.getElementById('paDistPreview').innerHTML = html;
+  document.getElementById('paDistWrap').style.display  = 'block';
+  document.getElementById('paBudgetSaveBtn').disabled  = false;
+}
+
+async function paGuardarBudget() {
+  var total  = parseFloat(document.getElementById('paBudgetTotal').value);
+  var mesVal = document.getElementById('paBudgetMes').value;
+  var parts  = mesVal.split('-');
+  if (!total || total <= 0) { alert('Ingresá un monto válido'); return; }
+  var btn = document.getElementById('paBudgetSaveBtn');
+  var msg = document.getElementById('paBudgetMsg');
+  btn.disabled = true;
+  document.getElementById('paBudgetSaveTxt').textContent = 'Guardando...';
+  msg.style.display = 'none';
+  try {
+    var url  = APPS_SCRIPT_URL + '?action=panamaSaveBudget&year=' + parts[0] + '&month=' + parts[1] +
+               '&totalMensual=' + total + '&pesos=' + encodeURIComponent(JSON.stringify(paPesos));
+    var data = await fetch(url).then(r => r.json());
+    if (data.ok) {
+      msg.textContent = '✅ Budget guardado correctamente';
+      msg.style.color = 'var(--teal)';
+      msg.style.display = 'block';
+      setTimeout(function() { paCerrarBudgetModal(); paCargarVentas(); }, 1500);
+    } else { throw new Error(data.message || 'Error desconocido'); }
+  } catch(e) {
+    msg.textContent = '❌ Error: ' + e.message;
+    msg.style.color = 'var(--red)';
+    msg.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    document.getElementById('paBudgetSaveTxt').textContent = '💾 Guardar Budget';
+  }
+}
+
+// Inicializar Panamá al navegar a la sección
+document.querySelectorAll('.nav-item').forEach(function(item) {
+  item.addEventListener('click', function() {
+    if (item.dataset.section === 'panama' && !paData) {
+      paInitFecha();
+      paCargarVentas();
+    }
+  });
+});
+paInitFecha();
 </body>
 </html>
