@@ -10,15 +10,36 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root {
+:root, html[data-theme="light"] {
+  --bg:       #F7F1F5;
+  --surface:  #FFFFFF;
+  --surface2: #F3EAF0;
+  --surface3: #ECE0E8;
+  --border:   #E3D3DE;
+  --border2:  #D3BCCC;
+  --accent:   #7C3AA0;
+  --accent2:  #491f54;
+  --lime:     #5B8C3A;
+  --teal:     #178A68;
+  --amber:    #B8790F;
+  --red:      #C6433F;
+  --text:     #2E1235;
+  --muted:    #7A6478;
+  --muted2:   #B39CAE;
+  --font:     'Syne', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --sidebar-w: 240px;
+  --radius:   14px;
+}
+html[data-theme="dark"] {
   --bg:       #0c0c10;
   --surface:  #13131a;
   --surface2: #1a1a24;
   --surface3: #21212e;
   --border:   #2a2a3a;
   --border2:  #333345;
-  --accent:   #a855f7;
-  --accent2:  #7c3aed;
+  --accent:   #9d4fd1;
+  --accent2:  #6d2e8c;
   --lime:     #c8f55a;
   --teal:     #5af5c8;
   --amber:    #f5c85a;
@@ -26,10 +47,6 @@
   --text:     #e8e8f0;
   --muted:    #7070a0;
   --muted2:   #4a4a6a;
-  --font:     'Syne', sans-serif;
-  --mono:     'JetBrains Mono', monospace;
-  --sidebar-w: 240px;
-  --radius:   14px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
@@ -710,12 +727,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
 /* ══════════════════════════════════════
    IDENTIDAD DE MARCA OAKBERRY
-   Accent retintado desde el purpura real del logo (#491f54),
-   ajustado para tener contraste sobre el fondo oscuro del workspace.
+   Tokens fijos (no cambian con el tema claro/oscuro) — el login y el
+   menú principal siempre usan el púrpura real de la marca.
 ══════════════════════════════════════ */
 :root{
-  --accent:  #9d4fd1;
-  --accent2: #6d2e8c;
   --brand-deep:   #2E1235;
   --brand-purple: #491f54;
   --brand-cream:  #F7F1F5;
@@ -747,34 +762,40 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   font-size:13px;color:rgba(255,255,255,.6);text-align:center;
   margin-bottom:40px;max-width:420px;
 }
-.menu-grupo{ width:100%;margin-bottom:30px; }
+.menu-grupo{ width:100%;margin-bottom:38px; }
 .menu-grupo-label{
   font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:rgba(255,255,255,.45);margin-bottom:14px;padding-left:4px;
+  color:rgba(255,255,255,.45);margin-bottom:16px;padding-left:4px;
 }
 .menu-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:16px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:20px;
 }
 .pennant-btn{
   position:relative;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:8px;min-height:104px;
-  background:var(--brand-cream);color:var(--brand-deep);
-  clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%);
+  gap:10px;min-height:126px;
+  background:linear-gradient(165deg,#ffffff 0%,#faf5f8 100%);
+  color:var(--brand-deep);
+  clip-path:polygon(0 0,100% 0,100% 84%,50% 100%,0 84%);
   border:none;cursor:pointer;
-  padding:20px 12px 26px;
+  padding:26px 14px 36px;
   font-family:var(--font);
-  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
-  box-shadow:0 8px 20px rgba(0,0,0,.25);
+  transition:transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease;
+  box-shadow:0 14px 30px -8px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.18);
+}
+.pennant-btn::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,var(--brand-purple),#a56ec2);
 }
 .pennant-btn:hover{
-  transform:translateY(-4px);
-  background:#fff;
-  box-shadow:0 12px 28px rgba(0,0,0,.35);
+  transform:translateY(-6px) scale(1.015);
+  box-shadow:0 20px 40px -10px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.22);
 }
+.pennant-btn:active{ transform:translateY(-2px) scale(1.0); }
 .pennant-btn .pennant-label{
-  font-size:14px;font-weight:800;text-align:center;letter-spacing:-.005em;
+  font-size:15px;font-weight:800;text-align:center;letter-spacing:-.005em;
+  line-height:1.25;
 }
 .menu-todas-btn{
   margin-top:8px;width:100%;max-width:340px;
@@ -801,7 +822,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 }
 .volver-menu-btn:hover{ border-color:var(--accent);color:#c9a3e8; }
 body.modo-vista-unica .volver-menu-btn{ display:flex; }
-body.modo-vista-unica .sidebar{ display:none !important; }
+body.modo-vista-unica .sidebar-logo{ display:none !important; }
+body.modo-vista-unica .sidebar-nav{ display:none !important; }
 body.modo-vista-unica .hamburger{ display:none !important; }
 
 @media (max-width:600px){
@@ -995,6 +1017,8 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <option value="citymall">City Mall</option>
         <option value="santaana">Santa Ana TC</option>
       </select>
+      <div class="ctrl-divider"></div>
+      <button class="btn btn-ghost" id="themeToggleBtn" onclick="toggleTema()" title="Cambiar tema claro/oscuro" style="font-size:16px;padding:8px 10px;">🌙</button>
       <div class="ctrl-divider"></div>
       <div class="user-chip" id="userChip" onclick="doLogout()" title="Cerrar sesión">
           <div class="user-avatar" id="userAvatar">?</div>
@@ -1738,6 +1762,22 @@ let proyChart     = null;
 let proyChartType = 'bar';
 let cacheConsultas = {};
 
+// ── Tema claro / oscuro ───────────────────────────────
+function aplicarTema(tema){
+  document.documentElement.setAttribute('data-theme', tema);
+  localStorage.setItem('oakberry_tema', tema);
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = tema === 'dark' ? '☀️' : '🌙';
+}
+function toggleTema(){
+  const actual = document.documentElement.getAttribute('data-theme') || 'light';
+  aplicarTema(actual === 'dark' ? 'light' : 'dark');
+}
+(function(){
+  const guardado = localStorage.getItem('oakberry_tema') || 'light';
+  aplicarTema(guardado);
+})();
+
 // ── Sidebar toggle (mobile) ──────────────────────────
 function toggleSidebar(){
   const sb  = document.getElementById('sidebar');
@@ -1853,7 +1893,7 @@ async function cargarDatosDashboard() {
       const cached   = await leerCacheDesdeSheet(sheetKey);
       if(cached){ datosGlobales = cached; return; }
     }
-    showLoader(true,'Cargando datos...','Consultando Toteat...');
+    showLoader(true,'Cargando datos...','Consultando base de datos...');
     const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
     const resp = await fetch(url);
     const data = await resp.json();
@@ -1928,7 +1968,7 @@ async function cargarDatos(forzar=false) {
     }
 
     // 3. Fallback: Apps Script → Toteat (lento, solo si no hay cache)
-    showLoader(true,'Cargando datos...','Consultando Toteat...');
+    showLoader(true,'Cargando datos...','Consultando base de datos...');
     const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true${forzar?"&forzar=true":""}`;
     const resp = await fetch(url);
     const data = await resp.json();
@@ -1936,7 +1976,7 @@ async function cargarDatos(forzar=false) {
     datosGlobales = data;
     cacheConsultas[clave] = {data, ts: Date.now()};
     renderDashboard(data);
-    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+' · desde Toteat');
+    setTxt('pageSub','última actualización: '+new Date().toLocaleTimeString('es-CR')+' · desde base de datos');
   } catch(e){ alert('Error: '+e.message); }
   finally{ showLoader(false); document.getElementById('btnActualizar').disabled=false; }
 }
