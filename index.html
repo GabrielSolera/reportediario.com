@@ -2020,13 +2020,15 @@ function renderTablaTiendas(data) {
     if(isTotal) tr.classList.add('total-row');
     const df=num(row.desvForecast), cd=num(row.crecimientoDia);
     const dfa=num(row.desvForecastAcum), ca=num(row.crecimientoAcum);
+    const ventaDia  = modoVentaGlobal === 'bruto' ? (row.ventasBrutas||row.ventasNetas) : row.ventasNetas;
+    const ventaAcum = modoVentaGlobal === 'bruto' ? (row.ventasBrutasAcum||row.ventasAcumuladas) : row.ventasAcumuladas;
     tr.innerHTML = `
       <td style="padding-left:16px">${row.tienda}</td>
-      <td style="color:var(--accent)">${crc(row.ventasNetas)}</td>
+      <td style="color:var(--accent)">${crc(ventaDia)}</td>
       <td>${crc(row.forecast)}</td>
       <td style="color:${colorPct(df)}">${pct(df)}</td>
       <td style="color:${colorPct(cd)}">${pct(cd)}</td>
-      <td style="border-left:1px solid var(--border);color:var(--lime)">${crc(row.ventasAcumuladas)}</td>
+      <td style="border-left:1px solid var(--border);color:var(--lime)">${crc(ventaAcum)}</td>
       <td>${crc(row.forecastAcumulado)}</td>
       <td style="color:${colorPct(dfa)}">${pct(dfa)}</td>
       <td style="padding-right:16px;color:${colorPct(ca)}">${pct(ca)}</td>`;
@@ -2037,7 +2039,7 @@ function renderTablaTiendas(data) {
 function renderChartTiendas(data) {
   const tiendas = data.filter(r=>r.tienda!=='TODAS');
   const labels  = tiendas.map(r=>r.tienda);
-  const values  = tiendas.map(r=>num(r.ventasNetas));
+  const values  = tiendas.map(r=> modoVentaGlobal === 'bruto' ? num(r.ventasBrutas||r.ventasNetas) : num(r.ventasNetas));
   const colors  = [STORES.guachipelin.color, STORES.escazu.color, STORES.citymall.color, STORES.santaana.color];
 
   if(charts.tiendas) charts.tiendas.destroy();
@@ -5013,6 +5015,8 @@ function setModoVenta(modo) {
   const seccion = document.querySelector('.section.active')?.id;
   if (seccion === 'section-dashboard' && datosGlobales) renderDashboard(datosGlobales);
   else if (seccion === 'section-reporteDiario' && datosReporte) generarTablaReporte(datosReporte);
+  else if (seccion === 'section-seguimiento' && segData) renderSeguimiento(segData);
+  else if (seccion === 'section-proyeccion' && proyData) renderProyeccion(proyData);
   else if (seccion === 'section-analisis' && anlDataCurr && anlDataRef) {
     // Re-renderizar análisis con los datos ya cargados
     const fi = document.getElementById('fechaFin').value;
