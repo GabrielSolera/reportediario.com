@@ -1571,17 +1571,15 @@ Chart.defaults.plugins.tooltip.borderWidth     = 1;
 Chart.defaults.plugins.legend.labels.color     = '#7070a0';
 
 
-const TOTEAT = {
-  baseUrl: 'https://toteatglobal.appspot.com/mw/or/1.0/sales',
-  xir: '4552687124873216',
-  xiu: '1001',
-};
-
+// NOTA: los tokens de API de Toteat (xil, xapitoken) que antes estaban acá
+// se eliminaron — el frontend no necesita ni debe tener credenciales, las
+// llamadas a Toteat las hace el backend de Apps Script. Se mantienen solo
+// nombre y color, que sí usa el resto de este archivo para las gráficas.
 const STORES = {
-  guachipelin: { name:'Guachipelín',          color:'#a855f7', xil:'1', xapitoken:'jgV0tnmFdH1b40NYWaGqnwG17SacdaXx' },
-  escazu:      { name:'Avenida Escazú',        color:'#5af5c8', xil:'2', xapitoken:'tnIkXMr57drgN6adRG8Eoop8C581H1N7' },
-  citymall:    { name:'City Mall',             color:'#f5c85a', xil:'3', xapitoken:'mIm5qS0LiYiBscvDmc6xjfPQE74cICmp' },
-  santaana:    { name:'Santa Ana TC',          color:'#f55a5a', xil:'5', xapitoken:'JzBXo1aqdoNKFwab1Xgsiqprwz4Hnuei' },
+  guachipelin: { name:'Guachipelín',    color:'#a855f7' },
+  escazu:      { name:'Avenida Escazú', color:'#5af5c8' },
+  citymall:    { name:'City Mall',      color:'#f5c85a' },
+  santaana:    { name:'Santa Ana TC',   color:'#f55a5a' },
 };
 
 const CR_FERIADOS = {
