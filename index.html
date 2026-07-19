@@ -1883,7 +1883,7 @@ async function cargarDatosDashboard() {
       if(cached){ datosGlobales = cached; return; }
     }
     showLoader(true,'Cargando datos...','Consultando base de datos...');
-    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=false`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(data && !data.error && Array.isArray(data)) datosGlobales = data;
@@ -1958,7 +1958,7 @@ async function cargarDatos(forzar=false) {
 
     // 3. Fallback: Apps Script → Toteat (lento, solo si no hay cache)
     showLoader(true,'Cargando datos...','Consultando base de datos...');
-    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true${forzar?"&forzar=true":""}`;
+    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=false${forzar?"&forzar=true":""}`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(!data||data.error||!data.length){ alert('Sin datos: '+(data?.message||'—')); return; }
@@ -2915,7 +2915,7 @@ async function fetchRefData(fechaRef){
   const tienda = document.getElementById('tiendaSelect').value;
   const clave  = `anl-${day}-${month}-${year}-${tienda}`;
   if(cacheConsultas[clave]) return cacheConsultas[clave].data;
-  const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=true`;
+  const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=false`;
   const resp = await fetch(url);
   const data = await resp.json();
   if(!data||!data.length) return null;
@@ -3020,7 +3020,7 @@ async function fetchRefDataRapido(fechaRef, tienda){
   try {
     const ff = new Date(fechaRef+'T12:00:00');
     const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
-    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=todas&modoRapido=true`;
+    const url = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=todas&modoRapido=false`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(data && Array.isArray(data) && data.length) {
