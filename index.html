@@ -1104,15 +1104,27 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 
     <!-- ═══════════ REPORTE DIARIO ═══════════ -->
     <div class="section" id="section-reporteDiario">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
         <div>
           <div style="font-size:18px;font-weight:800;margin-bottom:4px">Reporte Diario</div>
           <div style="font-size:12px;color:var(--muted)" id="reporteSubtitle">Ventas por día, por tienda, en el rango seleccionado</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-
           <button class="btn btn-lime" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
         </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div class="tab-pills" id="reporteGranTabs">
+          <button class="tab-pill active" onclick="setReporteGranularidad('diario',this)">Diario</button>
+          <button class="tab-pill" onclick="setReporteGranularidad('semanal',this)">Semanal</button>
+          <button class="tab-pill" onclick="setReporteGranularidad('mensual',this)">Mensual</button>
+          <button class="tab-pill" onclick="setReporteGranularidad('anual',this)">Anual</button>
+        </div>
+        <button class="tab-pill" id="btnVerSSSReporte" onclick="toggleReporteSSS()" title="Muestra el valor y % vs. el mismo rango del año anterior">Ver SSS (año anterior)</button>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">Tendencia</span></div>
+        <div class="card-body"><div class="chart-wrap" style="height:220px"><canvas id="chartReporteLineal"></canvas></div></div>
       </div>
       <div class="card">
         <div class="scroll-box">
@@ -2119,8 +2131,14 @@ function setModoReporte(modo) {
   modoReporte = modo;
   const sub = document.getElementById('reporteSubtitle');
   if(sub) sub.textContent = modo === 'neto' ? 'Venta Sin Impuestos · por día, por tienda' : 'Venta Bruta (con IVA) · por día, por tienda';
-  if (datosReporte) generarTablaReporte(datosReporte);
+  if (datosReporteRaw) aplicarGranularidadReporte();
 }
+
+let datosReporteRaw = null;       // datos diarios crudos, sin agrupar, tal como vienen del servidor
+let reporteGranularidad = 'diario';
+let reporteVerSSS = false;
+let datosReporteSSSRaw = null;    // datos crudos del mismo rango, año anterior
+let chartReporteInstance = null;
 
 async function cargarReporteDiario() {
   const fi = document.getElementById('fechaInicio').value;
@@ -2134,7 +2152,12 @@ async function cargarReporteDiario() {
     const resp = await fetch(url);
     const data = await resp.json();
     if(data&&!data.error&&Array.isArray(data)&&data.length){
-      datosReporte=data; generarTablaReporte(data);
+      datosReporteRaw = data;
+      datosReporteSSSRaw = null;
+      reporteVerSSS = false;
+      const btnSSS = document.getElementById('btnVerSSSReporte');
+      if(btnSSS) btnSSS.classList.remove('active');
+      aplicarGranularidadReporte();
     } else {
       tbody.innerHTML=`<tr><td colspan="100"><div class="empty-state"><div class="empty-icon">❌</div><div class="empty-txt">${data?.message||'Error'}</div></div></td></tr>`;
     }
@@ -2143,15 +2166,148 @@ async function cargarReporteDiario() {
   }
 }
 
-function generarTablaReporte(data) {
+// Agrupa un array de días crudos {fecha, tiendas:[...]} en semanas/meses/años.
+// Con granularidad 'diario' devuelve los datos tal cual, sin tocar.
+function agruparDatosReporte(data, granularidad) {
+  if (!data) return [];
+  if (granularidad === 'diario') return data;
+
+  const grupos = {};
+  const orden = [];
+
+  data.forEach(dia => {
+    const f = new Date(dia.fecha + 'T12:00:00');
+    let clave, etiqueta;
+
+    if (granularidad === 'semanal') {
+      const tmp = new Date(f);
+      tmp.setDate(tmp.getDate() + 4 - (tmp.getDay()||7));
+      const inicioAnio = new Date(tmp.getFullYear(), 0, 1);
+      const semanaIso = Math.ceil(((tmp - inicioAnio) / 86400000 + 1) / 7);
+      clave = `${tmp.getFullYear()}-W${String(semanaIso).padStart(2,'0')}`;
+      etiqueta = `Sem ${semanaIso}`;
+    } else if (granularidad === 'mensual') {
+      clave = `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}`;
+      etiqueta = f.toLocaleString('es-ES',{month:'short',year:'2-digit'});
+    } else { // anual
+      clave = `${f.getFullYear()}`;
+      etiqueta = `${f.getFullYear()}`;
+    }
+
+    if (!grupos[clave]) { grupos[clave] = { fecha: clave, etiqueta, tiendasMap: {} }; orden.push(clave); }
+
+    (dia.tiendas||[]).forEach(t => {
+      if (!grupos[clave].tiendasMap[t.tienda]) {
+        grupos[clave].tiendasMap[t.tienda] = { tienda: t.tienda, ventasNetas: 0, ventasBrutas: 0, transacciones: 0 };
+      }
+      grupos[clave].tiendasMap[t.tienda].ventasNetas   += (t.ventasNetas||0);
+      grupos[clave].tiendasMap[t.tienda].ventasBrutas  += (t.ventasBrutas||0);
+      grupos[clave].tiendasMap[t.tienda].transacciones += (t.transacciones||0);
+    });
+  });
+
+  return orden.map(clave => ({
+    fecha: grupos[clave].fecha,
+    etiqueta: grupos[clave].etiqueta,
+    tiendas: Object.values(grupos[clave].tiendasMap)
+  }));
+}
+
+function setReporteGranularidad(g, btn) {
+  reporteGranularidad = g;
+  document.querySelectorAll('#reporteGranTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  aplicarGranularidadReporte();
+}
+
+function aplicarGranularidadReporte() {
+  if (!datosReporteRaw) return;
+  datosReporte = agruparDatosReporte(datosReporteRaw, reporteGranularidad);
+  const datosSSS = reporteVerSSS && datosReporteSSSRaw ? agruparDatosReporte(datosReporteSSSRaw, reporteGranularidad) : null;
+  generarTablaReporte(datosReporte, datosSSS);
+  renderChartReporte(datosReporte);
+}
+
+function shiftYear(iso, delta) {
+  const [y,m,d] = iso.split('-').map(Number);
+  return `${y+delta}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+async function toggleReporteSSS() {
+  reporteVerSSS = !reporteVerSSS;
+  const btn = document.getElementById('btnVerSSSReporte');
+  if (btn) btn.classList.toggle('active', reporteVerSSS);
+  if (!reporteVerSSS) { aplicarGranularidadReporte(); return; }
+
+  const fi = document.getElementById('fechaInicio').value;
+  const ff = document.getElementById('fechaFin').value;
+  const ts = document.getElementById('tiendaSelect').value;
+  if (!fi || !ff) return;
+
+  if (!datosReporteSSSRaw) {
+    const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${shiftYear(fi,-1)}&fechaFin=${shiftYear(ff,-1)}&tienda=${ts}`;
+    try {
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (data && !data.error && Array.isArray(data)) datosReporteSSSRaw = data;
+    } catch(e) { console.error('SSS reporte:', e); }
+  }
+  aplicarGranularidadReporte();
+}
+
+function renderChartReporte(data) {
+  const canvas = document.getElementById('chartReporteLineal');
+  if (!canvas || !window.Chart) return;
+  const labels = data.map(d => d.etiqueta || (d.fecha||'').slice(5));
+  const totales = data.map(d => (d.tiendas||[]).reduce((s,t)=>{
+    const _modo = modoVentaGlobal||modoReporte;
+    return s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0));
+  }, 0));
+
+  if (chartReporteInstance) chartReporteInstance.destroy();
+  chartReporteInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Ventas totales',
+        data: totales,
+        borderColor: '#7B4FE0',
+        backgroundColor: 'rgba(123,79,224,.15)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+        pointBackgroundColor: '#7B4FE0'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => crc(ctx.parsed.y) } } },
+      scales: {
+        y: { ticks: { callback: v => crc(v) } },
+        x: { ticks: { maxRotation: 0 } }
+      }
+    }
+  });
+}
+
+function generarTablaReporte(data, datosSSS) {
   const tiendasSet = new Set();
   data.forEach(dia=>{ if(dia.tiendas&&Array.isArray(dia.tiendas)) dia.tiendas.forEach(t=>{ if(t.tienda) tiendasSet.add(t.tienda); }); });
   const tiendas = [...tiendasSet].sort();
   const thead = document.getElementById('headerReporte');
   thead.innerHTML = `<th style="padding:12px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;left:0;background:var(--surface2);z-index:5">Local</th>`;
   data.forEach(dia=>{
-    const f=new Date(dia.fecha+'T12:00:00');
-    thead.innerHTML+=`<th style="padding:12px 10px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);border-left:1px solid var(--border);min-width:90px;white-space:nowrap">${f.toLocaleString('es-ES',{month:'short'}).toUpperCase()}<br>${String(f.getDate()).padStart(2,'0')}</th>`;
+    let etiquetaHtml;
+    if (dia.etiqueta) {
+      etiquetaHtml = dia.etiqueta.toUpperCase();
+    } else {
+      const f=new Date(dia.fecha+'T12:00:00');
+      etiquetaHtml = `${f.toLocaleString('es-ES',{month:'short'}).toUpperCase()}<br>${String(f.getDate()).padStart(2,'0')}`;
+    }
+    thead.innerHTML+=`<th style="padding:12px 10px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);border-left:1px solid var(--border);min-width:90px;white-space:nowrap">${etiquetaHtml}</th>`;
   });
   const tbody = document.getElementById('bodyReporte');
   tbody.innerHTML='';
@@ -2180,14 +2336,54 @@ function generarTablaReporte(data) {
   const td0=document.createElement('td');
   td0.style.cssText='padding:10px 14px;font-weight:800;font-size:13px;position:sticky;left:0;z-index:4;border-right:1px solid var(--border);background:rgba(168,85,247,.12);color:var(--accent)';
   td0.textContent='TOTAL'; trTot.appendChild(td0);
+  const totalesPeriodo = [];
   data.forEach(dia=>{
     const td=document.createElement('td');
     td.style.cssText='padding:10px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:700;border-left:1px solid rgba(42,42,58,.4);color:var(--accent)';
     const tot=totPorDia[dia.fecha]||0;
+    totalesPeriodo.push(tot);
     td.textContent=tot>0?crc(tot):'—';
     trTot.appendChild(td);
   });
   tbody.appendChild(trTot);
+
+  // ── Filas de comparativo SSS (año anterior), si están activas ──
+  if (datosSSS && datosSSS.length) {
+    const totAAPorIndice = data.map((_, i) => {
+      const diaAA = datosSSS[i];
+      if (!diaAA || !diaAA.tiendas) return 0;
+      const _modo = modoVentaGlobal||modoReporte;
+      return diaAA.tiendas.reduce((s,t)=> s + (_modo==='bruto'?(t.ventasBrutas||t.ventasNetas||0):(t.ventasNetas||0)), 0);
+    });
+
+    const trAA = document.createElement('tr');
+    trAA.style.cssText = 'background:var(--surface2);';
+    const tdAA0 = document.createElement('td');
+    tdAA0.style.cssText = 'padding:10px 14px;font-weight:700;font-size:12px;position:sticky;left:0;z-index:4;border-right:1px solid var(--border);background:var(--surface2);color:var(--muted)';
+    tdAA0.textContent = 'Año Anterior'; trAA.appendChild(tdAA0);
+    totAAPorIndice.forEach(v=>{
+      const td=document.createElement('td');
+      td.style.cssText='padding:10px;text-align:right;font-family:var(--mono);font-size:12px;border-left:1px solid rgba(42,42,58,.4);color:var(--muted)';
+      td.textContent = v>0?crc(v):'—';
+      trAA.appendChild(td);
+    });
+    tbody.appendChild(trAA);
+
+    const trSSS = document.createElement('tr');
+    trSSS.style.cssText = 'background:var(--surface2);font-weight:700;';
+    const tdSSS0 = document.createElement('td');
+    tdSSS0.style.cssText = 'padding:10px 14px;font-weight:800;font-size:12px;position:sticky;left:0;z-index:4;border-right:1px solid var(--border);background:var(--surface2);color:var(--teal)';
+    tdSSS0.textContent = 'SSS %'; trSSS.appendChild(tdSSS0);
+    totalesPeriodo.forEach((tot,i)=>{
+      const aa = totAAPorIndice[i];
+      const td=document.createElement('td');
+      const pctVal = aa>0 ? ((tot-aa)/aa*100) : null;
+      td.style.cssText = 'padding:10px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:700;border-left:1px solid rgba(42,42,58,.4);color:' + (pctVal===null?'var(--muted2)':(pctVal>=0?'var(--teal)':'var(--red)'));
+      td.textContent = pctVal===null?'—':(pctVal>=0?'+':'')+pctVal.toFixed(1)+'%';
+      trSSS.appendChild(td);
+    });
+    tbody.appendChild(trSSS);
+  }
 }
 
 function exportarReporteDiario() {
@@ -2196,7 +2392,7 @@ function exportarReporteDiario() {
   const tiendasSet = new Set();
   datosReporte.forEach(d=>{ if(d.tiendas) d.tiendas.forEach(t=>{ if(t.tienda) tiendasSet.add(t.tienda); }); });
   const tiendas=[...tiendasSet].sort();
-  const fechas=datosReporte.map(d=>d.fecha);
+  const fechas=datosReporte.map(d=>d.etiqueta||d.fecha);
   const headers=['Local',...fechas];
   const rows=[headers];
   const totPorDia={};
@@ -3617,7 +3813,7 @@ function setMoneda(moneda) {
   document.getElementById('monedaUSDBtn').classList.toggle('active', moneda==='USD');
   const seccion = document.querySelector('.section.active')?.id;
   if(seccion==='section-dashboard' && datosGlobales) renderDashboard(datosGlobales);
-  else if(seccion==='section-reporteDiario' && datosReporte) generarTablaReporte(datosReporte);
+  else if(seccion==='section-reporteDiario' && datosReporteRaw) aplicarGranularidadReporte();
   else if(seccion==='section-proyeccion' && proyData) {
     renderProyeccion(proyData);
   }
@@ -5029,7 +5225,7 @@ function setModoVenta(modo) {
   // Re-renderizar la sección activa si hay datos cargados
   const seccion = document.querySelector('.section.active')?.id;
   if (seccion === 'section-dashboard' && datosGlobales) renderDashboard(datosGlobales);
-  else if (seccion === 'section-reporteDiario' && datosReporte) generarTablaReporte(datosReporte);
+  else if (seccion === 'section-reporteDiario' && datosReporteRaw) aplicarGranularidadReporte();
   else if (seccion === 'section-seguimiento' && segData) renderSeguimiento(segData);
   else if (seccion === 'section-proyeccion' && proyData) renderProyeccion(proyData);
   else if (seccion === 'section-analisis' && anlDataCurr && anlDataRef) {
