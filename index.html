@@ -1023,6 +1023,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 
     <!-- ═══════════ DASHBOARD ═══════════ -->
     <div class="section active" id="section-dashboard">
+      <div id="fichaRangoFechas" style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:var(--mono)"></div>
       <div class="kpi-grid" id="dashKpis">
         <div class="kpi k-purple">
           <div class="kpi-label">Ventas del Día</div>
@@ -1078,6 +1079,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <div class="card" style="grid-column:span 2">
           <div class="card-header">
             <span class="card-title">Detalle por Tienda</span>
+            <span id="fichaRangoAcum" style="font-size:10px;color:var(--muted);font-family:var(--mono);font-weight:400"></span>
           </div>
           <div class="card-body" style="padding:0">
             <div class="scroll-box">
@@ -1870,6 +1872,7 @@ function initDates() {
 async function cargarDatosDashboard() {
   if(datosGlobales) return;
   const fechaFinInput = document.getElementById('fechaFin').value;
+  const fechaInicioInput = document.getElementById('fechaInicio').value;
   if(!fechaFinInput) return;
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
@@ -1878,12 +1881,12 @@ async function cargarDatosDashboard() {
   try {
     // Intentar cache de Sheets primero
     if(tienda === 'todas') {
-      const sheetKey = `${day}_${month}_${year}_todas`;
+      const sheetKey = `${day}_${month}_${year}_${fechaInicioInput||'mes'}_todas`;
       const cached   = await leerCacheDesdeSheet(sheetKey);
       if(cached){ datosGlobales = cached; return; }
     }
     showLoader(true,'Cargando datos...','Consultando base de datos...');
-    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=false`;
+    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=false&fechaInicioAcum=${fechaInicioInput}`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(data && !data.error && Array.isArray(data)) datosGlobales = data;
@@ -1912,6 +1915,7 @@ async function leerCacheDesdeSheet(cacheKey) {
 async function cargarDatos(forzar=false) {
   if (!getSession()) { doLogout(); return; }
   const fechaFinInput = document.getElementById('fechaFin').value;
+  const fechaInicioInput = document.getElementById('fechaInicio').value;
   if(!fechaFinInput){ alert('Seleccioná la fecha'); return; }
 
   if(forzar) {
@@ -1929,7 +1933,7 @@ async function cargarDatos(forzar=false) {
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
   const tienda = document.getElementById('tiendaSelect').value;
-  const clave  = `${day}-${month}-${year}-${tienda}`;
+  const clave  = `${day}-${month}-${year}-${tienda}-${fechaInicioInput}`;
   const ahora  = Date.now();
 
   // 1. Caché local del navegador (5 min)
@@ -1945,7 +1949,7 @@ async function cargarDatos(forzar=false) {
   try {
     // 2. Caché directo en Google Sheets (sin Apps Script — <1 segundo)
     if(!forzar && tienda === 'todas') {
-      const sheetKey  = `${day}_${month}_${year}_todas`;
+      const sheetKey  = `${day}_${month}_${year}_${fechaInicioInput||'mes'}_todas`;
       const cached    = await leerCacheDesdeSheet(sheetKey);
       if(cached) {
         datosGlobales = cached;
@@ -1958,7 +1962,7 @@ async function cargarDatos(forzar=false) {
 
     // 3. Fallback: Apps Script → Toteat (lento, solo si no hay cache)
     showLoader(true,'Cargando datos...','Consultando base de datos...');
-    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=false${forzar?"&forzar=true":""}`;
+    const url  = `${APPS_SCRIPT_URL}?day=${day}&month=${month}&year=${year}&tienda=${tienda}&modoRapido=false&fechaInicioAcum=${fechaInicioInput}${forzar?"&forzar=true":""}`;
     const resp = await fetch(url);
     const data = await resp.json();
     if(!data||data.error||!data.length){ alert('Sin datos: '+(data?.message||'—')); return; }
@@ -1976,6 +1980,17 @@ async function cargarDatos(forzar=false) {
 function renderDashboard(data) {
   const total = data.find(r=>r.tienda==='TODAS')||data[0];
   if(!total) return;
+
+  // Fichitas mostrando el rango de fechas real que se está usando
+  const fiEl = document.getElementById('fechaInicio');
+  const ffEl = document.getElementById('fechaFin');
+  const formatFicha = (iso) => { if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
+  if (ffEl && ffEl.value) {
+    const elRango = document.getElementById('fichaRangoFechas');
+    if (elRango) elRango.textContent = `Ventas del día: ${formatFicha(ffEl.value)}`;
+    const elAcum = document.getElementById('fichaRangoAcum');
+    if (elAcum && fiEl) elAcum.textContent = `Acumulado: ${formatFicha(fiEl.value)} → ${formatFicha(ffEl.value)}`;
+  }
 
   // KPIs
   const ventaKpi = modoVentaGlobal === 'bruto' ? (total.ventasBrutas||total.ventasNetas) : total.ventasNetas;
