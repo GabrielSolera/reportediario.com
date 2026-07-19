@@ -1120,12 +1120,22 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <button class="tab-pill" onclick="setReporteGranularidad('mensual',this)">Mensual</button>
           <button class="tab-pill" onclick="setReporteGranularidad('anual',this)">Anual</button>
         </div>
-        <button class="tab-pill" id="btnVerSSSReporte" onclick="toggleReporteSSS()" title="Muestra el valor y % vs. el mismo rango del año anterior">Ver SSS (año anterior)</button>
+        <button class="tab-pill" id="btnVerSSSReporte" onclick="toggleReporteComp()">Comparar con otro período</button>
+      </div>
+      <div id="reporteCompPanel" style="display:none;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--surface2);border-radius:10px">
+        <div><div class="ctrl-label" style="margin-bottom:4px">Desde</div><input type="date" class="ctrl-input" id="reporteCompDesde"></div>
+        <div><div class="ctrl-label" style="margin-bottom:4px">Hasta</div><input type="date" class="ctrl-input" id="reporteCompHasta"></div>
+        <button class="btn btn-lime" onclick="cargarReporteComparacion()">Comparar</button>
+        <span style="font-size:11px;color:var(--muted)">La segunda línea se dibuja alineada por posición del día (día 1 vs día 1, día 2 vs día 2, etc.)</span>
       </div>
       <div class="card" style="margin-bottom:16px">
         <div class="card-header"><span class="card-title">Tendencia</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:220px"><canvas id="chartReporteLineal"></canvas></div></div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:220px"><canvas id="chartReporteLineal"></canvas></div>
+          <div id="reporteInsights" style="margin-top:12px"></div>
+        </div>
       </div>
+
       <div class="card">
         <div class="scroll-box">
           <div class="scroll-box" style="-webkit-overflow-scrolling:touch"><table id="tablaReporteDiario" style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
@@ -2193,9 +2203,25 @@ function setReporteGranularidad(g, btn) {
 function aplicarGranularidadReporte() {
   if (!datosReporteRaw) return;
   datosReporte = agruparDatosReporte(datosReporteRaw, reporteGranularidad);
-  const datosSSS = reporteVerSSS && datosReporteSSSRaw ? agruparDatosReporte(datosReporteSSSRaw, reporteGranularidad) : null;
-  generarTablaReporte(datosReporte, datosSSS);
-  renderChartReporte(datosReporte);
+  const datosComp = reporteVerSSS && datosReporteSSSRaw ? agruparDatosReporte(datosReporteSSSRaw, reporteGranularidad) : null;
+  generarTablaReporte(datosReporte, datosComp);
+  renderChartReporte(datosReporte, datosComp);
+}
+
+function toggleReporteComp() {
+  const panel = document.getElementById('reporteCompPanel');
+  const abierto = panel.style.display !== 'none';
+  panel.style.display = abierto ? 'none' : 'flex';
+  if (!abierto) {
+    const fiEl = document.getElementById('reporteCompDesde');
+    const ffEl = document.getElementById('reporteCompHasta');
+    if (fiEl && !fiEl.value) {
+      const fi = document.getElementById('fechaInicio').value;
+      const ff = document.getElementById('fechaFin').value;
+      if (fi) fiEl.value = shiftMonth(fi, -1);
+      if (ff) ffEl.value = shiftMonth(ff, -1);
+    }
+  }
 }
 
 function shiftYear(iso, delta) {
@@ -2203,65 +2229,117 @@ function shiftYear(iso, delta) {
   return `${y+delta}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 
-async function toggleReporteSSS() {
-  reporteVerSSS = !reporteVerSSS;
-  const btn = document.getElementById('btnVerSSSReporte');
-  if (btn) btn.classList.toggle('active', reporteVerSSS);
-  if (!reporteVerSSS) { aplicarGranularidadReporte(); return; }
-
-  const fi = document.getElementById('fechaInicio').value;
-  const ff = document.getElementById('fechaFin').value;
-  const ts = document.getElementById('tiendaSelect').value;
-  if (!fi || !ff) return;
-
-  if (!datosReporteSSSRaw) {
-    const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${shiftYear(fi,-1)}&fechaFin=${shiftYear(ff,-1)}&tienda=${ts}`;
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
-      if (data && !data.error && Array.isArray(data)) datosReporteSSSRaw = data;
-    } catch(e) { console.error('SSS reporte:', e); }
-  }
-  aplicarGranularidadReporte();
+function shiftMonth(iso, delta) {
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y, m-1+delta, d);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
-function renderChartReporte(data) {
+async function cargarReporteComparacion() {
+  const fi = document.getElementById('reporteCompDesde').value;
+  const ff = document.getElementById('reporteCompHasta').value;
+  const ts = document.getElementById('tiendaSelect').value;
+  if (!fi || !ff) { alert('Elegí ambas fechas'); return; }
+  const btn = document.getElementById('btnVerSSSReporte');
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data && !data.error && Array.isArray(data)) {
+      datosReporteSSSRaw = data;
+      reporteVerSSS = true;
+      if (btn) btn.classList.add('active');
+      aplicarGranularidadReporte();
+    }
+  } catch(e) { console.error('Comparación reporte:', e); }
+}
+
+function renderChartReporte(data, datosComp) {
   const canvas = document.getElementById('chartReporteLineal');
   if (!canvas || !window.Chart) return;
   const labels = data.map(d => d.etiqueta || (d.fecha||'').slice(5));
-  const totales = data.map(d => (d.tiendas||[]).reduce((s,t)=>{
-    const _modo = modoVentaGlobal||modoReporte;
-    return s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0));
-  }, 0));
+  const _modo = modoVentaGlobal||modoReporte;
+  const totales = data.map(d => (d.tiendas||[]).reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0));
+
+  const datasets = [{
+    label: 'Período actual',
+    data: totales,
+    borderColor: '#7B4FE0',
+    backgroundColor: 'rgba(123,79,224,.15)',
+    fill: true,
+    tension: 0.3,
+    pointRadius: 3,
+    pointBackgroundColor: '#7B4FE0'
+  }];
+
+  let totalesComp = null;
+  if (datosComp && datosComp.length) {
+    totalesComp = data.map((_, i) => {
+      const dc = datosComp[i];
+      if (!dc || !dc.tiendas) return null;
+      return dc.tiendas.reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0);
+    });
+    datasets.push({
+      label: 'Período comparado',
+      data: totalesComp,
+      borderColor: '#E5427A',
+      backgroundColor: 'transparent',
+      borderDash: [5,4],
+      tension: 0.3,
+      pointRadius: 2,
+      pointBackgroundColor: '#E5427A',
+      spanGaps: true
+    });
+  }
 
   if (chartReporteInstance) chartReporteInstance.destroy();
   chartReporteInstance = new Chart(canvas.getContext('2d'), {
     type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Ventas totales',
-        data: totales,
-        borderColor: '#7B4FE0',
-        backgroundColor: 'rgba(123,79,224,.15)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 3,
-        pointBackgroundColor: '#7B4FE0'
-      }]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false },
-        tooltip: { callbacks: { label: (ctx) => crc(ctx.parsed.y) } } },
+      plugins: { legend: { display: !!totalesComp, labels:{color:'#9494C0',boxWidth:12,font:{size:10}} },
+        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label+': '+crc(ctx.parsed.y) } } },
       scales: {
         y: { ticks: { callback: v => crc(v) } },
         x: { ticks: { maxRotation: 0 } }
       }
     }
   });
+
+  renderReporteInsights(labels, totales, totalesComp);
 }
+
+function renderReporteInsights(labels, totales, totalesComp) {
+  const cont = document.getElementById('reporteInsights');
+  if (!cont) return;
+  if (!totalesComp) { cont.innerHTML = ''; return; }
+
+  let peorIdx = -1, peorDelta = Infinity, mejorIdx = -1, mejorDelta = -Infinity;
+  for (let i=0; i<totales.length; i++) {
+    const comp = totalesComp[i];
+    if (comp===null || comp===undefined || comp<=0) continue;
+    const delta = (totales[i]-comp)/comp*100;
+    if (delta < peorDelta) { peorDelta = delta; peorIdx = i; }
+    if (delta > mejorDelta) { mejorDelta = delta; mejorIdx = i; }
+  }
+
+  let html = '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px">';
+  if (peorIdx >= 0) {
+    html += `<div style="background:rgba(229,66,122,.12);border-radius:8px;padding:8px 12px">
+      <span style="color:var(--red);font-weight:700">↓ Mayor caída:</span> ${labels[peorIdx]} (${peorDelta.toFixed(1)}% vs período comparado)
+    </div>`;
+  }
+  if (mejorIdx >= 0) {
+    html += `<div style="background:rgba(47,169,196,.12);border-radius:8px;padding:8px 12px">
+      <span style="color:var(--teal);font-weight:700">↑ Mayor crecimiento:</span> ${labels[mejorIdx]} (+${mejorDelta.toFixed(1)}% vs período comparado)
+    </div>`;
+  }
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
 
 function generarTablaReporte(data, datosSSS) {
   const tiendasSet = new Set();
@@ -3618,7 +3696,7 @@ async function cargarCompararFechas() {
       </tr>`;
     };
 
-    cont.innerHTML = `<table class="store-table" style="width:100%">
+    cont.innerHTML = `<table class="store-table" style="width:100%;margin-bottom:20px">
       <thead><tr>
         <th style="padding-left:16px;text-align:left">Métrica</th>
         <th>${fA}</th><th>${fB}</th><th>Δ%</th>
@@ -3628,10 +3706,43 @@ async function cargarCompararFechas() {
         ${fila('Transacciones', a.trans, b.trans, num)}
         ${fila('Ticket medio', ticketA, ticketB, crc)}
         ${fila('Bowls vendidos', bowlsA, bowlsB, num)}
-      </tbody></table>`;
+      </tbody></table>
+      ${renderComparativoBowls(pA, pB, fA, fB)}`;
   } catch(e) {
     cont.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-txt">Error: ${e.message}</div></div>`;
   }
+}
+
+// Desglose de bowls por tamaño, comparando dos fechas — une por nombre de producto
+function renderComparativoBowls(pA, pB, fA, fB) {
+  const bowlsA = (pA && pA.productos) ? pA.productos.filter(p=>p.esBowl) : [];
+  const bowlsB = (pB && pB.productos) ? pB.productos.filter(p=>p.esBowl) : [];
+
+  const nombres = new Set([...bowlsA.map(p=>p.name), ...bowlsB.map(p=>p.name)]);
+  if (nombres.size === 0) return '';
+
+  const filasBowl = [...nombres].sort().map(nombre => {
+    const pa = bowlsA.find(p=>p.name===nombre);
+    const pb = bowlsB.find(p=>p.name===nombre);
+    const qa = pa ? num(pa.total) : 0;
+    const qb = pb ? num(pb.total) : 0;
+    const delta = qb>0 ? ((qa-qb)/qb*100) : null;
+    return `<tr>
+      <td style="padding-left:16px">${nombre}</td>
+      <td style="text-align:right">${qa}</td>
+      <td style="text-align:right">${qb}</td>
+      <td style="text-align:right;color:${delta===null?'var(--muted)':(delta>=0?'var(--teal)':'var(--red)')}">${delta===null?'—':(delta>=0?'+':'')+delta.toFixed(1)+'%'}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Bowls por tamaño</div>
+    <table class="store-table" style="width:100%">
+      <thead><tr>
+        <th style="padding-left:16px;text-align:left">Tamaño</th>
+        <th>${fA}</th><th>${fB}</th><th>Δ%</th>
+      </tr></thead>
+      <tbody>${filasBowl}</tbody>
+    </table>`;
 }
 
 function renderMiniBarChart(id, labels, data, color){
