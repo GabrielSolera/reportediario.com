@@ -1154,17 +1154,6 @@ body.modo-vista-unica .hamburger{ display:none !important; }
             <button class="tab-pill" onclick="setAnlPeriod(-15,this)">−15 días</button>
             <button class="tab-pill" onclick="setAnlPeriod('mes',this)">Mes anterior</button>
           </div>
-          <span class="ctrl-label" style="margin-left:4px">Día</span>
-          <div class="tab-pills" id="anlDowTabs">
-            <button class="tab-pill active" onclick="setAnlDow(null,this)">Todos</button>
-            <button class="tab-pill" onclick="setAnlDow(1,this)">Lun</button>
-            <button class="tab-pill" onclick="setAnlDow(2,this)">Mar</button>
-            <button class="tab-pill" onclick="setAnlDow(3,this)">Mié</button>
-            <button class="tab-pill" onclick="setAnlDow(4,this)">Jue</button>
-            <button class="tab-pill" onclick="setAnlDow(5,this)">Vie</button>
-            <button class="tab-pill" onclick="setAnlDow(6,this)">Sáb</button>
-            <button class="tab-pill" onclick="setAnlDow(0,this)">Dom</button>
-          </div>
           <button class="btn btn-lime" onclick="cargarAnalisis()" id="btnAnalisis">↻ Analizar</button>
         </div>
       </div>
@@ -1182,110 +1171,91 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <!-- Contenido análisis (oculto hasta cargar) -->
       <div id="anlContent" style="display:none">
 
-        <!-- ① RANKING TIENDAS -->
+        <!-- ① RESUMEN DEL PERÍODO -->
         <div style="margin-bottom:20px">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">🏆 Ranking de Tiendas</div>
-          <div id="anlRanking" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"></div>
-        </div>
-
-        <!-- ② COMPARATIVO POR PERÍODO -->
-        <div class="grid-2" style="margin-bottom:20px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">🏆 Resumen del período</div>
+          <div id="anlRanking" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
           <div class="card">
             <div class="card-header">
-              <span class="card-title">Ventas por Tienda vs Período</span>
+              <span class="card-title">Ventas por Tienda</span>
               <span class="card-tag" id="anlPeriodTag">—</span>
             </div>
             <div class="card-body"><div class="chart-wrap-tall"><canvas id="anlChartComp"></canvas></div></div>
           </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Mes Actual vs Mes Anterior</span>
-              <span class="card-tag" id="anlTrendTag">por tienda</span>
-            </div>
-            <div class="card-body"><div class="chart-wrap-tall"><canvas id="anlChartTrend"></canvas></div></div>
+        </div>
+
+        <!-- ② DÍA DE LA SEMANA (nuevo) -->
+        <div class="card" style="margin-bottom:20px;border:1px solid rgba(47,169,196,.3)">
+          <div class="card-header">
+            <span class="card-title" style="color:var(--teal)">📅 Día de la Semana</span>
+            <button class="tab-pill" id="btnFinDeSemana" onclick="toggleFinDeSemana()">Ver fin de semana</button>
+          </div>
+          <div class="card-body">
+            <div id="diaSemanaStats" style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap"></div>
+            <div class="chart-wrap" style="height:180px"><canvas id="chartDiaSemana"></canvas></div>
           </div>
         </div>
 
-        <!-- ③ CANALES DE VENTA -->
+        <!-- ③ COMPARAR DOS FECHAS (nuevo) -->
+        <div class="card" style="margin-bottom:20px;border:1px solid rgba(229,66,122,.3)">
+          <div class="card-header">
+            <span class="card-title" style="color:var(--red)">🔀 Comparar dos Fechas</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:12px;align-items:end;margin-bottom:16px;flex-wrap:wrap">
+              <div>
+                <div class="ctrl-label" style="margin-bottom:4px">Fecha A</div>
+                <input type="date" class="ctrl-input" id="compFechaA">
+              </div>
+              <div>
+                <div class="ctrl-label" style="margin-bottom:4px">Fecha B</div>
+                <input type="date" class="ctrl-input" id="compFechaB">
+              </div>
+              <button class="btn btn-lime" onclick="cargarCompararFechas()">Comparar</button>
+            </div>
+            <div id="compFechasResultado">
+              <div class="empty-state" style="padding:24px"><div class="empty-txt">Elegí dos fechas y presioná Comparar</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ④ CANALES DE VENTA -->
         <div class="card" style="margin-bottom:20px">
           <div class="card-header">
-            <span class="card-title">Canales de Venta — Peso en la Venta Total</span>
-            <span class="card-tag" id="anlCanalesTag">Acumulado del mes</span>
+            <span class="card-title">Canales de Venta</span>
+            <span class="card-tag" id="anlCanalesTag">Acumulado del período</span>
           </div>
           <div class="card-body" style="padding:0">
             <div id="anlCanalesGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)"></div>
-            <div style="display:grid;grid-template-columns:1fr 360px;gap:0">
-              <div style="padding:18px;border-right:1px solid var(--border)">
-                <div class="chart-wrap" style="height:220px"><canvas id="anlChartCanales"></canvas></div>
+            <div style="display:grid;grid-template-columns:1fr 280px;gap:0">
+              <div style="padding:14px;border-right:1px solid var(--border)">
+                <div class="chart-wrap" style="height:160px"><canvas id="anlChartCanales"></canvas></div>
               </div>
-              <div style="padding:18px">
+              <div style="padding:14px">
                 <div id="anlCanalesDetalle"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ④ MÉTRICAS PROFUNDAS -->
-        <div class="grid-3" style="margin-bottom:20px">
-          <!-- Descuentos -->
-          <div class="card">
-            <div class="card-header"><span class="card-title">💰 Descuentos</span></div>
-            <div class="card-body">
-              <div id="anlDescGrid"></div>
-              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartDesc"></canvas></div></div>
-            </div>
-          </div>
-          <!-- Transacciones -->
-          <div class="card">
-            <div class="card-header"><span class="card-title">🔢 Transacciones</span></div>
-            <div class="card-body">
-              <div id="anlTransGrid"></div>
-              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartTrans"></canvas></div></div>
-            </div>
-          </div>
-          <!-- Ticket Medio -->
-          <div class="card">
-            <div class="card-header"><span class="card-title">🎫 Ticket Medio</span></div>
-            <div class="card-body">
-              <div id="anlTicketGrid"></div>
-              <div style="margin-top:14px"><div class="chart-wrap" style="height:130px"><canvas id="anlChartTicket"></canvas></div></div>
-            </div>
+        <!-- ⑤ RENTABILIDAD -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><span class="card-title">💰 Rentabilidad</span></div>
+          <div class="card-body" style="padding:0">
+            <div id="anlRentabilidadGrid"></div>
           </div>
         </div>
 
-        <!-- ⑤ COSTO Y MARGEN -->
-        <div class="grid-2" style="margin-bottom:20px">
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">💲 Costo Neto de Productos</span>
-              <span class="card-tag" id="anlCostoTag">del día</span>
-            </div>
-            <div class="card-body">
-              <div id="anlCostoGrid"></div>
-              <div style="margin-top:14px"><div class="chart-wrap" style="height:160px"><canvas id="anlChartCosto"></canvas></div></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">📈 Top Productos del Día</span>
-              <span class="card-tag" id="anlTopProdTag">por unidades</span>
-            </div>
-            <div class="card-body" style="padding:0">
-              <div id="anlTopProdList"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ⑥ CRECIMIENTO POR CANAL -->
+        <!-- ⑥ PRODUCTOS -->
         <div class="card" style="margin-bottom:20px">
           <div class="card-header">
-            <span class="card-title">📡 Crecimiento por Canal</span>
-            <span class="card-tag" id="anlCanalCrecTag">vs período anterior</span>
+            <span class="card-title">🫐 Productos</span>
+            <span class="card-tag" id="anlProdTag">del período</span>
           </div>
           <div class="card-body" style="padding:0">
-            <div id="anlCanalCrecGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)"></div>
-            <div class="card-body">
-              <div class="chart-wrap" style="height:200px"><canvas id="anlChartCanalCrec"></canvas></div>
+            <div style="display:grid;grid-template-columns:1fr 220px">
+              <div id="anlTopProdList" style="border-right:1px solid var(--border)"></div>
+              <div id="anlBowlsGrid" style="padding:14px"></div>
             </div>
           </div>
         </div>
@@ -3302,19 +3272,25 @@ function renderAnalisis(curr, ref, trendData, fechaCurr, fechaRef){
   const totRef  = ref ? (ref.find(r=>r.tienda==='TODAS')||ref[0]) : null;
   const tiendas = curr.filter(r=>r.tienda!=='TODAS');
 
-  // Period tag
+  // Period tag — dinámico según lo que esté seleccionado en "Comparar vs"
   const pl = anlPeriodLabel();
-  setTxt('anlPeriodTag', pl);
+  setTxt('anlPeriodTag', `vs ${pl}`);
   setTxt('anlTablaTag',  pl);
   setTxt('anlCanalesTag', `Acumulado · ${pl}`);
-  setTxt('anlTrendTag', ref ? 'mes actual vs referencia' : 'sin referencia');
 
   renderRanking(tiendas, ref);
   renderCompChart(tiendas, ref);
-  renderTrendChart(trendData, fechaCurr, curr, ref);
   renderCanales(totCurr, totRef);
-  renderMetricas(totCurr, totRef, tiendas, ref);
+  renderRentabilidad(totCurr, totRef, tiendas);
   renderTablaCompleta(tiendas, ref);
+  cargarDiaSemana();
+  cargarProductosPeriodo();
+
+  // Prellenar fechas del comparativo libre con la fecha actual y la del año pasado
+  const fA = document.getElementById('compFechaA');
+  const fB = document.getElementById('compFechaB');
+  if (fA && !fA.value) fA.value = fechaCurr;
+  if (fB && !fB.value) { const d=new Date(fechaCurr+'T12:00:00'); d.setFullYear(d.getFullYear()-1); fB.value = d.toISOString().split('T')[0]; }
 }
 
 // ① RANKING — usa ventasAcumuladas (período completo, no solo el día)
@@ -3378,89 +3354,6 @@ function renderCompChart(tiendas, ref){
   });
 }
 
-// ③ TENDENCIA DEL MES
-function renderTrendChart(dailyData, fechaCurr, curr, ref){
-  if(anlCharts.trend) anlCharts.trend.destroy();
-  const ctx = document.getElementById('anlChartTrend')?.getContext('2d');
-  if(!ctx) return;
-
-  // dailyData = { actual: [{fecha, ventasNetas}], ref: [...], mesIni, refIni }
-  const hasDaily = dailyData && Array.isArray(dailyData.actual) && dailyData.actual.length>0;
-  if(!hasDaily){
-    // Fallback: barras por tienda
-    const tag=document.getElementById('anlTrendTag');
-    if(tag) tag.textContent='sin datos diarios';
-    return;
-  }
-
-  // Aplicar filtro DOW
-  function dowFilter(arr) {
-    if(anlDow === null) return arr;
-    return arr.filter(d => new Date(d.fecha+'T12:00:00').getDay() === anlDow);
-  }
-  const actData = dowFilter(dailyData.actual || []);
-  const refData = dowFilter(dailyData.ref    || []);
-
-  const DIAS_NOMBRE = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-
-  let labels, actVals, refVals;
-
-  if(anlDow !== null) {
-    // Modo DOW: eje X = fecha del día (ej: "Sáb 4", "Sáb 11", "Sáb 18", "Sáb 25")
-    labels  = actData.map(d => { const dt=new Date(d.fecha+'T12:00:00'); return DIAS_NOMBRE[dt.getDay()]+' '+dt.getDate(); });
-    actVals = actData.map(d => d.ventasNetas||0);
-    // Para ref: emparejar por índice (mismo nº de ocurrencia del DOW)
-    refVals = actData.map((_,i) => refData[i] ? refData[i].ventasNetas||0 : null);
-  } else {
-    // Modo normal: eje X = día del mes (1-31)
-    const daysInMonth = actData.length>0 ? Math.max(...actData.map(d=>new Date(d.fecha+'T12:00:00').getDate())) : 31;
-    const actByDay = {}; actData.forEach(d=>{ actByDay[new Date(d.fecha+'T12:00:00').getDate()] = d.ventasNetas||0; });
-    const refByDay = {}; refData.forEach(d=>{ refByDay[new Date(d.fecha+'T12:00:00').getDate()] = d.ventasNetas||0; });
-    const maxDay = Math.max(daysInMonth, refData.length>0 ? Math.max(...refData.map(d=>new Date(d.fecha+'T12:00:00').getDate())) : 0);
-    labels  = Array.from({length:maxDay},(_,i)=>String(i+1));
-    actVals = labels.map((_,i)=>actByDay[i+1]||null);
-    refVals = labels.map((_,i)=>refByDay[i+1]||null);
-  }
-
-  // Colores
-  const actColor = '#a855f7';
-  const refColor = '#5af5c8';
-
-  // Fecha label para leyenda
-  const actMes = dailyData.mesIni ? new Date(dailyData.mesIni+'T12:00:00').toLocaleDateString('es-CR',{month:'short',year:'numeric'}) : 'Actual';
-  const refMes = dailyData.refIni ? new Date(dailyData.refIni+'T12:00:00').toLocaleDateString('es-CR',{month:'short',year:'numeric'}) : 'Anterior';
-
-  anlCharts.trend = new Chart(ctx, {
-    type:'line',
-    data:{ labels, datasets:[
-      { label:actMes, data:actVals, borderColor:actColor, borderWidth:2.5,
-        backgroundColor:actColor+'22', fill:true,
-        pointRadius:3, pointBackgroundColor:actColor,
-        tension:.3, spanGaps:true },
-      { label:refMes, data:refVals, borderColor:refColor, borderWidth:1.5,
-        backgroundColor:'transparent',
-        pointRadius:2, pointBackgroundColor:refColor,
-        borderDash:[5,4], tension:.3, spanGaps:true }
-    ]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{ labels:{color:'#7070a0',font:{size:10},boxWidth:14} },
-        datalabels:{display:false},
-        tooltip:{ backgroundColor:'#1a1a24', bodyColor:'#7070a0',
-          callbacks:{ label:c=>' '+c.dataset.label+': '+fmtK(c.parsed.y) }}
-      },
-      scales:{
-        x:{ grid:{color:'rgba(42,42,58,.3)'}, ticks:{color:'#7070a0',font:{size:9},maxTicksLimit:15} },
-        y:{ grid:{color:'rgba(42,42,58,.4)'}, ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)} }
-      }
-    }
-  });
-
-  const tag=document.getElementById('anlTrendTag');
-  if(tag) tag.textContent=`${actMes} vs ${refMes}`;
-}
-
 // ④ CANALES
 function renderCanales(totCurr, totRef){
   const totalAcum = CANAL_CFG.reduce((s,c)=>s+num(totCurr[c.keyAcum]||0),0)||num(totCurr.ventasAcumuladas||totCurr.ventasNetas||1);
@@ -3521,195 +3414,224 @@ function renderCanales(totCurr, totRef){
   });
 }
 
-// ⑤ MÉTRICAS
-function renderMetricas(totCurr, totRef, tiendas, ref){
-  // Descuentos — usar acumulado del período
-  const descAcum  = num(totCurr.descuentosAcum||totCurr.descuentos||0);
-  const descRefA  = totRef?num(totRef.descuentosAcum||totRef.descuentos||0):0;
-  const ventaBase = num(totCurr.ventasAcumuladas||totCurr.ventasNetas||1);
-  const ventaRefBase = num(totRef?.ventasAcumuladas||totRef?.ventasNetas||1);
-  const descPctV  = ventaBase>0 ? (descAcum/ventaBase)*100 : 0;
-
-  const dg=document.getElementById('anlDescGrid');
-  dg.innerHTML=metricaRow('Desc. período', fmtK(descAcum), descRefA>0?((descAcum-descRefA)/descRefA)*100:null)+
-               metricaRow('% sobre venta', descPctV.toFixed(1)+'%', null);
-  renderMiniBarChart('anlChartDesc',tiendas.map(t=>t.tienda.replace('Oakberry ','')),
-    tiendas.map(t=>num(t.descuentosAcum||t.descuentos||0)),CANAL_CFG[0].color);
-
-  // Transacciones — acumulado del período
-  const transAcum = num(totCurr.transaccionesAcum||totCurr.transacciones||0);
-  const transRefA = totRef?num(totRef.transaccionesAcum||totRef.transacciones||0):0;
-  const tg=document.getElementById('anlTransGrid');
-  tg.innerHTML=metricaRow('Trans. período', transAcum, transRefA>0?((transAcum-transRefA)/transRefA)*100:null);
-  renderMiniBarChart('anlChartTrans',tiendas.map(t=>t.tienda.replace('Oakberry ','')),
-    tiendas.map(t=>num(t.transaccionesAcum||t.transacciones||0)),'#5af5c8');
-
-  // Ticket medio — acumulado del período
-  const ticketA = transAcum>0 ? ventaBase/transAcum : 0;
-  const ticketRefA = transRefA>0 ? ventaRefBase/transRefA : 0;
-  const tkg=document.getElementById('anlTicketGrid');
-  tkg.innerHTML=metricaRow('Ticket período', fmtK(ticketA), ticketRefA>0?((ticketA-ticketRefA)/ticketRefA)*100:null);
-  renderMiniBarChart('anlChartTicket',tiendas.map(t=>t.tienda.replace('Oakberry ','')),
-    tiendas.map(t=>{const tn=num(t.transaccionesAcum||t.transacciones||0);return tn>0?num(t.ventasAcumuladas||t.ventasNetas||0)/tn:0;}),'#f5c85a');
-
-  // ⑤ Costo y Margen
-  renderCostoMargen(tiendas, ref);
-
-  // ⑥ Top Productos
-  renderTopProductos(tiendas);
-
-  // ⑦ Crecimiento por Canal
-  renderCanalCrecimiento(tiendas, ref);
-}
-
 function metricaRow(label, val, delta){
   const dc = delta!==null ? (delta>=0?'d-pos':'d-neg') : 'd-neu';
   const ds = delta!==null ? `<span class="metrica-delta ${dc}">${delta>=0?'+':''}${typeof delta==='number'?delta.toFixed(1)+'%':delta}</span>` : '';
   return `<div class="metrica-row"><span class="metrica-label">${label}</span><span style="display:flex;align-items:center;gap:6px"><span class="metrica-val">${val}</span>${ds}</span></div>`;
 }
 
+// ⑤ RENTABILIDAD (consolidado: descuentos + costo/margen + ticket medio + transacciones)
+function renderRentabilidad(totCurr, totRef, tiendas) {
+  const grid = document.getElementById('anlRentabilidadGrid');
+  if (!grid) return;
+  const filas = [totCurr, ...tiendas.filter(t=>t.tienda!=='TODAS')];
+  let html = `<table class="store-table" style="width:100%">
+    <thead><tr>
+      <th style="padding-left:16px;text-align:left">Tienda</th>
+      <th>Descuentos</th><th>% Venta</th>
+      <th style="border-left:1px solid var(--border)">Costo Neto</th><th>Margen %</th>
+      <th style="border-left:1px solid var(--border)">Ticket Medio</th><th>Transacc.</th>
+    </tr></thead><tbody>`;
+  filas.forEach(t=>{
+    const venta = num(t.ventasAcumuladas||t.ventasNetas||0);
+    const desc  = num(t.descuentosAcum||t.descuentos||0);
+    const costo = num(t.costoAcum||t.costoDia||0);
+    const trans = num(t.transaccionesAcum||t.transacciones||0);
+    const margen = venta - costo;
+    const descPct = venta>0 ? (desc/venta*100) : 0;
+    const margenPct = venta>0 ? (margen/venta*100) : 0;
+    const ticket = trans>0 ? venta/trans : 0;
+    const isTotal = t.tienda === 'TODAS';
+    html += `<tr style="${isTotal?'background:rgba(123,79,224,.08);font-weight:700':''}">
+      <td style="padding-left:16px;${isTotal?'color:var(--accent)':''}">${isTotal?'TODAS':t.tienda.replace('Oakberry ','')}</td>
+      <td style="text-align:right">${crc(desc)}</td>
+      <td style="text-align:right">${descPct.toFixed(1)}%</td>
+      <td style="text-align:right;border-left:1px solid var(--border)">${crc(costo)}</td>
+      <td style="text-align:right">${margenPct.toFixed(1)}%</td>
+      <td style="text-align:right;border-left:1px solid var(--border)">${crc(ticket)}</td>
+      <td style="text-align:right">${num(trans)}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  grid.innerHTML = html;
+}
 
-// ── COSTO Y MARGEN ────────────────────────────────────────────────────────────
-function renderCostoMargen(tiendas, refTiendas) {
-  const total = tiendas.find(t=>t.tienda==='TODAS') || tiendas[0] || {};
-  const costo = num(total.costoAcum || total.costoDia || 0);
-  const venta = num(total.ventasAcumuladas || total.ventasNetas || 0);
-  const margen = venta - costo;
-  const costoPct = venta > 0 ? (costo/venta*100) : 0;
-  const margenPct = venta > 0 ? (margen/venta*100) : 0;
+// ② DÍA DE LA SEMANA (nuevo)
+let diaSemanaData = null;
+let verFinDeSemana = false;
 
-  // Ref comparison
-  const refTotal = refTiendas ? (refTiendas.find(t=>t.tienda==='TODAS') || refTiendas[0] || {}) : {};
-  const refCosto = num(refTotal.costoAcum || refTotal.costoDia || 0);
-  const refVenta = num(refTotal.ventasAcumuladas || refTotal.ventasNetas || 0);
-  const refCostoPct = refVenta > 0 ? (refCosto/refVenta*100) : 0;
-  const deltaCostoPct = refCostoPct > 0 ? costoPct - refCostoPct : null;
+async function cargarDiaSemana() {
+  const ff = document.getElementById('fechaFin').value;
+  const ts = document.getElementById('tiendaSelect').value;
+  if (!ff) return;
+  const fechaObj = new Date(ff+'T12:00:00');
+  const dow = fechaObj.getDay();
+  const nombresDia = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 
-  setTxt('anlCostoTag', 'del día');
-  const grid = document.getElementById('anlCostoGrid');
-  grid.innerHTML = `
-    ${metricaRow('Costo Neto', fmtK(costo), null)}
-    ${metricaRow('Margen Bruto', fmtK(margen), null)}
-    ${metricaRow('Margen %', margenPct.toFixed(1)+'%', null)}
-    ${metricaRow('Costo %', costoPct.toFixed(1)+'%', deltaCostoPct !== null ? -deltaCostoPct : null)}
-  `;
+  const inicio70 = new Date(fechaObj); inicio70.setDate(inicio70.getDate()-70);
+  const pad = n=>String(n).padStart(2,'0');
+  const fmtISO = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const fechaAnioAnt = new Date(fechaObj); fechaAnioAnt.setFullYear(fechaAnioAnt.getFullYear()-1);
+  const storeKeyAnl = ts==='todas'?'all':ts;
 
-  // Bar chart: venta vs costo por tienda
-  const labels = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>t.tienda.replace('Oakberry ',''));
-  const costos = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>num(t.costoAcum||t.costoDia||0));
-  const ventas = tiendas.filter(t=>t.tienda!=='TODAS').map(t=>num(t.ventasAcumuladas||t.ventasNetas||0));
+  try {
+    const [respHist, respAA] = await Promise.all([
+      fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKeyAnl}&fechaInicio=${fmtISO(inicio70)}&fechaFin=${ff}`),
+      fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKeyAnl}&fechaInicio=${fmtISO(fechaAnioAnt)}&fechaFin=${fmtISO(fechaAnioAnt)}`)
+    ]);
+    const hist = await respHist.json();
+    const aa = await respAA.json();
+    diaSemanaData = { hist: Array.isArray(hist)?hist:[], aa: Array.isArray(aa)?aa:[], dow, nombresDia };
+    renderDiaSemana();
+  } catch(e) { console.error('Día de la semana:', e); }
+}
 
-  if(anlCharts['anlChartCosto']) anlCharts['anlChartCosto'].destroy();
-  const ctx = document.getElementById('anlChartCosto')?.getContext('2d');
-  if(!ctx) return;
-  anlCharts['anlChartCosto'] = new Chart(ctx, {
+function toggleFinDeSemana() {
+  verFinDeSemana = !verFinDeSemana;
+  const btn = document.getElementById('btnFinDeSemana');
+  if (btn) btn.classList.toggle('active', verFinDeSemana);
+  renderDiaSemana();
+}
+
+function renderDiaSemana() {
+  if (!diaSemanaData) return;
+  const { hist, aa, dow, nombresDia } = diaSemanaData;
+
+  const diasFiltro = verFinDeSemana ? [5,6,0] : [dow];
+  const ocurrencias = hist.filter(d => diasFiltro.includes(new Date(d.fecha+'T12:00:00').getDay()));
+  ocurrencias.sort((a,b)=> a.fecha.localeCompare(b.fecha));
+  const ultimas10 = ocurrencias.slice(-10);
+
+  const ayerVal = ultimas10.length ? ultimas10[ultimas10.length-1].ventasNetas : 0;
+  const promAnteriores = ultimas10.length>1
+    ? ultimas10.slice(0,-1).reduce((s,d)=>s+(d.ventasNetas||0),0) / (ultimas10.length-1)
+    : 0;
+  const vsProm = promAnteriores>0 ? ((ayerVal-promAnteriores)/promAnteriores*100) : null;
+
+  const aaVal = aa.reduce((s,d)=>s+(d.ventasNetas||0),0);
+  const vsAA = aaVal>0 ? ((ayerVal-aaVal)/aaVal*100) : null;
+
+  const stats = document.getElementById('diaSemanaStats');
+  const labelDia = verFinDeSemana ? 'fin de semana' : nombresDia[dow];
+  if (stats) stats.innerHTML = `
+    <div>
+      <div style="font-size:9px;color:var(--muted)"><span style="background:rgba(47,169,196,.2);color:var(--teal);padding:1px 5px;border-radius:4px;font-weight:700;margin-right:4px">SSS</span>Ayer vs mismo ${labelDia}, año anterior</div>
+      <div style="font-size:20px;font-weight:700;color:${vsAA===null?'var(--muted)':(vsAA>=0?'var(--teal)':'var(--red)')}">${vsAA===null?'—':(vsAA>=0?'+':'')+vsAA.toFixed(1)+'%'}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:var(--muted)">Ayer vs promedio últimos ${Math.max(ultimas10.length-1,0)} ${labelDia}</div>
+      <div style="font-size:20px;font-weight:700;color:${vsProm===null?'var(--muted)':(vsProm>=0?'var(--teal)':'var(--red)')}">${vsProm===null?'—':(vsProm>=0?'+':'')+vsProm.toFixed(1)+'%'}</div>
+    </div>`;
+
+  if (window.chartDiaSemanaInstance) window.chartDiaSemanaInstance.destroy();
+  const canvas = document.getElementById('chartDiaSemana');
+  if (!canvas || !window.Chart) return;
+  const labels = ultimas10.map(d=>{ const f=new Date(d.fecha+'T12:00:00'); return f.getDate()+'/'+(f.getMonth()+1); });
+  const valores = ultimas10.map(d=>d.ventasNetas||0);
+  const colores = ultimas10.map((_,i)=> i===ultimas10.length-1 ? '#2FA9C4' : '#3A3C6B');
+  window.chartDiaSemanaInstance = new Chart(canvas.getContext('2d'), {
     type:'bar',
-    data:{ labels, datasets:[
-      { label:'Venta', data:ventas, backgroundColor:'#a855f766', borderColor:'#a855f7', borderWidth:1, borderRadius:4 },
-      { label:'Costo', data:costos, backgroundColor:'#f55a5a66', borderColor:'#f55a5a', borderWidth:1, borderRadius:4 }
-    ]},
+    data:{ labels, datasets:[{ data: valores, backgroundColor: colores, borderRadius:4 }] },
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ labels:{color:'#7070a0',font:{size:10}} }, datalabels:{display:false},
-        tooltip:{backgroundColor:'#1a1a24',callbacks:{label:c=>` ${c.dataset.label}: ${fmtK(c.parsed.y)}`}}},
-      scales:{ x:{grid:{display:false},ticks:{color:'#7070a0',font:{size:9}}},
-               y:{grid:{color:'rgba(42,42,58,.4)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}}}
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>crc(c.parsed.y)}} },
+      scales:{ y:{ ticks:{callback:v=>fmtK(v)} } } }
   });
 }
 
-// ── TOP PRODUCTOS DEL DÍA ─────────────────────────────────────────────────────
-function renderTopProductos(curr) {
+// ⑥ PRODUCTOS DEL PERÍODO (real, vía action=productos — separado de canales)
+async function cargarProductosPeriodo() {
+  const fi = document.getElementById('fechaInicio').value;
+  const ff = document.getElementById('fechaFin').value;
+  const ts = document.getElementById('tiendaSelect').value;
+  if (!fi || !ff) return;
   const list = document.getElementById('anlTopProdList');
-  // Top productos requiere el endpoint de productos — mostrar canal breakdown como proxy
-  // y botón para ir a la pestaña de Ventas Producto
-  const tiendas = Array.isArray(curr) ? curr.filter(t=>t.tienda!=='TODAS') : [];
-  const total   = Array.isArray(curr) ? (curr.find(t=>t.tienda==='TODAS')||curr[0]) : {};
-
-  // Mostrar breakdown por canal del día
-  const canales = [
-    {key:'uber',  label:'Uber Eats',  color:'#06C167'},
-    {key:'peya',  label:'Pedidos Ya', color:'#FF6244'},
-    {key:'didi',  label:'Didi Food',  color:'#FF6600'},
-    {key:'olo',   label:'Mercat/OLO', color:'#5af5c8'},
-    {key:'otros', label:'Mostrador',  color:'#a855f7'},
-  ];
-  const totalVenta = canales.reduce((s,c)=>s+num(total[c.key]||0),0)||1;
-
-  list.innerHTML = canales.map(c=>{
-    const v = num(total[c.key]||0);
-    const pct = totalVenta>0 ? (v/totalVenta*100) : 0;
-    if(v===0) return '';
-    return `<div style="padding:9px 18px;border-bottom:1px solid rgba(42,42,58,.4)">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px">
-          <span style="width:8px;height:8px;border-radius:50%;background:${c.color};display:inline-block"></span>
-          ${c.label}
-        </span>
-        <span style="font-family:var(--mono);font-size:12px;color:${c.color}">${fmtK(v)}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="flex:1;height:3px;background:var(--border);border-radius:2px">
-          <div style="width:${pct.toFixed(1)}%;height:100%;background:${c.color};border-radius:2px"></div>
-        </div>
-        <span style="font-size:10px;color:var(--muted)">${pct.toFixed(1)}%</span>
-      </div>
-    </div>`;
-  }).filter(Boolean).join('');
-
-  // Botón para ir a Ventas Producto
-  list.innerHTML += `<div style="padding:14px 18px;text-align:center">
-    <button class="btn btn-lime" style="font-size:11px;padding:6px 14px" onclick="document.querySelector('[data-section=productos]').click()">
-      🥣 Ver Ventas por Producto →
-    </button>
-  </div>`;
-
-  setTxt('anlTopProdTag', 'canales del día');
+  if (list) list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Cargando productos...</div></div>';
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=productos&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data && !data.error) renderProductosPeriodo(data);
+    else if (list) list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-txt">Sin datos de productos</div></div>';
+  } catch(e) {
+    if (list) list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-txt">Error cargando productos</div></div>';
+  }
 }
 
-// ── CRECIMIENTO POR CANAL ─────────────────────────────────────────────────────
-function renderCanalCrecimiento(tiendas, refTiendas) {
-  const total    = tiendas.find(t=>t.tienda==='TODAS') || tiendas[0] || {};
-  const refTotal = refTiendas ? (refTiendas.find(t=>t.tienda==='TODAS') || refTiendas[0] || {}) : {};
+function renderProductosPeriodo(data) {
+  const list = document.getElementById('anlTopProdList');
+  const bowlsGrid = document.getElementById('anlBowlsGrid');
+  if (!list || !bowlsGrid) return;
+  const productos = (data.productos||[]).slice(0, 10);
 
-  const canales = CANAL_CFG;
-  const grid = document.getElementById('anlCanalCrecGrid');
-  grid.innerHTML = canales.map(c=>{
-    const curr  = num(total[c.keyAcum]||total[c.key]||0);
-    const ref   = num(refTotal[c.keyAcum]||refTotal[c.key]||0);
-    const delta = ref>0 ? ((curr-ref)/ref*100) : null;
-    const dColor = delta===null?'var(--muted)':(delta>=0?'var(--teal)':'var(--red)');
-    const ventaTotal = num(total.ventasAcumuladas||total.ventasNetas||1);
-    const pct = ventaTotal>0 ? (curr/ventaTotal*100).toFixed(1) : '0.0';
-    return `<div class="canal-kpi">
-      <div class="canal-name"><span class="canal-dot" style="background:${c.color}"></span>${c.label.toUpperCase()}</div>
-      <div class="canal-pct" style="color:${c.color}">${pct}%</div>
-      <div class="canal-value">${fmtK(curr)}</div>
-      <div class="canal-delta" style="background:${delta!==null?(delta>=0?'rgba(90,245,200,.1)':'rgba(245,90,90,.1)'):'var(--surface2)'};color:${dColor}">
-        ${delta!==null?(delta>=0?'▲':'▼')+' '+Math.abs(delta).toFixed(1)+'%':'—'}
-      </div>
-    </div>`;
-  }).join('');
+  list.innerHTML = '<div style="padding:12px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Top 10 por unidades</div>' +
+    productos.map(p => `
+      <div style="padding:8px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px">${p.name}</span>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${num(p.total)} uds</span>
+      </div>`).join('');
 
-  setTxt('anlCanalCrecTag', refTiendas ? 'vs período anterior' : 'sin referencia');
+  const bowls = (data.productos||[]).filter(p => p.esBowl);
+  const totalBowls = bowls.reduce((s,p)=>s+num(p.total),0);
+  bowlsGrid.innerHTML = `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Bowls por tamaño</div>` +
+    bowls.map(p => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px"><span>${p.name}</span><span style="font-family:var(--mono);color:var(--muted)">${num(p.total)}</span></div>`).join('') +
+    `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-weight:700;font-size:12px"><span>Total bowls</span><span>${num(totalBowls)}</span></div>`;
 
-  // Bar chart: canal actual vs referencia
-  if(anlCharts['anlChartCanalCrec']) anlCharts['anlChartCanalCrec'].destroy();
-  const ctx = document.getElementById('anlChartCanalCrec')?.getContext('2d');
-  if(!ctx) return;
-  anlCharts['anlChartCanalCrec'] = new Chart(ctx, {
-    type:'bar',
-    data:{
-      labels: canales.map(c=>c.label),
-      datasets:[
-        { label:'Actual',    data:canales.map(c=>num(total[c.keyAcum]||total[c.key]||0)),    backgroundColor:canales.map(c=>c.color+'aa'), borderRadius:4 },
-        { label:'Referencia',data:canales.map(c=>num((refTotal||{})[c.keyAcum]||(refTotal||{})[c.key]||0)), backgroundColor:'rgba(112,112,160,.25)', borderRadius:4 }
-      ]
-    },
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{labels:{color:'#7070a0',font:{size:10}}}, datalabels:{display:false},
-        tooltip:{backgroundColor:'#1a1a24',callbacks:{label:c=>` ${c.dataset.label}: ${fmtK(c.parsed.y)}`}}},
-      scales:{ x:{grid:{display:false},ticks:{color:'#7070a0',font:{size:9}}},
-               y:{grid:{color:'rgba(42,42,58,.4)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}}}
-  });
+  setTxt('anlProdTag', `${data.fechaInicio||''} → ${data.fechaFin||''}`);
+}
+
+// ③ COMPARAR DOS FECHAS (nuevo, libre)
+async function cargarCompararFechas() {
+  const fA = document.getElementById('compFechaA').value;
+  const fB = document.getElementById('compFechaB').value;
+  const ts = document.getElementById('tiendaSelect').value;
+  const cont = document.getElementById('compFechasResultado');
+  if (!fA || !fB) { alert('Elegí ambas fechas'); return; }
+  cont.innerHTML = '<div class="empty-state" style="padding:24px"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Comparando...</div></div>';
+
+  try {
+    const [rA, rB, pA, pB] = await Promise.all([
+      fetch(`${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fA}&fechaFin=${fA}&tienda=${ts}`).then(r=>r.json()),
+      fetch(`${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fB}&fechaFin=${fB}&tienda=${ts}`).then(r=>r.json()),
+      fetch(`${APPS_SCRIPT_URL}?action=productos&fechaInicio=${fA}&fechaFin=${fA}&tienda=${ts}`).then(r=>r.json()),
+      fetch(`${APPS_SCRIPT_URL}?action=productos&fechaInicio=${fB}&fechaFin=${fB}&tienda=${ts}`).then(r=>r.json())
+    ]);
+
+    const sumDia = (arr) => {
+      const dia = Array.isArray(arr) ? arr[0] : null;
+      if (!dia || !dia.tiendas) return { ventas:0, trans:0 };
+      return dia.tiendas.reduce((acc,t)=>({ ventas: acc.ventas+(t.ventasNetas||0), trans: acc.trans+(t.transacciones||0) }), {ventas:0,trans:0});
+    };
+    const bowlsDia = (data) => (data && data.productos) ? data.productos.filter(p=>p.esBowl).reduce((s,p)=>s+num(p.total),0) : 0;
+
+    const a = sumDia(rA), b = sumDia(rB);
+    const ticketA = a.trans>0 ? a.ventas/a.trans : 0;
+    const ticketB = b.trans>0 ? b.ventas/b.trans : 0;
+    const bowlsA = bowlsDia(pA), bowlsB = bowlsDia(pB);
+
+    const fila = (label, va, vb, formato) => {
+      const delta = vb>0 ? ((va-vb)/vb*100) : null;
+      return `<tr>
+        <td style="padding-left:16px">${label}</td>
+        <td style="text-align:right">${formato(va)}</td>
+        <td style="text-align:right">${formato(vb)}</td>
+        <td style="text-align:right;color:${delta===null?'var(--muted)':(delta>=0?'var(--teal)':'var(--red)')}">${delta===null?'—':(delta>=0?'+':'')+delta.toFixed(1)+'%'}</td>
+      </tr>`;
+    };
+
+    cont.innerHTML = `<table class="store-table" style="width:100%">
+      <thead><tr>
+        <th style="padding-left:16px;text-align:left">Métrica</th>
+        <th>${fA}</th><th>${fB}</th><th>Δ%</th>
+      </tr></thead>
+      <tbody>
+        ${fila('Ventas netas', a.ventas, b.ventas, crc)}
+        ${fila('Transacciones', a.trans, b.trans, num)}
+        ${fila('Ticket medio', ticketA, ticketB, crc)}
+        ${fila('Bowls vendidos', bowlsA, bowlsB, num)}
+      </tbody></table>`;
+  } catch(e) {
+    cont.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-txt">Error: ${e.message}</div></div>`;
+  }
 }
 
 function renderMiniBarChart(id, labels, data, color){
