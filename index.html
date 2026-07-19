@@ -1999,9 +1999,17 @@ function renderDashboard(data) {
   const dF = num(total.desvForecast);
   const dA = num(total.crecimientoAcum);
   const elDF = document.getElementById('kDesvForecast');
-  if(elDF){ elDF.textContent=pct(dF)+' vs forecast'; elDF.className='kpi-delta '+deltaClass(dF); }
+  if(elDF){ elDF.textContent=pct(dF)+' vs forecast'; elDF.className='kpi-delta '+deltaClass(dF); elDF.title='Ventas reales del día vs. el presupuesto (Budget CRC) cargado para ese día'; }
   const elDA = document.getElementById('kCrecAcum');
-  if(elDA){ elDA.textContent=pct(dA)+' SSS aa'; elDA.className='kpi-delta '+deltaClass(dA); }
+  if(elDA){
+    const comparables = total.tiendasComparablesSSS;
+    const totalTiendas = total.tiendasTotalesSSS;
+    const sufijo = (comparables!==undefined && totalTiendas!==undefined && comparables < totalTiendas)
+      ? ` SSS aa (${comparables}/${totalTiendas} tiendas)` : ' SSS aa';
+    elDA.textContent = pct(dA) + sufijo;
+    elDA.className = 'kpi-delta ' + deltaClass(dA);
+    elDA.title = 'Promedio de crecimiento vs. mismo día de semana del año anterior, solo entre tiendas que ya existían en esa fecha';
+  }
 
   // Descuentos & pagos
   setTxt('descDia',  crc(total.descuentos));  setTxt('descAcum',      crc(total.descuentosAcum||0));
@@ -2027,6 +2035,10 @@ function renderTablaTiendas(data) {
     if(isTotal) tr.classList.add('total-row');
     const df=num(row.desvForecast), cd=num(row.crecimientoDia);
     const dfa=num(row.desvForecastAcum), ca=num(row.crecimientoAcum);
+    const esComparable = row.tienda==='TODAS' || row.tieneComparacionSSS !== false;
+    const sssCelda = esComparable
+      ? `<td style="padding-right:16px;color:${colorPct(ca)}">${pct(ca)}</td>`
+      : `<td style="padding-right:16px;color:var(--muted2)" title="Sin datos en el período comparado (tienda nueva o sin histórico)">—</td>`;
     const ventaDia  = modoVentaGlobal === 'bruto' ? (row.ventasBrutas||row.ventasNetas) : row.ventasNetas;
     const ventaAcum = modoVentaGlobal === 'bruto' ? (row.ventasBrutasAcum||row.ventasAcumuladas) : row.ventasAcumuladas;
     tr.innerHTML = `
@@ -2038,7 +2050,7 @@ function renderTablaTiendas(data) {
       <td style="border-left:1px solid var(--border);color:var(--lime)">${crc(ventaAcum)}</td>
       <td>${crc(row.forecastAcumulado)}</td>
       <td style="color:${colorPct(dfa)}">${pct(dfa)}</td>
-      <td style="padding-right:16px;color:${colorPct(ca)}">${pct(ca)}</td>`;
+      ${sssCelda}`;
     tbody.appendChild(tr);
   });
 }
