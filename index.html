@@ -76,7 +76,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.75);}}
 .logo-text{font-size:16px;font-weight:900;letter-spacing:.08em;color:var(--text);}
 .logo-sub{font-size:9px;color:var(--muted2);font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
-.sidebar-nav{padding:8px 0 16px;flex:1;}
+.sidebar-nav{padding:8px 0 16px;flex:1 1 auto;min-height:0;}
 .nav-section{
   padding:20px 16px 5px;
   font-size:8.5px;font-weight:700;letter-spacing:.18em;
@@ -139,6 +139,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .sidebar-footer{
   padding:12px 14px 16px;
   border-top:1px solid rgba(42,42,58,.6);
+  flex-shrink:0;
 }
 .mode-toggle{
   display:flex;background:var(--surface2);
@@ -161,14 +162,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .topbar{
   background:var(--surface);border-bottom:1px solid var(--border);
-  padding:0 28px;height:60px;
+  padding:10px 28px;min-height:60px;
   display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;gap:16px;flex-wrap:nowrap;
+  flex-shrink:0;gap:12px 16px;flex-wrap:wrap;
 }
 .topbar-left{display:flex;align-items:center;gap:16px;flex-shrink:0;}
 .page-title{font-size:16px;font-weight:800;color:var(--text);}
 .page-sub{font-size:11px;color:var(--muted);margin-top:1px;font-family:var(--mono);}
-.topbar-controls{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
+.topbar-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:8px;}
 .ctrl-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;}
 .ctrl-input,.ctrl-select{
   font-family:var(--font);font-size:12px;font-weight:600;
@@ -1032,14 +1033,15 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <div class="kpi-delta d-neu" id="kDesvForecast">—</div>
         </div>
         <div class="kpi k-teal">
-          <div class="kpi-label" title="Vs. el mismo día de la semana, una semana atrás">Crecimiento Día</div>
+          <div class="kpi-label">Crecimiento Semanal</div>
           <div class="kpi-value" id="kCrec">+0%</div>
-          <div class="kpi-sub">vs <span id="kFechaRef">—</span></div>
+          <div class="kpi-sub">vs <span id="kFechaRef">—</span> (mismo día, semana pasada)</div>
         </div>
         <div class="kpi k-lime">
           <div class="kpi-label">Ventas Acumuladas</div>
           <div class="kpi-value" id="kAcum">₡0</div>
           <div class="kpi-delta d-neu" id="kCrecAcum">—</div>
+          <div class="kpi-sub" style="margin-top:4px">SSS = vs. mismo día de semana, año anterior</div>
         </div>
         <div class="kpi k-amber">
           <div class="kpi-label">Transacciones</div>
@@ -1080,6 +1082,9 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <div class="card-header">
             <span class="card-title">Detalle por Tienda</span>
             <span id="fichaRangoAcum" style="font-size:10px;color:var(--muted);font-family:var(--mono);font-weight:400"></span>
+          </div>
+          <div style="padding:8px 16px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface2)">
+            <strong>Desv%</strong>: real vs. forecast del día &nbsp;·&nbsp; <strong>Crec%</strong>: vs. mismo día, semana pasada &nbsp;·&nbsp; <strong>SSS%</strong>: vs. mismo día de semana, año anterior
           </div>
           <div class="card-body" style="padding:0">
             <div class="scroll-box">
@@ -1122,11 +1127,14 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         </div>
         <button class="tab-pill" id="btnVerSSSReporte" onclick="toggleReporteComp()">Comparar con otro período</button>
       </div>
-      <div id="reporteCompPanel" style="display:none;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--surface2);border-radius:10px">
-        <div><div class="ctrl-label" style="margin-bottom:4px">Desde</div><input type="date" class="ctrl-input" id="reporteCompDesde"></div>
-        <div><div class="ctrl-label" style="margin-bottom:4px">Hasta</div><input type="date" class="ctrl-input" id="reporteCompHasta"></div>
-        <button class="btn btn-lime" onclick="cargarReporteComparacion()">Comparar</button>
-        <span style="font-size:11px;color:var(--muted)">La segunda línea se dibuja alineada por posición del día (día 1 vs día 1, día 2 vs día 2, etc.)</span>
+      <div id="reporteCompPanel" style="display:none;flex-direction:column;gap:10px;margin-bottom:14px;padding:12px;background:var(--surface2);border-radius:10px">
+        <div style="display:flex;align-items:end;gap:12px;flex-wrap:wrap">
+          <div><div class="ctrl-label" style="margin-bottom:4px">Desde</div><input type="date" class="ctrl-input" id="reporteCompDesde"></div>
+          <div><div class="ctrl-label" style="margin-bottom:4px">Hasta</div><input type="date" class="ctrl-input" id="reporteCompHasta"></div>
+          <button class="btn btn-lime" onclick="cargarReporteComparacion()">Comparar</button>
+          <span style="font-size:11px;color:var(--muted)">La segunda línea se dibuja alineada por posición del día (día 1 vs día 1, día 2 vs día 2, etc.)</span>
+        </div>
+        <div id="reporteCompAviso" style="display:none;font-size:11px;color:var(--amber);background:rgba(224,166,42,.12);padding:8px 10px;border-radius:6px"></div>
       </div>
       <div class="card" style="margin-bottom:16px">
         <div class="card-header"><span class="card-title">Tendencia</span></div>
@@ -2230,8 +2238,10 @@ function toggleReporteComp() {
     if (fiEl && !fiEl.value) {
       const fi = document.getElementById('fechaInicio').value;
       const ff = document.getElementById('fechaFin').value;
-      if (fi) fiEl.value = shiftMonth(fi, -1);
-      if (ff) ffEl.value = shiftMonth(ff, -1);
+      // Default: mismo rango, un año atrás — garantiza la misma cantidad
+      // de días y evita que se solape con el rango principal.
+      if (fi) fiEl.value = shiftYear(fi, -1);
+      if (ff) ffEl.value = shiftYear(ff, -1);
     }
   }
 }
@@ -2247,12 +2257,37 @@ function shiftMonth(iso, delta) {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
+function diasEntre(iso1, iso2) {
+  const d1 = new Date(iso1+'T12:00:00'), d2 = new Date(iso2+'T12:00:00');
+  return Math.round((d2-d1)/86400000) + 1;
+}
+
 async function cargarReporteComparacion() {
+  const fiPrincipal = document.getElementById('fechaInicio').value;
+  const ffPrincipal = document.getElementById('fechaFin').value;
   const fi = document.getElementById('reporteCompDesde').value;
   const ff = document.getElementById('reporteCompHasta').value;
   const ts = document.getElementById('tiendaSelect').value;
   if (!fi || !ff) { alert('Elegí ambas fechas'); return; }
   const btn = document.getElementById('btnVerSSSReporte');
+  const avisoEl = document.getElementById('reporteCompAviso');
+
+  // Aviso si los dos rangos no tienen la misma cantidad de días, o si se solapan
+  if (avisoEl) {
+    const diasPrincipal = diasEntre(fiPrincipal, ffPrincipal);
+    const diasComp = diasEntre(fi, ff);
+    const seSolapan = !(ff < fiPrincipal || fi > ffPrincipal);
+    if (diasPrincipal !== diasComp) {
+      avisoEl.textContent = `⚠️ El rango principal tiene ${diasPrincipal} días y el comparado ${diasComp} — los totales por período no van a ser directamente comparables.`;
+      avisoEl.style.display = 'block';
+    } else if (seSolapan) {
+      avisoEl.textContent = `⚠️ Los dos rangos se solapan en fechas — los días compartidos van a salir idénticos.`;
+      avisoEl.style.display = 'block';
+    } else {
+      avisoEl.style.display = 'none';
+    }
+  }
+
   try {
     const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`;
     const resp = await fetch(url);
@@ -5299,4 +5334,3 @@ function setModoVenta(modo) {
 </script>
 </body>
 </html>
-  
