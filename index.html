@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root, html[data-theme="dark"] {
   --bg:       #191B36;
@@ -27,7 +27,7 @@
   --muted:    #9494C0;
   --muted2:   #5C5E90;
   --font:     'Syne', sans-serif;
-  --mono:     'JetBrains Mono', monospace;
+  --mono:     'Inter', sans-serif;
   --sidebar-w: 240px;
   --radius:   14px;
 }
@@ -51,7 +51,7 @@ html[data-theme="light"] {
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
 canvas{color:#7070a0;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;font-variant-numeric:tabular-nums;}
 
 /* ── SIDEBAR ── */
 .sidebar{
@@ -1470,7 +1470,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <div class="card-dark" style="padding:18px 20px;margin-bottom:14px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">
           Crecimiento YoY por mes (%)
-          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">sólido = real · tenue = proyectado (prom. YoY 16.2% sobre estacionalidad 2025)</span>
+          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">datos en vivo desde BigQuery — se comparan solo los meses que ya tienen dato real en ambos años</span>
         </div>
         <div id="estacLegend4" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:12px;color:var(--muted)"></div>
         <div style="position:relative;height:220px"><canvas id="estacChart4"></canvas></div>
@@ -1480,11 +1480,9 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <div class="card-dark" style="padding:18px 20px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">
           Tabla resumen — crecimiento YoY por mes
-          <span style="font-size:9px;font-weight:400;opacity:.6;margin-left:8px">ᵉ = proyectado con tendencia +16.2% (prom. YoY real Ene-Mar)</span>
         </div>
         <div style="font-size:10px;color:var(--muted);margin-bottom:12px;opacity:.7">
-          Los meses proyectados aplican la tendencia promedio de los 3 meses reales (Ene-Mar).
-          Cuando lleguen datos reales del mes, se actualiza automáticamente.
+          Los meses que todavía no pasaron simplemente no muestran dato — se completan solos a medida que llegan las ventas reales.
         </div>
         <div id="estacTablaYoY"></div>
       </div>
@@ -1811,15 +1809,17 @@ window.fetch = function(url, options) {
   return _fetchOriginal(url, options).then(function(resp) {
     // Si el backend dice que la sesión no es válida, forzar logout limpio
     // en vez de dejar que cada pantalla falle en silencio por su cuenta.
+    // OJO: solo si de verdad había una sesión activa — si nunca hubo login,
+    // no tiene sentido "avisar que expiró" ni recargar la página (eso fue
+    // justo lo que causó el loop infinito: una llamada disparada sin login
+    // que se reintentaba solo con cada recarga).
     if (resp.ok && typeof url === 'string' && url.indexOf(APPS_SCRIPT_URL) === 0) {
       const clon = resp.clone();
       clon.json().then(function(data) {
-        if (data && data.noAutorizado) {
+        if (data && data.noAutorizado && getSession()) {
           alert('Tu sesión expiró. Volvé a iniciar sesión.');
-          if (typeof doLogout === 'function') {
-            clearSession();
-            location.reload();
-          }
+          clearSession();
+          location.reload();
         }
       }).catch(function(){ /* respuesta no era JSON, ignorar */ });
     }
@@ -4244,7 +4244,19 @@ function renderEstac() {
     }
 
     const prev = estacData[yr-1];
-    const prevTot = prev ? prev.ventas.slice(mesIni,mesFin+1).filter(v=>v!=null).reduce((a,b)=>a+b,0) : 0;
+    // El comparativo debe usar la MISMA cantidad de meses en ambos años —
+    // si 2026 solo tiene datos reales hasta cierto mes, 2025 también se
+    // corta ahí (antes comparaba 2026 parcial contra 2025 completo, dando
+    // un YoY negativo falso que no reflejaba una caída real).
+    let mesFinComparable = mesFin;
+    if (yr === 2026) {
+      const lastRealGlobal = estacData[2026]
+        ? estacData[2026].ventas.reduce((last,v,i)=>v!==null&&v>0?i:last,-1) : -1;
+      mesFinComparable = Math.min(mesFin, lastRealGlobal);
+    }
+    const prevTot = (prev && mesFinComparable >= mesIni)
+      ? prev.ventas.slice(mesIni,mesFinComparable+1).filter(v=>v!=null).reduce((a,b)=>a+b,0)
+      : 0;
     // YoY solo sobre real, no proyectado
     const yoy = prevTot > 0 ? (tot-prevTot)/prevTot*100 : null;
     return { yr, tot, totProy, tr, yoy };
@@ -4583,8 +4595,13 @@ window.addEventListener('load', () => {
   const mesStr = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
   const segMesEl = document.getElementById('segMes');
   if(segMesEl) segMesEl.value = mesStr;
-  cargarTipoCambioFn(); // cargar TC del BCCR al inicio
-  cargarDatos();
+  // Estas dos llaman al backend, que ahora exige sesión válida — si todavía
+  // no hay login (o la sesión venció), NO hay que dispararlas, si no el
+  // servidor responde "no autorizado" y eso reinicia la página en loop.
+  if (getSession()) {
+    cargarTipoCambioFn(); // cargar TC del BCCR al inicio
+    cargarDatos();
+  }
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -5415,6 +5432,9 @@ function mostrarDashboard(nombre, usuario) {
   // Mostrar el panel de menú principal en vez de ir directo a una vista
   document.getElementById('menuPrincipal').classList.remove('hidden');
   aplicarPermisosVistas();
+  // El tipo de cambio ya no se carga solo al abrir la página (requiere
+  // sesión) — se carga acá, una vez que ya sabemos que el login funcionó.
+  if (typeof cargarTipoCambioFn === 'function') cargarTipoCambioFn();
 }
 
 // Claves de vista tal como se usan en data-section / abrirVista()
