@@ -1513,6 +1513,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <div class="kpi-label">Proyección del Mes</div>
           <div class="kpi-value" id="pkTotal">—</div>
           <div class="kpi-sub" id="pkTotalSub">Ejecutá la proyección</div>
+          <div class="kpi-delta d-neu" id="pkVsAnterior" style="margin-top:6px">—</div>
         </div>
         <div class="kpi k-lime">
           <div class="kpi-label">Promedio Diario</div>
@@ -1834,7 +1835,7 @@ window.fetch = function(url, options) {
 // ── Chart.js global defaults — override browser black ──
 Chart.defaults.color          = '#7070a0';
 Chart.defaults.borderColor    = 'rgba(42,42,58,.5)';
-Chart.defaults.font.family    = "'Syne', sans-serif";
+Chart.defaults.font.family    = "'Inter', sans-serif";
 Chart.defaults.font.size      = 11;
 Chart.defaults.plugins.tooltip.backgroundColor = '#1a1a24';
 Chart.defaults.plugins.tooltip.titleColor      = '#e8e8f0';
@@ -1999,7 +2000,16 @@ function volverAlMenuPrincipal(){
 const num  = (v, d=0) => { const n=Number(v); return isNaN(n)?d:n; };
 const crc  = v => fmtMoneda(num(v));
 const pct  = (v,d=1) => { const n=num(v); return `${n>0?'+':''}${n.toFixed(d)}%`; };
-const fmtK = n => { if(n>=1000000) return '₡'+(n/1000000).toFixed(2)+'M'; if(n>=1000) return '₡'+Math.round(n/1000)+'K'; return '₡'+Math.round(n).toLocaleString('es-CR'); };
+const fmtK = n => {
+  const esUSD = monedaGlobal === 'USD';
+  const valor = esUSD ? n / tipoCambio : n;
+  const simbolo = esUSD ? '$' : '₡';
+  const signo = valor < 0 ? '-' : '';
+  const abs = Math.abs(valor);
+  if (abs >= 1000000) return signo + simbolo + (abs/1000000).toFixed(2) + 'M';
+  if (abs >= 1000) return signo + simbolo + Math.round(abs/1000) + 'K';
+  return signo + simbolo + Math.round(abs).toLocaleString(esUSD ? 'en-US' : 'es-CR');
+};
 const setTxt = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
 const showLoader = (show, txt='', step='') => {
   document.getElementById('globalLoader').style.display = show ? 'flex' : 'none';
@@ -3076,6 +3086,29 @@ function renderProyKPIs(data){
   setTxt('pkTotal', fmtK(total));
   const ml=new Date(data.tY,data.tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
   setTxt('pkTotalSub', ml.charAt(0).toUpperCase()+ml.slice(1));
+
+  // Comparativo vs mes anterior — reconstruido a partir del promedio por
+  // día de semana del mes anterior (pDow), que ya se calculaba antes para
+  // el efecto calendario, multiplicado por cuántas veces cae cada día en
+  // ese mes.
+  const elVsAnt = document.getElementById('pkVsAnterior');
+  if (elVsAnt) {
+    const diasMesAnterior = new Date(data.prevY, data.prevM, 0).getDate();
+    let totalMesAnterior = 0;
+    for (let d = 1; d <= diasMesAnterior; d++) {
+      const dow = new Date(data.prevY, data.prevM - 1, d).getDay();
+      totalMesAnterior += data.pDow[dow] || 0;
+    }
+    if (totalMesAnterior > 0) {
+      const deltaPct = (total - totalMesAnterior) / totalMesAnterior * 100;
+      const mesAntNombre = new Date(data.prevY, data.prevM - 1).toLocaleDateString('es-CR',{month:'long'});
+      elVsAnt.className = 'kpi-delta ' + (deltaPct >= 0 ? 'd-pos' : 'd-neg');
+      elVsAnt.textContent = (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(1) + '% vs ' + mesAntNombre;
+    } else {
+      elVsAnt.className = 'kpi-delta d-neu';
+      elVsAnt.textContent = 'Sin dato del mes anterior';
+    }
+  }
   setTxt('pkAvg', fmtK(avg));
   setTxt('pkAvgSub', `${data.days.length} días · ${data.histFrom} → ${data.histTo}`);
   setTxt('pkBest', fmtK(best.projected));
@@ -3375,13 +3408,19 @@ const CANAL_CFG = [
   { key:'otros',   label:'Mostrador',   color:'#a855f7', keyAcum:'otrosAcum' },
 ];
 
-const STORE_COLORS = {
+const STORE_COLORS_DARK = {
   'Oakberry Guachipelin':'#a855f7','Oakberry Avenida Escazu':'#5af5c8',
   'Oakberry City Mall':'#f5c85a','Santa Ana Town Center':'#f55a5a',
 };
+const STORE_COLORS_LIGHT = {
+  'Oakberry Guachipelin':'#7C3AA0','Oakberry Avenida Escazu':'#178A68',
+  'Oakberry City Mall':'#B8790F','Santa Ana Town Center':'#C6433F',
+};
 function storeColor(name){
-  for(const k of Object.keys(STORE_COLORS)) if(name.toLowerCase().includes(k.toLowerCase().split(' ').pop())) return STORE_COLORS[k];
-  return '#7070a0';
+  const esClaro = document.documentElement.getAttribute('data-theme') === 'light';
+  const paleta = esClaro ? STORE_COLORS_LIGHT : STORE_COLORS_DARK;
+  for(const k of Object.keys(paleta)) if(name.toLowerCase().includes(k.toLowerCase().split(' ').pop())) return paleta[k];
+  return esClaro ? '#7A6478' : '#7070a0';
 }
 
 function setAnlPeriod(p, btn){
