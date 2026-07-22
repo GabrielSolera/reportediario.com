@@ -3697,10 +3697,11 @@ function renderCompChart(tiendas, ref){
 
   if(anlCharts.comp) anlCharts.comp.destroy();
   const ctx = document.getElementById('anlChartComp').getContext('2d');
+  const coloresTiendaTema = [STORES.guachipelin.color, STORES.escazu.color, STORES.citymall.color, STORES.santaana.color];
   anlCharts.comp = new Chart(ctx,{
     type:'bar',
     data:{ labels, datasets:[
-      { label:'Período actual', data:curr,   backgroundColor:labels.map((_,i)=>['#a855f799','#5af5c899','#f5c85a99','#f55a5a99'][i]||'#a855f799'), borderColor:['#a855f7','#5af5c8','#f5c85a','#f55a5a'], borderWidth:2, borderRadius:6 },
+      { label:'Período actual', data:curr,   backgroundColor:labels.map((_,i)=>(coloresTiendaTema[i]||'#a855f7')+'99'), borderColor:labels.map((_,i)=>coloresTiendaTema[i]||'#a855f7'), borderWidth:2, borderRadius:6 },
       { label:'Referencia',     data:refVals, backgroundColor:'rgba(112,112,160,.18)', borderColor:'rgba(112,112,160,.5)', borderWidth:1, borderRadius:4, borderDash:[4,4] },
     ]},
     options:{
