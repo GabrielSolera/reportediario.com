@@ -59,12 +59,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   background:var(--bg);
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;
-  height:100vh;overflow-y:auto;overflow-x:hidden;
+  height:100vh;overflow:hidden;
   position:relative;z-index:50;
 }
 .sidebar-logo{
   padding:22px 18px 18px;
   border-bottom:1px solid rgba(42,42,58,.6);
+  flex-shrink:0;
 }
 .logo-mark{display:flex;align-items:center;gap:10px;margin-bottom:3px;}
 .logo-dot{
@@ -76,7 +77,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.75);}}
 .logo-text{font-size:16px;font-weight:900;letter-spacing:.08em;color:var(--text);}
 .logo-sub{font-size:9px;color:var(--muted2);font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
-.sidebar-nav{padding:8px 0 16px;flex:1 1 auto;min-height:0;}
+.sidebar-nav{padding:8px 0 16px;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;}
 .nav-section{
   padding:20px 16px 5px;
   font-size:8.5px;font-weight:700;letter-spacing:.18em;
@@ -1013,13 +1014,24 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <span class="date-sep">→</span>
       <input type="date" class="ctrl-input" id="fechaFin" style="width:130px">
       <div class="ctrl-divider"></div>
-      <select class="ctrl-select" id="tiendaSelect">
-        <option value="todas">Todas las tiendas</option>
-        <option value="guachipelin">Guachipelín</option>
-        <option value="escazu">Avenida Escazú</option>
-        <option value="citymall">City Mall</option>
-        <option value="santaana">Santa Ana TC</option>
-      </select>
+      <div class="tienda-multiselect" id="tiendaMultiselectWrap" style="position:relative">
+        <button type="button" class="ctrl-select" id="tiendaMultiselectBtn" onclick="toggleTiendaDropdown(event)" style="cursor:pointer;text-align:left">Todas las tiendas ▾</button>
+        <div id="tiendaDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;z-index:400;min-width:220px;box-shadow:0 8px 20px rgba(0,0,0,.3)">
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);margin-bottom:4px">
+            <input type="checkbox" class="tienda-chk" value="guachipelin" checked onchange="onTiendaChkChange()"> Oakberry Guachipelín
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="tienda-chk" value="escazu" checked onchange="onTiendaChkChange()"> Oakberry Avenida Escazú
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="tienda-chk" value="citymall" checked onchange="onTiendaChkChange()"> Oakberry City Mall
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="tienda-chk" value="santaana" checked onchange="onTiendaChkChange()"> Santa Ana TC
+          </label>
+        </div>
+        <input type="hidden" id="tiendaSelect" value="todas">
+      </div>
       <div class="ctrl-divider"></div>
       <button class="btn btn-ghost" id="themeToggleBtn" onclick="toggleTema()" title="Cambiar tema claro/oscuro" style="font-size:16px;padding:8px 10px;">🌙</button>
       <button class="btn btn-ghost" id="btnAjustes" onclick="abrirAjustes()" title="Ajustes: usuarios y permisos" style="display:none;font-size:16px;padding:8px 10px;">⚙️</button>
@@ -1781,6 +1793,40 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 // ═══════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_BD4WIfx5BIxRgN46qPYflabEzDdy1l6iyvteYQyPabv4HT1hsJcQMOSM2K49yGg/exec';
 
+// ── Interceptor de sesión ────────────────────────────────────────────
+// El backend ahora exige un token de sesión válido en TODAS las llamadas
+// (menos login). En vez de agregar "&token=..." a mano en cada uno de los
+// ~26 lugares del archivo que llaman a APPS_SCRIPT_URL, se intercepta fetch
+// una sola vez acá y se lo agrega automáticamente a cualquier llamada al
+// backend que no sea el login.
+const _fetchOriginal = window.fetch.bind(window);
+window.fetch = function(url, options) {
+  if (typeof url === 'string' && url.indexOf(APPS_SCRIPT_URL) === 0 && url.indexOf('action=login') === -1) {
+    const sesion = getSession();
+    if (sesion && sesion.token) {
+      const separador = url.indexOf('?') === -1 ? '?' : '&';
+      url = url + separador + 'token=' + encodeURIComponent(sesion.token);
+    }
+  }
+  return _fetchOriginal(url, options).then(function(resp) {
+    // Si el backend dice que la sesión no es válida, forzar logout limpio
+    // en vez de dejar que cada pantalla falle en silencio por su cuenta.
+    if (resp.ok && typeof url === 'string' && url.indexOf(APPS_SCRIPT_URL) === 0) {
+      const clon = resp.clone();
+      clon.json().then(function(data) {
+        if (data && data.noAutorizado) {
+          alert('Tu sesión expiró. Volvé a iniciar sesión.');
+          if (typeof doLogout === 'function') {
+            clearSession();
+            location.reload();
+          }
+        }
+      }).catch(function(){ /* respuesta no era JSON, ignorar */ });
+    }
+    return resp;
+  });
+};
+
 // ── Forecast/Budget: igual que el dashboard, usa el endpoint principal ──
 // Llama ?day=lastDay&month=X&year=X&tienda=X y lee forecastMensual de la respuesta
 
@@ -1858,6 +1904,52 @@ function closeSidebar(){
 
 // Activa una sección puntual (usado tanto por los clicks del sidebar como
 // por los botones-banderín del menú principal)
+// ── Selector múltiple de tiendas ──────────────────────────────────
+const NOMBRES_TIENDA_CORTO = {
+  guachipelin: 'Guachipelín', escazu: 'Avenida Escazú',
+  citymall: 'City Mall', santaana: 'Santa Ana TC'
+};
+
+function toggleTiendaDropdown(ev) {
+  if (ev) ev.stopPropagation();
+  const dd = document.getElementById('tiendaDropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('tiendaMultiselectWrap');
+  const dd = document.getElementById('tiendaDropdown');
+  if (wrap && dd && !wrap.contains(e.target)) dd.style.display = 'none';
+});
+
+function onTiendaChkChange() {
+  const checks = [...document.querySelectorAll('.tienda-chk')];
+  let marcadas = checks.filter(c => c.checked).map(c => c.value);
+
+  // No dejar que quede en cero — si desmarcaron todas, volver a "todas"
+  if (marcadas.length === 0) {
+    checks.forEach(c => c.checked = true);
+    marcadas = checks.map(c => c.value);
+  }
+
+  const hidden = document.getElementById('tiendaSelect');
+  const btn = document.getElementById('tiendaMultiselectBtn');
+
+  if (marcadas.length === checks.length) {
+    hidden.value = 'todas';
+    btn.textContent = 'Todas las tiendas ▾';
+  } else if (marcadas.length === 1) {
+    hidden.value = marcadas[0];
+    btn.textContent = (NOMBRES_TIENDA_CORTO[marcadas[0]] || marcadas[0]) + ' ▾';
+  } else {
+    hidden.value = marcadas.join(',');
+    btn.textContent = marcadas.length + ' tiendas seleccionadas ▾';
+  }
+
+  // Recargar automáticamente la vista activa con la nueva selección
+  if (getSession()) cargarDatos(true).catch(e => console.error('Multiselect tienda:', e));
+}
+
 function activarSeccion(sectionKey, label){
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -1868,6 +1960,14 @@ function activarSeccion(sectionKey, label){
   document.getElementById('pageTitle').textContent =
     label || (navItem ? navItem.querySelector('span:last-of-type').textContent : sectionKey);
   if (window.innerWidth <= 900) closeSidebar();
+
+  // Carga automática al entrar — reusa la misma lógica que el botón
+  // Actualizar, así que respeta el caché de 5 min (no golpea el servidor
+  // de nuevo si volvés a la misma sección enseguida).
+  const fechaFinListo = document.getElementById('fechaFin')?.value;
+  if (fechaFinListo && getSession()) {
+    cargarDatos(false).catch(e => console.error('Autoload ' + sectionKey + ':', e));
+  }
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -4028,20 +4128,7 @@ function getLastRealMes(yr) {
 const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
 // Datos conocidos (de los tests) — se extienden si llegan datos del API
-let estacData = {
-  2025: {
-    ventas: [19536717,19490867,23706260,19058331,20065771,17433187,18283449,20221502,17841033,20452216,21873231,21252613],
-    trans:  [3794,3618,4238,3278,3425,3056,3222,3504,2928,3677,3930,3744]
-  },
-  2026: {
-    ventas: [25402059,21553271,25607666,null,null,null,null,null,null,null,null,null],
-    trans:  [4300,3611,4408,null,null,null,null,null,null,null,null,null],
-    // Proyección: v2025[m] × promedio YoY real (Ene +30.0%, Feb +10.6%, Mar +8.0% → prom 16.2%)
-    // Cada mes proyectado respeta el patrón estacional de 2025
-    proy:   [null,null,null,21446975,22580681,19618146,20574975,22755930,20077109,23015560,24614676,23916274],
-    budget: [28613477,24110182,25607659,25294763,26339003,24310078,23487610,25612324,27593065,26204617,27041967,29282702]
-  }
-};
+let estacData = {};
 
 let estacYearsActive = new Set([2024, 2025, 2026]);
 let estacCharts = {};
@@ -4064,19 +4151,27 @@ async function cargarEstacionalidad() {
   if(estacLoaded) { renderEstac(); return; }
   showLoader(true, 'Cargando estacionalidad...', 'Consultando historial');
   try {
-    // Fetch historial diario año a año para calcular mensuales
+    // Traer 2024, 2025 y 2026 EN VIVO desde BigQuery — antes 2025/2026 estaban
+    // hardcodeados con números fijos que quedaron desactualizados apenas
+    // arreglamos los datos en BigQuery. Ahora los 3 años se calculan igual.
     const pad = n=>String(n).padStart(2,'0');
-    const years = [2024]; // 2025 y 2026 ya tenemos datos
+    const hoy = new Date();
+    const years = [2024, 2025, 2026];
     for(const yr of years) {
-      const data = { ventas: Array(12).fill(0), trans: Array(12).fill(0) };
-      // Fetch mes a mes para no timeout
-      for(let m=1; m<=12; m++) {
+      const data = { ventas: Array(12).fill(null), trans: Array(12).fill(null) };
+      const mesLimite = (yr === hoy.getFullYear()) ? (hoy.getMonth()+1) : 12; // no pedir meses futuros
+      for(let m=1; m<=mesLimite; m++) {
         const days = new Date(yr,m,0).getDate();
         const ini = `${yr}-${pad(m)}-01`, fin = `${yr}-${pad(m)}-${pad(days)}`;
         try {
           const resp = await fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=all&fechaInicio=${ini}&fechaFin=${fin}`);
           const rows = await resp.json();
-          if(Array.isArray(rows)) rows.forEach(r=>{ data.ventas[m-1]+=r.ventasNetas||0; data.trans[m-1]+=r.transacciones||0; });
+          if(Array.isArray(rows) && rows.length) {
+            let sumaVentas = 0, sumaTrans = 0;
+            rows.forEach(r=>{ sumaVentas+=r.ventasNetas||0; sumaTrans+=r.transacciones||0; });
+            data.ventas[m-1] = sumaVentas;
+            data.trans[m-1]  = sumaTrans;
+          }
         } catch(e) { console.warn(`estac ${yr}-${m}:`, e); }
       }
       estacData[yr] = data;
@@ -5477,6 +5572,12 @@ async function guardarUsuario() {
 
 function doLogout() {
   if (!confirm('¿Cerrar sesión?')) return;
+  const sesionActual = getSession();
+  if (sesionActual && sesionActual.token) {
+    // Avisar al servidor para que invalide el token ya mismo (no esperar
+    // las 6 horas de expiración automática).
+    _fetchOriginal(`${APPS_SCRIPT_URL}?action=logout&token=${encodeURIComponent(sesionActual.token)}`).catch(function(){});
+  }
   clearSession();
   // Reset UI
   document.getElementById('loginScreen').classList.remove('hidden');
