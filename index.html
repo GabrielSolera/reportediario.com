@@ -235,6 +235,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.75);margin-bottom:10px;}
 .kpi-value{font-family:var(--mono);font-size:24px;font-weight:700;color:#fff;}
 .kpi-sub{font-size:11px;color:rgba(255,255,255,.72);margin-top:4px;}
+.kpi-sub span{font-family:var(--mono);font-weight:600;}
 .kpi-delta{
   display:inline-flex;align-items:center;gap:4px;
   font-size:11px;font-weight:700;font-family:var(--mono);
@@ -2235,7 +2236,12 @@ function renderTablaTiendas(data) {
   });
 }
 
-function renderChartTiendas(data) {
+let dashChartTiendasTipo = 'bar'; // 'bar' | 'horizontalBar' — recordado entre recargas de datos
+
+function renderChartTiendas(data, tipo) {
+  if (tipo) dashChartTiendasTipo = tipo;
+  const esHorizontal = dashChartTiendasTipo === 'horizontalBar';
+
   const tiendas = data.filter(r=>r.tienda!=='TODAS');
   const labels  = tiendas.map(r=>r.tienda);
   const values  = tiendas.map(r=> modoVentaGlobal === 'bruto' ? num(r.ventasBrutas||r.ventasNetas) : num(r.ventasNetas));
@@ -2247,10 +2253,14 @@ function renderChartTiendas(data) {
     type:'bar',
     data:{ labels, datasets:[{ label:'Ventas', data:values, backgroundColor:colors.map(c=>c+'99'), borderColor:colors, borderWidth:2, borderRadius:6 }] },
     options:{
+      indexAxis: esHorizontal ? 'y' : 'x',
       responsive:true,maintainAspectRatio:false,
       plugins:{ legend:{display:false}, datalabels:{display:false},
-        tooltip:{ backgroundColor:'#1a1a24', titleColor:'#e8e8f0', bodyColor:'#7070a0', callbacks:{label:ctx=>' '+fmtK(ctx.parsed.y)} } },
-      scales:{
+        tooltip:{ backgroundColor:'#1a1a24', titleColor:'#e8e8f0', bodyColor:'#7070a0', callbacks:{label:ctx=>' '+fmtK(esHorizontal?ctx.parsed.x:ctx.parsed.y)} } },
+      scales: esHorizontal ? {
+        x:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11},callback:v=>fmtK(v)}},
+        y:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11}}}
+      } : {
         x:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11}}},
         y:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11},callback:v=>fmtK(v)}}
       }
@@ -2290,8 +2300,7 @@ function renderChartPagos(total) {
 function switchDashChart(type,btn,chartId){
   document.querySelectorAll(`#section-dashboard .tab-pill`).forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  // simple toggle between bar and horizontal
-  if(datosGlobales) renderChartTiendas(datosGlobales);
+  if(datosGlobales) renderChartTiendas(datosGlobales, type);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4154,29 +4163,43 @@ async function cargarEstacionalidad() {
     // Traer 2024, 2025 y 2026 EN VIVO desde BigQuery — antes 2025/2026 estaban
     // hardcodeados con números fijos que quedaron desactualizados apenas
     // arreglamos los datos en BigQuery. Ahora los 3 años se calculan igual.
+    //
+    // OPTIMIZADO: antes pedía mes por mes (hasta 36 llamadas secuenciales,
+    // por eso tardaba tanto). Ahora es 1 sola llamada por año — se trae
+    // todos los días del año de una vez y se agrupan por mes acá mismo.
     const pad = n=>String(n).padStart(2,'0');
     const hoy = new Date();
     const years = [2024, 2025, 2026];
-    for(const yr of years) {
+
+    await Promise.all(years.map(async (yr) => {
       const data = { ventas: Array(12).fill(null), trans: Array(12).fill(null) };
       const mesLimite = (yr === hoy.getFullYear()) ? (hoy.getMonth()+1) : 12; // no pedir meses futuros
-      for(let m=1; m<=mesLimite; m++) {
-        const days = new Date(yr,m,0).getDate();
-        const ini = `${yr}-${pad(m)}-01`, fin = `${yr}-${pad(m)}-${pad(days)}`;
-        try {
-          const resp = await fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=all&fechaInicio=${ini}&fechaFin=${fin}`);
-          const rows = await resp.json();
-          if(Array.isArray(rows) && rows.length) {
-            let sumaVentas = 0, sumaTrans = 0;
-            rows.forEach(r=>{ sumaVentas+=r.ventasNetas||0; sumaTrans+=r.transacciones||0; });
-            data.ventas[m-1] = sumaVentas;
-            data.trans[m-1]  = sumaTrans;
-          }
-        } catch(e) { console.warn(`estac ${yr}-${m}:`, e); }
-      }
+      const ini = `${yr}-01-01`;
+      const ultimoDia = new Date(yr, mesLimite, 0).getDate();
+      const fin = `${yr}-${pad(mesLimite)}-${pad(ultimoDia)}`;
+
+      try {
+        const resp = await fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=all&fechaInicio=${ini}&fechaFin=${fin}`);
+        const rows = await resp.json();
+        if (Array.isArray(rows) && rows.length) {
+          const porMes = Array(12).fill(null);
+          rows.forEach(r => {
+            if (!r.fecha) return;
+            const m = parseInt(r.fecha.slice(5,7), 10) - 1; // 0-indexado
+            if (m < 0 || m > 11) return;
+            if (!porMes[m]) porMes[m] = { ventas: 0, trans: 0 };
+            porMes[m].ventas += r.ventasNetas || 0;
+            porMes[m].trans  += r.transacciones || 0;
+          });
+          porMes.forEach((v, i) => {
+            if (v) { data.ventas[i] = v.ventas; data.trans[i] = v.trans; }
+          });
+        }
+      } catch(e) { console.warn(`estac ${yr}:`, e); }
+
       estacData[yr] = data;
-      setStep(`Cargando ${yr}...`);
-    }
+    }));
+
     estacLoaded = true;
   } catch(e) { console.error('estacionalidad:', e); }
   finally { showLoader(false); }
