@@ -1881,6 +1881,23 @@ function aplicarTema(tema){
   localStorage.setItem('oakberry_tema', tema);
   const btn = document.getElementById('themeToggleBtn');
   if (btn) btn.textContent = tema === 'dark' ? '☀️' : '🌙';
+
+  // Actualizar los colores de tienda que usa el gráfico "Ventas por Tienda"
+  // y otros lugares que leen STORES[x].color directo — el verde agua y el
+  // amarillo pálido de fondo oscuro casi no se ven en fondo claro.
+  const coloresPorTema = tema === 'light'
+    ? { guachipelin:'#7C3AA0', escazu:'#178A68', citymall:'#B8790F', santaana:'#C6433F' }
+    : { guachipelin:'#a855f7', escazu:'#5af5c8', citymall:'#f5c85a', santaana:'#f55a5a' };
+  Object.keys(coloresPorTema).forEach(k => {
+    if (STORES[k]) STORES[k].color = coloresPorTema[k];
+  });
+
+  // Volver a dibujar la vista actual para que los gráficos ya abiertos
+  // reflejen los colores nuevos (si no, quedan con los del tema anterior
+  // hasta que se recargue la sección a mano).
+  if (typeof cargarDatos === 'function' && getSession()) {
+    cargarDatos(false).catch(()=>{});
+  }
 }
 function toggleTema(){
   const actual = document.documentElement.getAttribute('data-theme') || 'dark';
