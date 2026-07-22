@@ -2120,6 +2120,11 @@ async function cargarDatos(forzar=false) {
   const fechaInicioInput = document.getElementById('fechaInicio').value;
   if(!fechaFinInput){ alert('Seleccioná la fecha'); return; }
 
+  // TC fijado del mes que se está viendo — no el de "hoy". Así, cuando mires
+  // en diciembre las ventas de julio, el dólar usado es el de julio, no el
+  // actual (evita que los reportes históricos "floten" con el tiempo).
+  cargarTipoCambioMensualFn(fechaFinInput).catch(()=>{});
+
   if(forzar) {
     Object.keys(cacheConsultas).forEach(k => delete cacheConsultas[k]);
     datosGlobales = null;
@@ -4127,6 +4132,36 @@ async function cargarTipoCambioFn() {
     console.info('TC: usando valor estimado ₡' + tipoCambio.toFixed(0), e.message);
     updateDisplay(tipoCambio, 'estimado');
   }
+}
+
+// TC FIJADO POR MES — para reportería. A diferencia de cargarTipoCambioFn
+// (que trae el tipo de cambio de HOY), esta trae el que quedó fijado para
+// el mes que se está mirando en el selector de fechas. La primera vez que
+// se consulta un mes, el backend lo fija; de ahí en más siempre devuelve
+// ese mismo valor para ese mes, aunque el dólar real siga subiendo o bajando.
+let tcMensualCache = {}; // { 'YYYY-MM': venta } — evita repetir la consulta
+async function cargarTipoCambioMensualFn(fechaISO) {
+  if (!fechaISO) return;
+  const [year, month] = fechaISO.split('-').map(Number);
+  const claveMes = `${year}-${String(month).padStart(2,'0')}`;
+
+  const top = document.getElementById('tcTopbar');
+
+  if (tcMensualCache[claveMes]) {
+    tipoCambio = tcMensualCache[claveMes];
+    if (top) { top.textContent = `TC: ₡${tipoCambio.toFixed(0)} (${MESES_CORTOS?.[month-1]||month}/${year})`; top.title = `Tipo de cambio fijado para ese mes — no cambia aunque mires el reporte después`; }
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${APPS_SCRIPT_URL}?action=tipoCambioMensual&year=${year}&month=${month}`);
+    const data = await resp.json();
+    if (data && data.venta > 400) {
+      tipoCambio = data.venta;
+      tcMensualCache[claveMes] = data.venta;
+      if (top) { top.textContent = `TC: ₡${data.venta.toFixed(0)} (${MESES_CORTOS?.[month-1]||month}/${year})`; top.title = `Tipo de cambio fijado para ese mes — no cambia aunque mires el reporte después`; }
+    }
+  } catch(e) { console.warn('TC mensual:', e); }
 }
 
 function setMoneda(moneda) {
