@@ -4181,6 +4181,14 @@ function fmtMoneda(valorCRC) {
 // ═══════════════════════════════════════════════════════════
 //  ESTACIONALIDAD
 // ═══════════════════════════════════════════════════════════
+// Color para indicadores +/- (crecimiento, YoY, etc.) — el verde agua fijo
+// no se ve en tema claro, así que se resuelve según el tema activo.
+function colorPositivoNegativo(esPositivo) {
+  const esClaro = document.documentElement.getAttribute('data-theme') === 'light';
+  if (esPositivo) return esClaro ? '#178A68' : '#5af5c8';
+  return esClaro ? '#C6433F' : '#f55a5a';
+}
+
 const ESTAC_COLORS = {
   2023: { line:'#5a5aaa', fill:'rgba(90,90,170,.15)',  dash:[],    label:'2023' },
   2024: { line:'#5af5c8', fill:'rgba(90,245,200,.12)', dash:[4,3], label:'2024' },
@@ -4299,7 +4307,22 @@ function renderEstac() {
   const mesIni = parseInt(document.getElementById('estacMesIni').value) - 1;
   const mesFin = parseInt(document.getElementById('estacMesFin').value) - 1;
   const labels = MESES_CORTOS.slice(mesIni, mesFin+1);
-  const isDark = document.documentElement.classList.contains('dark') || window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+  // Sincronizar los colores de línea con el tema ACTUAL antes de dibujar
+  // nada — 2024 (agua) y 2026 (dorado) casi no se ven en tema claro sobre
+  // fondo blanco. Se hace acá (no en aplicarTema) porque renderEstac()
+  // siempre corre después de que todo el script ya cargó.
+  if (!isDark) {
+    ESTAC_COLORS[2024].line = '#178A68'; ESTAC_COLORS[2024].fill = 'rgba(23,138,104,.12)';
+    ESTAC_COLORS[2026].line = '#B8790F'; ESTAC_COLORS[2026].fill = 'rgba(184,121,15,.15)';
+    ESTAC_COLORS[2027].line = '#C6437F'; ESTAC_COLORS[2027].fill = 'rgba(198,67,127,.12)';
+  } else {
+    ESTAC_COLORS[2024].line = '#5af5c8'; ESTAC_COLORS[2024].fill = 'rgba(90,245,200,.12)';
+    ESTAC_COLORS[2026].line = '#f5c85a'; ESTAC_COLORS[2026].fill = 'rgba(245,200,90,.15)';
+    ESTAC_COLORS[2027].line = '#f55a8a'; ESTAC_COLORS[2027].fill = 'rgba(245,90,138,.12)';
+  }
+
   const gc = 'rgba(42,42,58,.5)';
   const tc = '#7070a0';
   const fmtM = v => v!=null ? +(v/1e6).toFixed(2) : null;
@@ -4349,7 +4372,7 @@ function renderEstac() {
     const c = ESTAC_COLORS[t.yr];
     // Suprimir YoY si es absurdo (>200% = datos incompletos del año anterior)
     const showYoY = t.yoy != null && Math.abs(t.yoy) <= 200;
-    const yoyColor  = t.yoy >= 0 ? '#5af5c8' : '#f55a5a';
+    const yoyColor  = colorPositivoNegativo(t.yoy >= 0);
     const yoySign   = t.yoy >= 0 ? '+' : '';
     const yoyBadge  = showYoY
       ? `<span style="
@@ -4365,10 +4388,15 @@ function renderEstac() {
       ? `<span style="color:var(--muted);font-size:10px">+ ₡${(t.totProy/1e6).toFixed(1)}M proy</span>`
       : '';
     const realLabel = t.yr === 2026 && t.totProy > 0 ? ' <span style="font-size:9px;opacity:.6">(real)</span>' : '';
-    return `<div class="kpi" style="padding:12px 14px;border-left:3px solid ${c.line}">
-      <div class="kpi-label" style="font-size:9px;font-family:var(--font);letter-spacing:.06em">${t.yr}</div>
+    // Esta tarjeta usa fondo neutro (solo un acento de color a la izquierda),
+    // no el degradado sólido de las tarjetas k-purple/k-teal/etc — por eso
+    // el texto acá se fuerza a los colores del tema en vez de heredar el
+    // blanco pensado para fondos de color fuerte (si no, queda invisible
+    // en tema claro).
+    return `<div class="kpi" style="padding:12px 14px;border-left:3px solid ${c.line};background:var(--surface2)">
+      <div class="kpi-label" style="font-size:9px;font-family:var(--font);letter-spacing:.06em;color:var(--muted)">${t.yr}</div>
       <div class="kpi-value" style="font-size:19px;color:${c.line};font-family:var(--mono)">₡${(t.tot/1e6).toFixed(1)}M${realLabel} ${yoyBadge}</div>
-      <div class="kpi-sub" style="font-size:10px;font-family:var(--font);margin-top:5px;display:flex;gap:10px;align-items:center">
+      <div class="kpi-sub" style="font-size:10px;font-family:var(--font);margin-top:5px;display:flex;gap:10px;align-items:center;color:var(--muted)">
         <span>${t.tr.toLocaleString('es-CR')} trans</span>
         ${proyLine}
       </div>
@@ -4655,15 +4683,15 @@ function renderTablaYoY(years, mesIni, mesFin, labels) {
 
     yoys.forEach(y=>{
       if(y.v===null){ html+=`<td style="text-align:center;padding:5px 8px;color:var(--muted)">—</td>`; return; }
-      const bg  = y.v>=0?'rgba(90,245,200,.1)':'rgba(245,90,90,.1)';
-      const col = y.v>=0?'#5af5c8':'#f55a5a';
+      const col = colorPositivoNegativo(y.v>=0);
+      const bg  = col+'1A';
       const op  = y.real?'1':'.5';
       html += `<td style="text-align:center;padding:4px 6px">
         <span style="display:inline-block;padding:2px 7px;border-radius:10px;background:${bg};color:${col};opacity:${op};font-family:var(--mono);font-size:10px;white-space:nowrap">${y.v>=0?'+':''}${y.v.toFixed(1)}%${!y.real?'ᵉ':''}</span>
       </td>`;
     });
 
-    const avgCol = avg>=0?'#5af5c8':'#f55a5a';
+    const avgCol = colorPositivoNegativo(avg>=0);
     html+=`<td style="text-align:right;padding:5px 10px;font-family:var(--mono);font-weight:600;color:${avgCol}">${avg>=0?'+':''}${avg.toFixed(1)}%</td>
     </tr>`;
   });
