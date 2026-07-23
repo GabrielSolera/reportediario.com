@@ -2785,7 +2785,7 @@ async function runProjection() {
 
   if(!histFrom||!histTo){ alert('Seleccioná el rango de historial'); return; }
   const [tY,tM] = monthVal.split('-').map(Number);
-  const storeKeys = storeKey==='all' ? Object.keys(STORES) : [storeKey];
+  const storeKeys = (storeKey==='all') ? Object.keys(STORES) : storeKey.split(',').map(k=>k.trim()).filter(k=>STORES[k]);
 
   // Determinar si el mes a proyectar ya tiene días transcurridos
   // Usar hora CR (UTC-6) para evitar que a las 6pm UTC ya "sea mañana"
@@ -4809,7 +4809,7 @@ async function cargarSeguimiento() {
   const aaFechaInicio = `${aaPY}-${pad(tM)}-01`;
   const aaFechaFin    = `${aaPY}-${pad(tM)}-${pad(aaLastDay)}`;
 
-  const storeKeys = store==='todas' ? Object.keys(STORES) : [store];
+  const storeKeys = store==='todas' ? Object.keys(STORES) : store.split(',').map(k=>k.trim()).filter(k=>STORES[k]);
 
   document.getElementById('segRunBtn').disabled = true;
   document.getElementById('segStatus').textContent = 'Cargando...';
