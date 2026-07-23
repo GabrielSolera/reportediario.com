@@ -1943,6 +1943,11 @@ document.addEventListener('click', (e) => {
   if (wrap && dd && !wrap.contains(e.target)) dd.style.display = 'none';
 });
 
+// Vistas que requieren configurar algo (mes a proyectar, rango de historial,
+// etc.) antes de tener sentido cargar datos solas — no deberían auto-cargar
+// ni al entrar, ni al cambiar el filtro de tiendas. Por ahora solo Proyección.
+const VISTAS_SIN_AUTOCARGA = ['proyeccion'];
+
 function onTiendaChkChange() {
   const checks = [...document.querySelectorAll('.tienda-chk')];
   let marcadas = checks.filter(c => c.checked).map(c => c.value);
@@ -1967,8 +1972,14 @@ function onTiendaChkChange() {
     btn.textContent = marcadas.length + ' tiendas seleccionadas ▾';
   }
 
-  // Recargar automáticamente la vista activa con la nueva selección
-  if (getSession()) cargarDatos(true).catch(e => console.error('Multiselect tienda:', e));
+  // Recargar automáticamente la vista activa con la nueva selección —
+  // salvo en vistas como Proyección, que necesitan que configures otras
+  // cosas primero y tienen su propio botón para correr.
+  const seccionActivaEl = document.querySelector('.section.active');
+  const seccionActiva = seccionActivaEl ? seccionActivaEl.id.replace('section-','') : null;
+  if (getSession() && !VISTAS_SIN_AUTOCARGA.includes(seccionActiva)) {
+    cargarDatos(true).catch(e => console.error('Multiselect tienda:', e));
+  }
 }
 
 function activarSeccion(sectionKey, label){
@@ -1984,9 +1995,10 @@ function activarSeccion(sectionKey, label){
 
   // Carga automática al entrar — reusa la misma lógica que el botón
   // Actualizar, así que respeta el caché de 5 min (no golpea el servidor
-  // de nuevo si volvés a la misma sección enseguida).
+  // de nuevo si volvés a la misma sección enseguida). Proyección queda
+  // afuera: necesita que elijas mes y rango de historial antes de correr.
   const fechaFinListo = document.getElementById('fechaFin')?.value;
-  if (fechaFinListo && getSession()) {
+  if (fechaFinListo && getSession() && !VISTAS_SIN_AUTOCARGA.includes(sectionKey)) {
     cargarDatos(false).catch(e => console.error('Autoload ' + sectionKey + ':', e));
   }
 }
