@@ -234,7 +234,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .kpi.k-red{    background:linear-gradient(150deg, rgba(229,66,122,.9), rgba(185,40,95,.75)); }
 .kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.75);margin-bottom:10px;}
 .kpi-value{font-family:var(--mono);font-size:24px;font-weight:700;color:#fff;}
-.kpi-sub{font-size:11px;color:rgba(255,255,255,.72);margin-top:4px;}
+.kpi-sub{font-size:11px;color:rgba(255,255,255,.72);margin-top:4px;font-family:var(--mono);}
 .kpi-sub span{font-family:var(--mono);font-weight:600;}
 .kpi-delta{
   display:inline-flex;align-items:center;gap:4px;
@@ -3086,7 +3086,22 @@ function buildProjection(historicalByStore, currentMonthByStore, lastRealDay, tY
     });
   }
 
-  return {days, dowAvg, tDow, pDow, tY, tM, prevY, prevM, histFrom, histTo, lastRealDay};
+  // Total REAL del mes anterior — sumado directo de las ventas diarias reales
+  // ya descargadas (historicalByStore), no reconstruido a partir de countDow
+  // (que solo cuenta cuántas veces cae cada día de semana, no vende plata —
+  // ese fue el bug que daba el "+15,522,676.9%" absurdo).
+  const prevMStr = String(prevM).padStart(2,'0');
+  let totalMesAnteriorReal = 0;
+  for (const sk of storeKeys) {
+    const sales = historicalByStore[sk] || {};
+    Object.entries(sales).forEach(([dateStr, obj]) => {
+      if (dateStr.startsWith(`${prevY}-${prevMStr}`) && obj && obj.ventas) {
+        totalMesAnteriorReal += obj.ventas;
+      }
+    });
+  }
+
+  return {days, dowAvg, tDow, pDow, tY, tM, prevY, prevM, histFrom, histTo, lastRealDay, totalMesAnteriorReal};
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3111,26 +3126,24 @@ function renderProyKPIs(data){
   const ml=new Date(data.tY,data.tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
   setTxt('pkTotalSub', ml.charAt(0).toUpperCase()+ml.slice(1));
 
-  // Comparativo vs mes anterior — reconstruido a partir del promedio por
-  // día de semana del mes anterior (pDow), que ya se calculaba antes para
-  // el efecto calendario, multiplicado por cuántas veces cae cada día en
-  // ese mes.
+  // Comparativo vs mes anterior — usa el total REAL de ventas de ese mes
+  // (sumado de los datos históricos ya descargados), no una reconstrucción
+  // a partir de conteos de día de semana.
   const elVsAnt = document.getElementById('pkVsAnterior');
   if (elVsAnt) {
-    const diasMesAnterior = new Date(data.prevY, data.prevM, 0).getDate();
-    let totalMesAnterior = 0;
-    for (let d = 1; d <= diasMesAnterior; d++) {
-      const dow = new Date(data.prevY, data.prevM - 1, d).getDay();
-      totalMesAnterior += data.pDow[dow] || 0;
-    }
-    if (totalMesAnterior > 0) {
+    const totalMesAnterior = data.totalMesAnteriorReal || 0;
+    const mesAntNombre = new Date(data.prevY, data.prevM - 1).toLocaleDateString('es-CR',{month:'long'});
+    // Piso de sanidad: si el total del mes anterior es una fracción diminuta
+    // del total actual, probablemente el histórico no cubre ese mes completo
+    // — no mostrar un % que puede salir disparatado por datos incompletos.
+    const esConfiable = totalMesAnterior > 0 && totalMesAnterior > total * 0.05;
+    if (esConfiable) {
       const deltaPct = (total - totalMesAnterior) / totalMesAnterior * 100;
-      const mesAntNombre = new Date(data.prevY, data.prevM - 1).toLocaleDateString('es-CR',{month:'long'});
       elVsAnt.className = 'kpi-delta ' + (deltaPct >= 0 ? 'd-pos' : 'd-neg');
       elVsAnt.textContent = (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(1) + '% vs ' + mesAntNombre;
     } else {
       elVsAnt.className = 'kpi-delta d-neu';
-      elVsAnt.textContent = 'Sin dato del mes anterior';
+      elVsAnt.textContent = 'Sin dato confiable del mes anterior';
     }
   }
   setTxt('pkAvg', fmtK(avg));
