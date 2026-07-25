@@ -1972,14 +1972,10 @@ function onTiendaChkChange() {
     btn.textContent = marcadas.length + ' tiendas seleccionadas ▾';
   }
 
-  // Recargar automáticamente la vista activa con la nueva selección —
-  // salvo en vistas como Proyección, que necesitan que configures otras
-  // cosas primero y tienen su propio botón para correr.
-  const seccionActivaEl = document.querySelector('.section.active');
-  const seccionActiva = seccionActivaEl ? seccionActivaEl.id.replace('section-','') : null;
-  if (getSession() && !VISTAS_SIN_AUTOCARGA.includes(seccionActiva)) {
-    cargarDatos(true).catch(e => console.error('Multiselect tienda:', e));
-  }
+  // Cambiar el filtro de tiendas NO recarga nada solo — igual que las
+  // fechas, hace falta tocar el botón "Actualizar" a propósito. Antes
+  // disparaba una recarga automática acá, y eso causaba comportamientos
+  // raros (incluida una pantalla en blanco reportada por el usuario).
 }
 
 function activarSeccion(sectionKey, label){
