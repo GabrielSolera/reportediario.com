@@ -1368,8 +1368,8 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <div class="kpi k-purple"><div class="kpi-label">Ventas Netas Mes</div><div class="kpi-value" id="skTotal">₡0</div><div class="kpi-sub" id="skTotalSub">—</div></div>
         <div class="kpi k-teal"><div class="kpi-label">vs Año Anterior</div><div class="kpi-value" id="skCrecimiento">—</div><div class="kpi-sub" id="skCrecimientoSub">—</div></div>
         <div class="kpi k-lime"><div class="kpi-label">vs Presupuesto</div><div class="kpi-value" id="skDesvPpto">—</div><div class="kpi-sub" id="skDesvPptoSub">—</div></div>
-        <div class="kpi"><div class="kpi-label">Pedidos Totales</div><div class="kpi-value" id="skPedidos">0</div><div class="kpi-sub" id="skPedidosSub">—</div></div>
-        <div class="kpi"><div class="kpi-label">Ticket Medio</div><div class="kpi-value" id="skTicket">₡0</div><div class="kpi-sub" id="skTicketSub">—</div></div>
+        <div class="kpi k-amber"><div class="kpi-label">Pedidos Totales</div><div class="kpi-value" id="skPedidos">0</div><div class="kpi-sub" id="skPedidosSub">—</div></div>
+        <div class="kpi k-red"><div class="kpi-label">Ticket Medio</div><div class="kpi-value" id="skTicket">₡0</div><div class="kpi-sub" id="skTicketSub">—</div></div>
       </div>
 
       <!-- Tabla -->
@@ -1892,12 +1892,11 @@ function aplicarTema(tema){
     if (STORES[k]) STORES[k].color = coloresPorTema[k];
   });
 
-  // Volver a dibujar la vista actual para que los gráficos ya abiertos
-  // reflejen los colores nuevos (si no, quedan con los del tema anterior
-  // hasta que se recargue la sección a mano).
-  if (typeof cargarDatos === 'function' && getSession()) {
-    cargarDatos(false).catch(()=>{});
-  }
+  // Cambiar de tema NO recarga datos solo — mismo criterio que el filtro de
+  // tiendas y las fechas: solo el botón "Actualizar" dispara una recarga.
+  // Los gráficos ya abiertos van a quedar con los colores del tema anterior
+  // hasta la próxima vez que se carguen datos (al tocar Actualizar, o al
+  // entrar de nuevo a esa vista).
 }
 function toggleTema(){
   const actual = document.documentElement.getAttribute('data-theme') || 'dark';
