@@ -1282,6 +1282,18 @@ body.modo-vista-unica .hamburger{ display:none !important; }
                 <div id="anlCanalesDetalle"></div>
               </div>
             </div>
+            <div style="padding:14px;border-top:1px solid var(--border)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Tendencia por canal</div>
+                <div class="tab-pills" id="canalTrendTabs">
+                  <button class="tab-pill active" onclick="setCanalTrendGranularidad('diario',this)">Diario</button>
+                  <button class="tab-pill" onclick="setCanalTrendGranularidad('semanal',this)">Semanal</button>
+                  <button class="tab-pill" onclick="setCanalTrendGranularidad('anual',this)">Anual</button>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height:220px"><canvas id="anlChartCanalesTrend"></canvas></div>
+              <div id="anlCanalesTrendEmpty" class="empty-state" style="display:none;padding:16px"><div class="empty-txt">Sin datos de canales para el rango seleccionado</div></div>
+            </div>
           </div>
         </div>
 
@@ -3423,6 +3435,7 @@ let anlPeriod      = -7;
 let anlDow         = null; // null=todos, 0=Dom, 1=Lun...6=Sab
 let anlCharts      = {};
 let anlDataCurr    = null, anlDataRef = null, anlTrendData = null;
+let anlCanalesTrendRaw = null, canalTrendGranularidad = 'diario', anlChartCanalesTrend = null;
 let anlLastTienda  = null;
 
 function setAnlDow(dow, btn) {
@@ -3571,6 +3584,16 @@ async function cargarAnalisis(){
     } catch(e){ console.warn('Daily data error:', e); }
     anlTrendData = { actual: anlDailyActual, ref: anlDailyRef, mesIni, refIni };
 
+    // Tendencia por canal — usa el rango de fechas seleccionado (Desde/Hasta del topbar),
+    // no el mes calendario, para que coincida con el resto del período de Análisis.
+    setStep('Cargando tendencia de canales...');
+    const fechaInicioGlobal = document.getElementById('fechaInicio').value || mesIni;
+    try {
+      const respCanales = await fetch(`${APPS_SCRIPT_URL}?action=historialCanales&tienda=${storeKeyAnl}&fechaInicio=${fechaInicioGlobal}&fechaFin=${fechaFinInput}`);
+      const dataCanales = await respCanales.json();
+      anlCanalesTrendRaw = Array.isArray(dataCanales) ? dataCanales : null;
+    } catch(e) { console.warn('Canales trend error:', e); anlCanalesTrendRaw = null; }
+
     renderAnalisis(anlDataCurr, anlDataRef, anlTrendData, fechaFinInput, fechaRef);
     document.getElementById('anlEmpty').style.display   = 'none';
     document.getElementById('anlContent').style.display = 'block';
@@ -3670,6 +3693,7 @@ function renderAnalisis(curr, ref, trendData, fechaCurr, fechaRef){
   renderRanking(tiendas, ref);
   renderCompChart(tiendas, ref);
   renderCanales(totCurr, totRef);
+  renderCanalesTrendChart();
   renderRentabilidad(totCurr, totRef, tiendas);
   renderTablaCompleta(tiendas, ref);
   cargarDiaSemana();
@@ -3801,6 +3825,94 @@ function renderCanales(totCurr, totRef){
           ${delta!==null?`<span class="metrica-delta ${delta>=0?'d-pos':'d-neg'}">${delta>=0?'+':''}${delta.toFixed(1)}%</span>`:''}
         </span>
       </div>`;
+  });
+}
+
+// Agrupa el historial diario de canales {fecha, uber, peya, didi, olo, otros}
+// en semanas (ISO) o años, sumando montos. 'diario' devuelve los datos tal cual.
+function agruparCanalesTrend(data, granularidad){
+  if(!data || !data.length) return [];
+  if(granularidad === 'diario'){
+    return data.map(d => ({...d, etiqueta: new Date(d.fecha+'T12:00:00').toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit'})}));
+  }
+  const grupos = {}; const orden = [];
+  data.forEach(dia=>{
+    const f = new Date(dia.fecha+'T12:00:00');
+    let clave, etiqueta;
+    if(granularidad === 'semanal'){
+      const tmp = new Date(f);
+      tmp.setDate(tmp.getDate() + 4 - (tmp.getDay()||7));
+      const inicioAnio = new Date(tmp.getFullYear(), 0, 1);
+      const semanaIso = Math.ceil(((tmp - inicioAnio) / 86400000 + 1) / 7);
+      clave = `${tmp.getFullYear()}-W${String(semanaIso).padStart(2,'0')}`;
+      etiqueta = `Sem ${semanaIso}`;
+    } else { // anual
+      clave = `${f.getFullYear()}`;
+      etiqueta = `${f.getFullYear()}`;
+    }
+    if(!grupos[clave]){ grupos[clave] = {fecha:clave, etiqueta, uber:0, peya:0, didi:0, olo:0, otros:0}; orden.push(clave); }
+    grupos[clave].uber  += (dia.uber||0);
+    grupos[clave].peya  += (dia.peya||0);
+    grupos[clave].didi  += (dia.didi||0);
+    grupos[clave].olo   += (dia.olo||0);
+    grupos[clave].otros += (dia.otros||0);
+  });
+  return orden.map(clave=>grupos[clave]);
+}
+
+function setCanalTrendGranularidad(g, btn){
+  canalTrendGranularidad = g;
+  document.querySelectorAll('#canalTrendTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderCanalesTrendChart();
+}
+
+function renderCanalesTrendChart(){
+  const wrap  = document.getElementById('anlChartCanalesTrend')?.closest('.chart-wrap');
+  const empty = document.getElementById('anlCanalesTrendEmpty');
+  const datos = agruparCanalesTrend(anlCanalesTrendRaw, canalTrendGranularidad);
+
+  if(!datos.length){
+    if(anlChartCanalesTrend){ anlChartCanalesTrend.destroy(); anlChartCanalesTrend=null; }
+    if(wrap) wrap.style.display='none';
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(wrap) wrap.style.display='';
+  if(empty) empty.style.display='none';
+
+  const labels = datos.map(d=>d.etiqueta);
+  const datasets = CANAL_CFG.map(c=>({
+    label: c.label,
+    data: datos.map(d=>d[c.key]||0),
+    borderColor: c.color,
+    backgroundColor: c.color+'22',
+    pointBackgroundColor: c.color,
+    pointRadius: canalTrendGranularidad==='diario' && datos.length>25 ? 0 : 3,
+    borderWidth: 2,
+    tension: .3,
+    fill: false,
+  }));
+
+  if(anlChartCanalesTrend) anlChartCanalesTrend.destroy();
+  const ctx = document.getElementById('anlChartCanalesTrend').getContext('2d');
+  anlChartCanalesTrend = new Chart(ctx,{
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ position:'bottom', labels:{ color:'#7070a0', font:{size:11}, boxWidth:10, usePointStyle:true } },
+        datalabels:{ display:false },
+        tooltip:{ backgroundColor:'#1a1a24', titleColor:'#e8e8f0', bodyColor:'#7070a0',
+          callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${fmtK(ctx.parsed.y)}` } }
+      },
+      scales:{
+        x:{ grid:{ color:'rgba(42,42,58,.5)' }, ticks:{ color:'#7070a0', font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:12 } },
+        y:{ grid:{ color:'rgba(42,42,58,.5)' }, ticks:{ color:'#7070a0', font:{size:10}, callback:v=>fmtK(v) } }
+      }
+    }
   });
 }
 
