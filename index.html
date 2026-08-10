@@ -907,6 +907,13 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div>
     </div>
 
+    <div class="menu-grupo">
+      <div class="menu-grupo-label">Financiero</div>
+      <div class="menu-grid">
+        <button class="pennant-btn" onclick="abrirVista('plproyectado','P&amp;L Proyectado')"><div class="pennant-icon" style="background:#7B4FE0"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16v-5M12 16V8M17 16v-9"/></svg></div><span class="pennant-label">P&amp;L Proyectado</span></button>
+      </div>
+    </div>
+
     <button class="menu-todas-btn" onclick="abrirTodasLasVistas()">Ver todas las vistas →</button>
     <button class="menu-logout" onclick="doLogout()">Cerrar sesión</button>
   </div>
@@ -5800,7 +5807,7 @@ function mostrarDashboard(nombre, usuario) {
 }
 
 // Claves de vista tal como se usan en data-section / abrirVista()
-const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion'];
+const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado'];
 
 function vistasPermitidas() {
   const session = getSession();
@@ -5842,7 +5849,7 @@ function aplicarPermisosVistas() {
 const VISTA_LABELS = {
   dashboard: 'Dashboard', reporteDiario: 'Reporte Diario', analisis: 'Análisis',
   descuentos: 'Descuentos', seguimiento: 'Seguimiento', productos: 'Ventas Producto',
-  estacionalidad: 'Estacionalidad', proyeccion: 'Proyección'
+  estacionalidad: 'Estacionalidad', proyeccion: 'Proyección', plproyectado: 'P&L Proyectado'
 };
 let ajustesUsuarioEditando = null; // null = creando nuevo
 
