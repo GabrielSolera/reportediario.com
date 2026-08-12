@@ -6069,7 +6069,7 @@ const PL_LINEAS = [
   { key:'ingresosFranquiciasFijo', label:'Ingresos por franquicias',                 tipo:'fijo', seccion:'support', default:0  },
 ];
 const PL_SECCION_LABEL = { food:'Food Cost', op:'Operation Cost', support:'Support Office' };
-const PL_ESCENARIOS = [0, 10, 15, 20, 25]; // % de crecimiento en ventas/órdenes, sobre el real del mes
+let plEscenarios = [0, 10, 15, 20, 25]; // % de crecimiento en ventas/órdenes, editable por el usuario
 
 let plBaseline    = null;   // { ventasNetas, transacciones, ticketProm, ordenesDia, anio, mes, tienda, ... }
 let plAssumptions = {};     // { key: valor }
@@ -6123,6 +6123,7 @@ async function cargarPLProyectado(){
     } else {
       plAssumptions = plDefaults();
       plEditandoId  = null;
+      plEscenarios  = [0, 10, 15, 20, 25];
       renderPLInputsGrid();
       renderPLSensTable();
     }
@@ -6192,13 +6193,24 @@ function computePLScenario(pct){
   };
 }
 
+function onPLEscenarioChange(idx, value){
+  plEscenarios[idx] = num(value, plEscenarios[idx]);
+  renderPLSensTable();
+}
+
 function renderPLSensTable(){
   if(!plBaseline) return;
-  const esc = PL_ESCENARIOS.map(computePLScenario);
+  const esc = plEscenarios.map(computePLScenario);
   const nCols = esc.length + 1;
 
   document.getElementById('plSensThead').innerHTML =
-    `<tr><th style="text-align:left">Sensibilidad de venta</th>${esc.map(e=>`<th>${e.pct}%</th>`).join('')}</tr>`;
+    `<tr><th style="text-align:left">Sensibilidad de venta</th>${plEscenarios.map((p,i)=>`
+      <th>
+        <span style="display:inline-flex;align-items:center;gap:2px">
+          <input type="number" step="any" class="ctrl-input" style="width:56px;text-align:center;padding:4px 2px;font-family:var(--mono)" value="${p}" onchange="onPLEscenarioChange(${i}, this.value)" title="Editar % de crecimiento">
+          <span style="color:var(--muted)">%</span>
+        </span>
+      </th>`).join('')}</tr>`;
 
   const seccionRow = label => `<tr><td colspan="${nCols}" style="background:rgba(123,79,224,.14);font-weight:700;color:var(--accent)">${label}</td></tr>`;
   const detalleRow = (label,vals) => `<tr><td style="padding-left:20px;font-weight:400;color:var(--muted)">${label}</td>${vals.map(v=>`<td>${fmtK(v)}</td>`).join('')}</tr>`;
@@ -6233,6 +6245,7 @@ function limpiarPL(){
   if(!confirm('¿Limpiar el formulario? Los valores no guardados se pierden (el historial guardado no se borra).')) return;
   plAssumptions = plDefaults();
   plEditandoId  = null;
+  plEscenarios  = [0, 10, 15, 20, 25];
   renderPLInputsGrid();
   renderPLSensTable();
   renderHistorialPL();
@@ -6249,6 +6262,7 @@ async function guardarPL(){
       anio:   plBaseline.anio,
       mes:    plBaseline.mes,
       id:     plEditandoId || '',
+      escenariosPct: plEscenarios.join(','),
     });
     PL_LINEAS.forEach(l=> params.set(l.key, String(plAssumptions[l.key] != null ? plAssumptions[l.key] : l.default)));
     const resp = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
@@ -6306,6 +6320,10 @@ function cargarDesdeHistorialPL(id){
   if(!row) return;
   plAssumptions = {};
   PL_LINEAS.forEach(l=> plAssumptions[l.key] = num(row[l.key], l.default));
+  if(row.escenariosPct){
+    const parsed = String(row.escenariosPct).split(',').map(s=>s.trim()).filter(Boolean).map(s=>num(s, 0));
+    if(parsed.length) plEscenarios = parsed;
+  }
   plEditandoId = id;
   renderPLInputsGrid();
   renderPLSensTable();
