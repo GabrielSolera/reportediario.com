@@ -1654,18 +1654,19 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <button class="btn btn-primary" id="plGuardarBtn" onclick="guardarPL()">💾 Guardar</button>
       </div>
 
-      <!-- Baseline real -->
+      <!-- Baseline de venta -->
       <div class="card" style="margin-bottom:20px">
         <div class="card-header">
-          <span class="card-title">Ventas del mes (real)</span>
+          <span class="card-title">Venta base del mes</span>
           <span class="card-tag" id="plBaselineTag">—</span>
         </div>
         <div class="card-body" style="display:flex;gap:36px;flex-wrap:wrap">
           <div><div class="metrica-label">Ventas netas</div><div class="metrica-val" id="plVentasNetas" style="font-size:18px">—</div></div>
-          <div><div class="metrica-label">Transacciones</div><div class="metrica-val" id="plTransacciones" style="font-size:18px">—</div></div>
+          <div><div class="metrica-label">Transacciones (real)</div><div class="metrica-val" id="plTransacciones" style="font-size:18px">—</div></div>
           <div><div class="metrica-label">Ticket promedio</div><div class="metrica-val" id="plTicketProm" style="font-size:18px">—</div></div>
           <div><div class="metrica-label">Órdenes / día (prom.)</div><div class="metrica-val" id="plOrdenesDia" style="font-size:18px">—</div></div>
         </div>
+        <div style="padding:0 14px 14px" id="plFuenteVenta"></div>
       </div>
 
       <!-- Supuestos editables -->
@@ -6099,23 +6100,37 @@ async function cargarPLProyectado(){
     const fechaIni = `${anio}-${pad(mes)}-01`;
     const fechaFin = `${anio}-${pad(mes)}-${pad(ultimoDia)}`;
     const storeKey = tienda==='todas' ? 'all' : tienda;
+    const diasEnMes = new Date(anio, mes, 0).getDate();
 
     const resp = await fetch(`${APPS_SCRIPT_URL}?action=historialDiario&tienda=${storeKey}&fechaInicio=${fechaIni}&fechaFin=${fechaFin}`);
     const hist = await resp.json();
     const dias = Array.isArray(hist) ? hist : [];
-    const ventasNetas   = dias.reduce((s,d)=>s+num(d.ventasNetas),0);
-    const transacciones = dias.reduce((s,d)=>s+num(d.transacciones),0);
-    const diasConDatos  = dias.length || 1;
-    const ticketProm    = transacciones>0 ? ventasNetas/transacciones : 0;
-    const ordenesDia    = transacciones/diasConDatos;
+    const ventasReal        = dias.reduce((s,d)=>s+num(d.ventasNetas),0);
+    const transaccionesReal = dias.reduce((s,d)=>s+num(d.transacciones),0);
+    const diasConDatos      = dias.length || 1;
+    const ticketProm        = transaccionesReal>0 ? ventasReal/transaccionesReal : 0;
+    const ordenesDiaReal    = transaccionesReal/diasConDatos;
 
-    plBaseline = { ventasNetas, transacciones, ticketProm, ordenesDia, diasConDatos, anio, mes, tienda, esMesActual };
+    // ¿Ya se generó, en la pestaña Proyección, una proyección para este mismo mes+tienda?
+    // Si sí, es la venta "más aterrizada" (real hasta hoy + modelo para los días que faltan)
+    // y la preferimos como base del P&L en vez de la venta real acumulada (parcial).
+    const proyCoincide = typeof proyData !== 'undefined' && proyData && Array.isArray(proyData.days)
+      && Number(proyData.tY)===anio && Number(proyData.tM)===mes
+      && mismaSeleccionTienda(proyData.storeKey, storeKey);
+    const ventasProyectada = proyCoincide ? proyData.days.reduce((s,d)=>s+d.projected,0) : null;
 
-    setTxt('plBaselineTag', esMesActual ? `Al día ${ultimoDia} (mes en curso)` : 'Mes cerrado');
-    setTxt('plVentasNetas', fmtK(ventasNetas));
-    setTxt('plTransacciones', transacciones.toLocaleString('es-CR'));
-    setTxt('plTicketProm', fmtK(ticketProm));
-    setTxt('plOrdenesDia', ordenesDia.toFixed(1));
+    plBaseline = {
+      ventasReal, transaccionesReal, ticketProm, ordenesDiaReal, diasConDatos, diasEnMes,
+      ventasProyectada, proyCoincide,
+      anio, mes, tienda, esMesActual,
+      fuente: proyCoincide ? 'proyeccion' : 'real',
+    };
+    plBaseline.ventasNetas = proyCoincide ? ventasProyectada : ventasReal;
+    plBaseline.ordenesDia  = (plBaseline.ventasNetas>0 && ticketProm>0)
+      ? (plBaseline.ventasNetas/diasEnMes)/ticketProm
+      : ordenesDiaReal;
+
+    renderPLBaselineCard();
 
     await cargarHistorialPL();
     if(plHistorial.length){
@@ -6134,6 +6149,53 @@ async function cargarPLProyectado(){
   }finally{
     showLoader(false);
   }
+}
+
+// Compara dos selecciones de tienda (strings 'all' o 'k1,k2,...') sin importar el orden
+function mismaSeleccionTienda(a, b){
+  if(a===b) return true;
+  if(!a || !b) return false;
+  const norm = s => String(s).split(',').map(x=>x.trim()).filter(Boolean).sort().join(',');
+  return norm(a) === norm(b);
+}
+
+function renderPLBaselineCard(){
+  if(!plBaseline) return;
+  const usandoProy = plBaseline.fuente === 'proyeccion';
+
+  setTxt('plBaselineTag', usandoProy
+    ? '📈 Proyección de venta (Proyección)'
+    : (plBaseline.esMesActual ? 'Venta real acumulada (mes en curso)' : 'Venta real del mes (cerrado)'));
+  setTxt('plVentasNetas', fmtK(plBaseline.ventasNetas));
+  setTxt('plTransacciones', plBaseline.transaccionesReal.toLocaleString('es-CR'));
+  setTxt('plTicketProm', fmtK(plBaseline.ticketProm));
+  setTxt('plOrdenesDia', plBaseline.ordenesDia.toFixed(1));
+
+  const cont = document.getElementById('plFuenteVenta');
+  if(!cont) return;
+  let html = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)">`;
+  html += `<span style="font-size:11px;color:var(--muted)">Base de venta para el P&amp;L:</span>`;
+  html += `<button class="tab-pill${!usandoProy?' active':''}" onclick="setPLFuente('real')">Venta real acumulada — ${fmtK(plBaseline.ventasReal)}</button>`;
+  if(plBaseline.proyCoincide){
+    html += `<button class="tab-pill${usandoProy?' active':''}" onclick="setPLFuente('proyeccion')">Proyección del mes — ${fmtK(plBaseline.ventasProyectada)}</button>`;
+  } else {
+    html += `<button class="tab-pill" style="opacity:.5;cursor:not-allowed" disabled title="Andá a Proyección y generá la proyección para este mes y esta tienda">Proyección del mes (no generada)</button>`;
+    html += `<button class="tab-pill" style="border-color:var(--accent);color:var(--accent)" onclick="abrirVista('proyeccion','Proyección')">Ir a Proyección →</button>`;
+  }
+  html += `</div>`;
+  cont.innerHTML = html;
+}
+
+function setPLFuente(fuente){
+  if(!plBaseline) return;
+  if(fuente==='proyeccion' && !plBaseline.proyCoincide) return;
+  plBaseline.fuente = fuente;
+  plBaseline.ventasNetas = fuente==='proyeccion' ? plBaseline.ventasProyectada : plBaseline.ventasReal;
+  plBaseline.ordenesDia  = (plBaseline.ventasNetas>0 && plBaseline.ticketProm>0)
+    ? (plBaseline.ventasNetas/plBaseline.diasEnMes)/plBaseline.ticketProm
+    : plBaseline.ordenesDiaReal;
+  renderPLBaselineCard();
+  renderPLSensTable();
 }
 
 function renderPLInputsGrid(){
