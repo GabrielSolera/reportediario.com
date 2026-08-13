@@ -4401,7 +4401,11 @@ function setMoneda(moneda) {
     } else { const rd=new Date(ff); rd.setDate(rd.getDate()+anlPeriod); fechaRef=rd.toISOString().split('T')[0]; }
     renderAnalisis(anlDataCurr, anlDataRef, anlTrendData||[], fi, fechaRef);
   }
-  else if(seccion==='section-plproyectado' && plBaseline) renderPLSensTable();
+  else if(seccion==='section-plproyectado' && plBaseline){
+    renderPLBaselineCard();
+    renderPLInputsGrid();
+    renderPLSensTable();
+  }
 }
 
 function mostrarConfigTC() {
@@ -6206,31 +6210,79 @@ function setPLFuente(fuente){
   renderPLSensTable();
 }
 
+function fmtMilesPL(n){
+  return Math.round(n||0).toLocaleString('es-CR');
+}
+
+// Los montos "fijo" siempre se guardan en colones (plAssumptions). Esto calcula
+// qué valor mostrar en el input según la moneda activa (₡ o $).
+function plValorParaMostrar(key){
+  const l = PL_LINEAS.find(x=>x.key===key);
+  const raw = plAssumptions[key] != null ? plAssumptions[key] : l.default;
+  if(l.tipo === 'fijo' && monedaGlobal === 'USD') return raw / tipoCambio;
+  return raw;
+}
+
 function renderPLInputsGrid(){
   const cont = document.getElementById('plInputsGrid');
   if(!cont) return;
+  const simboloFijo = monedaGlobal === 'USD' ? '$' : '₡';
   let html=''; let seccionActual=null;
   PL_LINEAS.forEach(l=>{
     if(l.seccion !== seccionActual){
       seccionActual = l.seccion;
       html += `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:${html?'18px':'0'} 0 8px">${PL_SECCION_LABEL[seccionActual]}</div>`;
     }
-    const val = plAssumptions[l.key] != null ? plAssumptions[l.key] : l.default;
-    html += `
-      <div class="metrica-row">
-        <span class="metrica-label" style="flex:1">${l.label}</span>
-        <span style="display:flex;align-items:center;gap:4px">
-          ${l.tipo==='fijo' ? '<span style="color:var(--muted);font-size:12px">$</span>' : ''}
-          <input type="number" step="any" class="ctrl-input" style="width:100px;text-align:right" id="plIn_${l.key}" value="${val}" oninput="onPLInputChange('${l.key}', this.value)">
-          ${l.tipo==='pct' ? '<span style="color:var(--muted);font-size:12px">%</span>' : ''}
-        </span>
-      </div>`;
+    if(l.tipo === 'fijo'){
+      html += `
+        <div class="metrica-row">
+          <span class="metrica-label" style="flex:1">${l.label}</span>
+          <span style="display:flex;align-items:center;justify-content:flex-end;gap:4px;width:150px;flex-shrink:0">
+            <span style="color:var(--muted);font-size:12px;width:14px;text-align:center">${simboloFijo}</span>
+            <input type="text" inputmode="decimal" class="ctrl-input" style="width:110px;text-align:right" id="plIn_${l.key}"
+              value="${fmtMilesPL(plValorParaMostrar(l.key))}"
+              onfocus="onPLInputFocus(this,'${l.key}')"
+              onblur="onPLInputBlur(this,'${l.key}')"
+              onkeydown="if(event.key==='Enter') this.blur()">
+          </span>
+        </div>`;
+    } else {
+      const val = plAssumptions[l.key] != null ? plAssumptions[l.key] : l.default;
+      html += `
+        <div class="metrica-row">
+          <span class="metrica-label" style="flex:1">${l.label}</span>
+          <span style="display:flex;align-items:center;justify-content:flex-end;gap:4px;width:150px;flex-shrink:0">
+            <input type="number" step="any" class="ctrl-input" style="width:110px;text-align:right" id="plIn_${l.key}" value="${val}" oninput="onPLInputChange('${l.key}', this.value)">
+            <span style="color:var(--muted);font-size:12px;width:14px;text-align:center">%</span>
+          </span>
+        </div>`;
+    }
   });
   cont.innerHTML = html;
 }
 
 function onPLInputChange(key, value){
   plAssumptions[key] = num(value, 0);
+  renderPLSensTable();
+}
+
+// Al enfocar un monto fijo: mostrar el número plano (sin separadores) en la
+// moneda que se está viendo actualmente, listo para editar.
+function onPLInputFocus(el, key){
+  const val = plValorParaMostrar(key);
+  el.value = Math.round(val*100)/100;
+  el.select();
+}
+
+// Al salir del campo: lo que escribió el usuario está en la moneda ACTIVA
+// (₡ o $) — se convierte a colones (moneda canónica interna) antes de guardar.
+function onPLInputBlur(el, key){
+  const l = PL_LINEAS.find(x=>x.key===key);
+  const limpio = String(el.value).replace(/[^\d.-]/g,'');
+  const entrada = num(limpio, 0);
+  const enColones = (l.tipo==='fijo' && monedaGlobal==='USD') ? entrada * tipoCambio : entrada;
+  plAssumptions[key] = Math.round(enColones);
+  el.value = fmtMilesPL(plValorParaMostrar(key));
   renderPLSensTable();
 }
 
