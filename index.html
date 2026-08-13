@@ -4387,6 +4387,7 @@ function setMoneda(moneda) {
   const seccion = document.querySelector('.section.active')?.id;
   if(seccion==='section-dashboard' && datosGlobales) renderDashboard(datosGlobales);
   else if(seccion==='section-reporteDiario' && datosReporteRaw) aplicarGranularidadReporte();
+  else if(seccion==='section-seguimiento' && segData) renderSeguimiento(segData);
   else if(seccion==='section-proyeccion' && proyData) {
     renderProyeccion(proyData);
   }
@@ -4978,7 +4979,13 @@ const fmtFull = n => {
   if(!n || n===0) return '—';
   return Math.round(n).toLocaleString('es-CR');
 };
-const fmtCRC = n => n && n!==0 ? '₡'+fmtFull(n) : '—';
+const fmtCRC = n => {
+  if(!n || n===0) return '—';
+  if(monedaGlobal === 'USD'){
+    return '$' + Math.round(n / tipoCambio).toLocaleString('en-US');
+  }
+  return '₡' + Math.round(n).toLocaleString('es-CR');
+};
 const fmtPctColor = (v) => {
   if(v===null||v===undefined||isNaN(v)) return `<span style="color:var(--muted)">—</span>`;
   const c = v>=0?'var(--teal)':'var(--red)';
@@ -5141,9 +5148,6 @@ async function cargarSeguimiento() {
 
     renderSeguimiento(segData);
     document.getElementById('segExcelBtn').style.display = 'flex';
-    const pptoStr = pptoMensualTotal>0 ? fmtCRC(pptoMensualTotal) : 'no configurado';
-    document.getElementById('segStatus').textContent =
-      `Datos hasta día ${lastDay} · Presupuesto: ${pptoStr}`;
 
   }catch(e){
     alert('Error cargando seguimiento:\n'+e.message);
@@ -5157,6 +5161,10 @@ async function cargarSeguimiento() {
 function renderSeguimiento(data){
   const {rows,tY,tM,lastDay,daysInMonth,pptoMensualTotal,
          acumVentas,acumTrans,acumAA,acumAATrans} = data;
+
+  const pptoStr = pptoMensualTotal>0 ? fmtCRC(pptoMensualTotal) : 'no configurado';
+  document.getElementById('segStatus').textContent =
+    `Datos hasta día ${lastDay} · Presupuesto: ${pptoStr}`;
 
   const ML = new Date(tY,tM-1).toLocaleDateString('es-CR',{month:'long',year:'numeric'});
   const storeActiva = (document.getElementById('tiendaMultiselectBtn')?.textContent || '').replace('▾','').trim();
@@ -5207,14 +5215,14 @@ function renderSeguimiento(data){
     const ticket  = r.transacciones>0 ? r.ventasNetas/r.transacciones : null;
     const aaTicket= r.aaTrans>0 ? r.aaVentas/r.aaTrans : null;
 
-    const crc = (v) => v&&v>0 ? `<span style="font-family:var(--mono)">₡${fmtFull(v)}</span>` : '<span style="color:var(--muted)">—</span>';
+    const crc = (v) => v&&v>0 ? `<span style="font-family:var(--mono)">${fmtCRC(v)}</span>` : '<span style="color:var(--muted)">—</span>';
     const num = (v) => v&&v>0 ? `<span style="font-family:var(--mono)">${v.toLocaleString('es-CR')}</span>` : '<span style="color:var(--muted)">—</span>';
 
     tr.innerHTML = `
       <td style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--muted);font-size:12px">${r.d}</td>
       <td style="font-size:12px;color:var(--muted)">${r.dayName}</td>
       <td style="text-align:right">${r.diarizacion>0?crc(r.diarizacion):'<span style="color:var(--muted)">—</span>'}</td>
-      <td style="text-align:right">${r.hasData?'<span style="font-family:var(--mono);color:var(--accent);font-weight:700">₡'+fmtFull(r.ventasNetas)+'</span>':'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:right">${r.hasData?'<span style="font-family:var(--mono);color:var(--accent);font-weight:700">'+fmtCRC(r.ventasNetas)+'</span>':'<span style="color:var(--muted)">—</span>'}</td>
       <td style="text-align:right">${fmtPctColor(varPpto)}</td>
       <td style="text-align:right">${r.hasData?num(r.transacciones):'<span style="color:var(--muted)">—</span>'}</td>
       <td style="text-align:right" title="${r.aaDateLabel||''}">${r.aaVentas>0?crc(r.aaVentas):'<span style="color:var(--muted)">—</span>'}</td>
@@ -5239,23 +5247,23 @@ function renderSeguimiento(data){
 
   tfoot.innerHTML = `<tr class="total-row">
     <td colspan="2" style="padding-left:14px;font-weight:800;font-size:13px">TOTAL / ACUM.</td>
-    <td style="text-align:right;font-family:var(--mono)">${totalDiarz>0?'₡'+fmtFull(totalDiarz):'—'}</td>
-    <td style="text-align:right;font-family:var(--mono);color:var(--accent);font-weight:800">₡${fmtFull(acumVentas)}</td>
+    <td style="text-align:right;font-family:var(--mono)">${totalDiarz>0?fmtCRC(totalDiarz):'—'}</td>
+    <td style="text-align:right;font-family:var(--mono);color:var(--accent);font-weight:800">${fmtCRC(acumVentas)}</td>
     <td style="text-align:right">${fmtPctColor(desvFinal)}</td>
     <td style="text-align:right;font-family:var(--mono)">${acumTrans>0?acumTrans.toLocaleString('es-CR'):'—'}</td>
-    <td style="text-align:right;font-family:var(--mono)">₡${fmtFull(totalAA)}</td>
+    <td style="text-align:right;font-family:var(--mono)">${fmtCRC(totalAA)}</td>
     <td style="text-align:right;font-family:var(--mono)">${totalAATrans>0?totalAATrans.toLocaleString('es-CR'):'—'}</td>
     <td style="text-align:right">${fmtPctColor(totalCrecPct)}</td>
     <td style="text-align:right">${fmtPctColor(totalCrecTrans)}</td>
-    <td style="text-align:right;font-family:var(--mono)">${ticketTotal?'₡'+fmtFull(ticketTotal):'—'}</td>
+    <td style="text-align:right;font-family:var(--mono)">${ticketTotal?fmtCRC(ticketTotal):'—'}</td>
   </tr>
   <tr style="background:rgba(90,245,200,.04)">
     <td colspan="2" style="padding:8px 14px;font-size:11px;color:var(--muted)">Proyección cierre mes</td>
-    <td colspan="2" style="font-family:var(--mono);font-weight:700;color:var(--lime);font-size:13px">${lastDay>0?'₡'+fmtFull(Math.round(acumVentas/lastDay*daysInMonth)):'—'}</td>
+    <td colspan="2" style="font-family:var(--mono);font-weight:700;color:var(--lime);font-size:13px">${lastDay>0?fmtCRC(Math.round(acumVentas/lastDay*daysInMonth)):'—'}</td>
     <td style="font-size:11px;color:var(--muted)">al ritmo actual</td>
     <td style="font-size:11px;color:var(--muted)" colspan="2">PR. Crecimiento vs AA:</td>
     <td>${fmtPctColor(totalCrecPct)}</td>
-    <td style="font-size:11px;color:var(--muted)" colspan="3">Ticket AA: ${aaTicketTotal?'₡'+fmtFull(aaTicketTotal):'—'}</td>
+    <td style="font-size:11px;color:var(--muted)" colspan="3">Ticket AA: ${aaTicketTotal?fmtCRC(aaTicketTotal):'—'}</td>
   </tr>`;
 }
 
