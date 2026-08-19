@@ -874,26 +874,6 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 </div>
 
 
-<!-- ══════════════ SELECTOR DE PAÍS (post-login, antes del menú) ══════════════ -->
-<div id="paisSelectorScreen" class="hidden" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)">
-  <div style="text-align:center;max-width:520px;padding:24px">
-    <div style="font-size:22px;font-weight:800;margin-bottom:8px;color:var(--text)">¿Qué país querés revisar?</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:28px">Podés cambiar de país en cualquier momento desde el menú.</div>
-    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-      <button onclick="elegirPais('CR')" style="cursor:pointer;width:200px;padding:28px 20px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--font)">
-        <span style="font-size:40px">🇨🇷</span>
-        <span style="font-size:15px;font-weight:700">Costa Rica</span>
-        <span style="font-size:11px;color:var(--muted)">4 tiendas · ₡ / $</span>
-      </button>
-      <button onclick="elegirPais('PA')" style="cursor:pointer;width:200px;padding:28px 20px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--font)">
-        <span style="font-size:40px">🇵🇦</span>
-        <span style="font-size:15px;font-weight:700">Panamá</span>
-        <span style="font-size:11px;color:var(--muted)">San Francisco · $</span>
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- ══════════════ MENU PRINCIPAL (post-login) ══════════════ -->
 <div id="menuPrincipal" class="hidden">
   <div class="menu-inner">
@@ -901,7 +881,6 @@ body.modo-vista-unica .hamburger{ display:none !important; }
     <div class="menu-titulo">¿Qué querés revisar hoy?</div>
     <div class="menu-sub">Elegí una vista puntual, o abrí el panel completo con todas juntas.</div>
 
-    <div id="menuGruposCR">
     <div class="menu-grupo">
       <div class="menu-grupo-label">Principal</div>
       <div class="menu-grid">
@@ -934,22 +913,8 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <button class="pennant-btn" onclick="abrirVista('plproyectado','P&amp;L Proyectado')"><div class="pennant-icon" style="background:#7B4FE0"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16v-5M12 16V8M17 16v-9"/></svg></div><span class="pennant-label">P&amp;L Proyectado</span></button>
       </div>
     </div>
-    </div>
-    <!-- fin menuGruposCR -->
 
-    <div id="menuGruposPA" style="display:none">
-      <div class="menu-grupo">
-        <div class="menu-grupo-label">Panamá</div>
-        <div class="menu-grid">
-          <button class="pennant-btn" onclick="abrirVista('pa-dashboard','Dashboard Panamá')"><div class="pennant-icon" style="background:#2FA9C4">🇵🇦</div><span class="pennant-label">Dashboard</span></button>
-          <button class="pennant-btn" onclick="abrirVista('pa-reporte','Reporte Diario Panamá')"><div class="pennant-icon" style="background:#5FAF48">📅</div><span class="pennant-label">Reporte Diario</span></button>
-          <button class="pennant-btn" onclick="abrirVista('pa-canales','Canales Panamá')"><div class="pennant-icon" style="background:#E0A62A">📊</div><span class="pennant-label">Canales</span></button>
-        </div>
-      </div>
-    </div>
-
-    <button class="menu-todas-btn" id="menuTodasBtn" onclick="abrirTodasLasVistas()">Ver todas las vistas →</button>
-    <button class="menu-todas-btn" onclick="cambiarPais()" style="margin-top:10px">🌐 Cambiar país (actual: <span id="paisActualLabel">—</span>)</button>
+    <button class="menu-todas-btn" onclick="abrirTodasLasVistas()">Ver todas las vistas →</button>
     <button class="menu-logout" onclick="doLogout()">Cerrar sesión</button>
   </div>
 </div>
@@ -975,7 +940,6 @@ body.modo-vista-unica .hamburger{ display:none !important; }
   </div>
 
   <div class="sidebar-nav">
-    <div id="navItemsCR">
     <div class="nav-section">Principal</div>
     <div class="nav-item active" data-section="dashboard">
       <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M112 48H48a8 8 0 00-8 8v64a8 8 0 008 8h64a8 8 0 008-8V56a8 8 0 00-8-8zm0 96H48a8 8 0 00-8 8v64a8 8 0 008 8h64a8 8 0 008-8v-64a8 8 0 00-8-8zm96-96h-64a8 8 0 00-8 8v64a8 8 0 008 8h64a8 8 0 008-8V56a8 8 0 00-8-8zm0 96h-64a8 8 0 00-8 8v64a8 8 0 008 8h64a8 8 0 008-8v-64a8 8 0 00-8-8z" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M208 32h-64a16 16 0 00-16 16v64a16 16 0 0016 16h64a16 16 0 0016-16V48a16 16 0 00-16-16zm-96 0H48a16 16 0 00-16 16v64a16 16 0 0016 16h64a16 16 0 0016-16V48a16 16 0 00-16-16zm96 96h-64a16 16 0 00-16 16v64a16 16 0 0016 16h64a16 16 0 0016-16v-64a16 16 0 00-16-16zm-96 0H48a16 16 0 00-16 16v64a16 16 0 0016 16h64a16 16 0 0016-16v-64a16 16 0 00-16-16z" fill="currentColor"/></svg></span><span class="nav-label">Dashboard</span>
@@ -1011,28 +975,10 @@ body.modo-vista-unica .hamburger{ display:none !important; }
     <div class="nav-item" data-section="plproyectado">
       <span class="nav-icon"><svg class="ph-regular" width="18" height="18" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 216V40m0 176h176M88 176v-48m48 48V96m48 80v-72m48 72V64" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ph-fill" width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><path d="M232 208a8 8 0 01-8 8H32a8 8 0 01-8-8V48a8 8 0 0116 0v94.4l50.3-50.3a8 8 0 0111.3 0L128 118.7l58.3-58.4a8 8 0 0111.4 11.3L133.7 136a8 8 0 01-11.4 0L96 109.7l-56 56V200h184a8 8 0 018 8z" fill="currentColor"/></svg></span><span class="nav-label">P&amp;L Proyectado</span>
     </div>
-    </div>
-    <!-- fin navItemsCR -->
-
-    <div id="navItemsPA" style="display:none">
-      <div class="nav-section">Panamá</div>
-      <div class="nav-item active" data-section="pa-dashboard">
-        <span class="nav-icon">🇵🇦</span><span class="nav-label">Dashboard</span>
-      </div>
-      <div class="nav-item" data-section="pa-reporte">
-        <span class="nav-icon">📅</span><span class="nav-label">Reporte Diario</span>
-      </div>
-      <div class="nav-item" data-section="pa-canales">
-        <span class="nav-icon">📊</span><span class="nav-label">Canales</span>
-      </div>
-      <div class="nav-item" onclick="cambiarPais()" style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px">
-        <span class="nav-icon">🌐</span><span class="nav-label">Cambiar país</span>
-      </div>
-    </div>
   </div>
 
   <!-- Toggle Neto / Bruto -->
-  <div class="sidebar-footer" id="sidebarFooter">
+  <div class="sidebar-footer">
     <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin-bottom:7px">Modo de venta</div>
     <div class="mode-toggle">
       <button class="mode-btn active" id="modoNetoBtn" onclick="setModoVenta('neto')">Neto</button>
@@ -1064,7 +1010,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 <!-- MAIN -->
 <div class="main">
   <!-- TOPBAR -->
-  <div class="topbar" id="topbar">
+  <div class="topbar">
     <div class="topbar-left">
       <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menú">
         <span></span><span></span><span></span>
@@ -1076,7 +1022,6 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div>
     </div>
     <div class="topbar-controls" id="topbarControls">
-    <div id="topbarControlsCR" style="display:contents">
       <span class="ctrl-label">Desde</span>
       <input type="date" class="ctrl-input" id="fechaInicio" style="width:130px">
       <span class="date-sep">→</span>
@@ -1103,9 +1048,6 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <input type="hidden" id="tiendaSelect" value="todas">
       </div>
       <div class="ctrl-divider"></div>
-        <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos(true)">↻ Actualizar</button>
-    </div>
-    <!-- fin topbarControlsCR -->
       <button class="btn btn-ghost" id="themeToggleBtn" onclick="toggleTema()" title="Cambiar tema claro/oscuro" style="font-size:16px;padding:8px 10px;">🌙</button>
       <button class="btn btn-ghost" id="btnAjustes" onclick="abrirAjustes()" title="Ajustes: usuarios y permisos" style="display:none;font-size:16px;padding:8px 10px;">⚙️</button>
       <div class="ctrl-divider"></div>
@@ -1114,6 +1056,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <span class="user-name" id="userNameChip">—</span>
           <button class="logout-btn" tabindex="-1">✕</button>
         </div>
+        <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos(true)">↻ Actualizar</button>
     </div>
   </div>
 
@@ -1868,90 +1811,6 @@ body.modo-vista-unica .hamburger{ display:none !important; }
     </div>
     <!-- ═══════════ FIN VENTAS POR PRODUCTO ═══════════ -->
 
-    <!-- ═══════════ PANAMÁ · DASHBOARD ═══════════ -->
-    <div class="section" id="section-pa-dashboard">
-      <div class="proy-controls" style="flex-wrap:wrap;gap:8px">
-        <span style="font-size:11px;color:var(--muted);font-family:var(--mono)">🇵🇦 San Francisco (La Peatonal) · todo en USD</span>
-        <div style="flex:1"></div>
-        <button class="btn btn-primary" onclick="cargarPADashboard()">↻ Actualizar</button>
-      </div>
-
-      <div class="kpi-grid" id="paDashKpis">
-        <div class="kpi k-purple">
-          <div class="kpi-label">Ventas de Hoy</div>
-          <div class="kpi-value" id="paKHoy">$0</div>
-          <div class="kpi-sub"><span id="paKHoyPedidos">0</span> pedidos</div>
-        </div>
-        <div class="kpi k-teal">
-          <div class="kpi-label">Semana (lun-hoy)</div>
-          <div class="kpi-value" id="paKSemana">$0</div>
-          <div class="kpi-delta d-neu" id="paKSemanaDelta">—</div>
-        </div>
-        <div class="kpi k-lime">
-          <div class="kpi-label">Mes (1-hoy)</div>
-          <div class="kpi-value" id="paKMes">$0</div>
-          <div class="kpi-delta d-neu" id="paKMesDelta">—</div>
-        </div>
-        <div class="kpi k-amber">
-          <div class="kpi-label">Ticket Promedio (mes)</div>
-          <div class="kpi-value" id="paKTicket">$0</div>
-          <div class="kpi-sub"><span id="paKMesPedidos">0</span> pedidos en el mes</div>
-        </div>
-      </div>
-
-      <div id="paDashEmpty" style="display:none" class="empty-state" style="padding:40px"><div class="empty-txt">Cargando datos de Panamá...</div></div>
-    </div>
-    <!-- ═══════════ FIN PANAMÁ · DASHBOARD ═══════════ -->
-
-    <!-- ═══════════ PANAMÁ · REPORTE DIARIO ═══════════ -->
-    <div class="section" id="section-pa-reporte">
-      <div class="proy-controls" style="flex-wrap:wrap;gap:8px">
-        <span class="ctrl-label">Desde</span>
-        <input type="date" class="ctrl-input" id="paRepFechaInicio" style="width:140px">
-        <span class="date-sep">→</span>
-        <input type="date" class="ctrl-input" id="paRepFechaFin" style="width:140px">
-        <button class="btn btn-primary" onclick="cargarPAReporte()">↻ Cargar</button>
-      </div>
-
-      <div class="card" style="margin-top:16px">
-        <div class="card-header">
-          <span class="card-title">Reporte Diario — San Francisco</span>
-          <span class="card-tag" id="paRepTag">—</span>
-        </div>
-        <div class="card-body" style="padding:0;overflow-x:auto">
-          <table class="store-table" id="paRepTable" style="min-width:480px">
-            <thead><tr><th style="text-align:left">Fecha</th><th style="text-align:left">Día</th><th>Pedidos</th><th>Ventas</th><th>Ticket prom.</th></tr></thead>
-            <tbody id="paRepBody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Elegí un rango y tocá Cargar</td></tr></tbody>
-            <tfoot id="paRepFoot"></tfoot>
-          </table>
-        </div>
-      </div>
-    </div>
-    <!-- ═══════════ FIN PANAMÁ · REPORTE DIARIO ═══════════ -->
-
-    <!-- ═══════════ PANAMÁ · CANALES ═══════════ -->
-    <div class="section" id="section-pa-canales">
-      <div class="proy-controls" style="flex-wrap:wrap;gap:8px">
-        <span class="ctrl-label">Desde</span>
-        <input type="date" class="ctrl-input" id="paCanFechaInicio" style="width:140px">
-        <span class="date-sep">→</span>
-        <input type="date" class="ctrl-input" id="paCanFechaFin" style="width:140px">
-        <button class="btn btn-primary" onclick="cargarPACanales()">↻ Cargar</button>
-      </div>
-
-      <div class="card" style="margin-top:16px">
-        <div class="card-header">
-          <span class="card-title">Canales de Venta — San Francisco</span>
-          <span class="card-tag" id="paCanTag">—</span>
-        </div>
-        <div class="card-body">
-          <div id="paCanalesGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"></div>
-          <div class="chart-wrap" style="height:220px"><canvas id="paChartCanales"></canvas></div>
-        </div>
-      </div>
-    </div>
-    <!-- ═══════════ FIN PANAMÁ · CANALES ═══════════ -->
-
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -2018,14 +1877,6 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 //  CONFIG
 // ═══════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_BD4WIfx5BIxRgN46qPYflabEzDdy1l6iyvteYQyPabv4HT1hsJcQMOSM2K49yGg/exec';
-
-// ── Backend de Panamá (Apps Script independiente) ──
-// Reemplazar estos dos valores cuando despliegues codebackend_panama_v1.gs:
-// la URL la da Apps Script al implementar como Aplicación Web, y el token
-// tiene que ser EXACTAMENTE el mismo que pusiste en Script Properties
-// (PA_API_TOKEN) de ese proyecto.
-const APPS_SCRIPT_URL_PA   = 'PEGAR_AQUI_LA_URL_DEL_APPS_SCRIPT_DE_PANAMA';
-const APPS_SCRIPT_TOKEN_PA = 'PEGAR_AQUI_EL_MISMO_TOKEN_QUE_PUSISTE_EN_PA_API_TOKEN';
 
 // ── Interceptor de sesión ────────────────────────────────────────────
 // El backend ahora exige un token de sesión válido en TODAS las llamadas
@@ -2224,14 +2075,6 @@ function activarSeccion(sectionKey, label){
   // Actualizar, así que respeta el caché de 5 min (no golpea el servidor
   // de nuevo si volvés a la misma sección enseguida). Proyección queda
   // afuera: necesita que elijas mes y rango de historial antes de correr.
-  if (sectionKey.indexOf('pa-') === 0) {
-    // Secciones de Panamá: no usan el fechaFin/caché de CR, tienen su
-    // propia carga.
-    if (sectionKey === 'pa-dashboard') cargarPADashboard();
-    if (sectionKey === 'pa-reporte')   cargarPAReporte();
-    if (sectionKey === 'pa-canales')   cargarPACanales();
-    return;
-  }
   const fechaFinListo = document.getElementById('fechaFin')?.value;
   if (fechaFinListo && getSession() && !VISTAS_SIN_AUTOCARGA.includes(sectionKey)) {
     cargarDatos(false).catch(e => console.error('Autoload ' + sectionKey + ':', e));
@@ -4563,8 +4406,6 @@ function setMoneda(moneda) {
     renderPLInputsGrid();
     renderPLSensTable();
   }
-  else if(seccion==='section-productos' && prodData) renderProductos();
-  else if(seccion==='section-estacionalidad' && Object.keys(estacData).length) renderEstac();
 }
 
 function mostrarConfigTC() {
@@ -4742,7 +4583,7 @@ function renderEstac() {
 
   const gc = 'rgba(42,42,58,.5)';
   const tc = '#7070a0';
-  const fmtM = v => v!=null ? v : null;
+  const fmtM = v => v!=null ? +(v/1e6).toFixed(2) : null;
 
   // ── KPIs ──
   const kpiDiv = document.getElementById('estacKpis');
@@ -4802,7 +4643,7 @@ function renderEstac() {
       : '';
     const ticketMedio = t.tr > 0 ? Math.round(t.tot / t.tr) : 0;
     const proyLine = t.totProy > 0
-      ? `<span style="color:var(--muted);font-size:10px">+ ${fmtK(t.totProy)} proy</span>`
+      ? `<span style="color:var(--muted);font-size:10px">+ ₡${(t.totProy/1e6).toFixed(1)}M proy</span>`
       : '';
     const realLabel = t.yr === 2026 && t.totProy > 0 ? ' <span style="font-size:9px;opacity:.6">(real)</span>' : '';
     // Esta tarjeta usa fondo neutro (solo un acento de color a la izquierda),
@@ -4812,7 +4653,7 @@ function renderEstac() {
     // en tema claro).
     return `<div class="kpi" style="padding:12px 14px;border-left:3px solid ${c.line};background:var(--surface2)">
       <div class="kpi-label" style="font-size:9px;font-family:var(--font);letter-spacing:.06em;color:var(--muted)">${t.yr}</div>
-      <div class="kpi-value" style="font-size:19px;color:${c.line};font-family:var(--mono)">${fmtK(t.tot)}${realLabel} ${yoyBadge}</div>
+      <div class="kpi-value" style="font-size:19px;color:${c.line};font-family:var(--mono)">₡${(t.tot/1e6).toFixed(1)}M${realLabel} ${yoyBadge}</div>
       <div class="kpi-sub" style="font-size:10px;font-family:var(--font);margin-top:5px;display:flex;gap:10px;align-items:center;color:var(--muted)">
         <span>${t.tr.toLocaleString('es-CR')} trans</span>
         ${proyLine}
@@ -4918,11 +4759,11 @@ function renderEstac() {
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false},
           tooltip:{ mode:'index', intersect:false, backgroundColor:'#1a1a24',
-            callbacks:{ label:c=>c.raw!=null?` ${c.dataset.label}: ${fmtK(c.raw)}`:null,
+            callbacks:{ label:c=>c.raw!=null?` ${c.dataset.label}: ₡${c.raw}M`:null,
               filter: item => item.raw !== null } } },
         scales:{
           x:{ grid:{color:gc}, ticks:{color:tc,font:{size:11}} },
-          y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>fmtK(v)} }
+          y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>'₡'+v+'M'} }
         }
       }
     });
@@ -4980,10 +4821,10 @@ function renderEstac() {
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false},
           tooltip:{ mode:'index', intersect:false, backgroundColor:'#1a1a24',
-            callbacks:{ label:c=>` ${c.dataset.label}: ${fmtK(c.raw||0)}` } } },
+            callbacks:{ label:c=>` ${c.dataset.label}: ₡${(c.raw||0).toLocaleString('es-CR')}` } } },
         scales:{
           x:{ grid:{color:gc}, ticks:{color:tc,font:{size:10}} },
-          y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>fmtK(v)}, suggestedMin:5000 }
+          y:{ grid:{color:gc}, ticks:{color:tc,font:{size:10},callback:v=>'₡'+v.toLocaleString('es-CR')}, suggestedMin:5000 }
         }
       }
     });
@@ -5682,12 +5523,13 @@ function renderProductos() {
 
   // ── KPI 5: Venta neta del filtro ──
   const ventaNeta = items.reduce((s,p) => s + (p.ventaNeta || 0), 0);
-  setTxt('pkVal5', ventaNeta > 0 ? fmtCRC(ventaNeta) : '—');
+  const crcFmt = v => '₡' + Math.round(v).toLocaleString('es-CR');
+  setTxt('pkVal5', ventaNeta > 0 ? crcFmt(ventaNeta) : '—');
   setTxt('pkSub5', 'del filtro activo');
 
   // ── KPI 6: Ticket medio (venta neta / unidades) ──
   const ticketMedio = totalFiltrado > 0 && ventaNeta > 0 ? ventaNeta / totalFiltrado : 0;
-  setTxt('pkVal6', ticketMedio > 0 ? fmtCRC(ticketMedio) : '—');
+  setTxt('pkVal6', ticketMedio > 0 ? crcFmt(ticketMedio) : '—');
   setTxt('pkSub6', 'venta / unidad');
 
   // ── Pie chart ──
@@ -5969,240 +5811,12 @@ function mostrarDashboard(nombre, usuario) {
   const initials = nombre.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userNameChip').textContent = nombre.split(' ')[0];
+  // Mostrar el panel de menú principal en vez de ir directo a una vista
+  document.getElementById('menuPrincipal').classList.remove('hidden');
   aplicarPermisosVistas();
   // El tipo de cambio ya no se carga solo al abrir la página (requiere
   // sesión) — se carga acá, una vez que ya sabemos que el login funcionó.
   if (typeof cargarTipoCambioFn === 'function') cargarTipoCambioFn();
-
-  // Preguntar país solo si todavía no se eligió ninguno en esta sesión de
-  // navegador. Si ya se había elegido antes (mismo dispositivo), se entra
-  // directo a ese país sin volver a preguntar.
-  const paisGuardado = localStorage.getItem('oakberry_pais');
-  if (paisGuardado === 'CR' || paisGuardado === 'PA') {
-    activarPais(paisGuardado);
-  } else {
-    document.getElementById('paisSelectorScreen').classList.remove('hidden');
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  SWITCH DE PAÍS — Costa Rica / Panamá
-// ═══════════════════════════════════════════════════════════
-let paisActivo = null; // 'CR' | 'PA'
-
-function elegirPais(pais){
-  localStorage.setItem('oakberry_pais', pais);
-  document.getElementById('paisSelectorScreen').classList.add('hidden');
-  activarPais(pais);
-}
-
-function cambiarPais(){
-  localStorage.removeItem('oakberry_pais');
-  paisActivo = null;
-  document.body.classList.remove('modo-vista-unica');
-  document.getElementById('menuPrincipal').classList.add('hidden');
-  document.getElementById('paisSelectorScreen').classList.remove('hidden');
-}
-
-function activarPais(pais){
-  paisActivo = pais;
-  const esPA = pais === 'PA';
-
-  // Menú principal: mostrar el grupo de tarjetas del país activo
-  document.getElementById('menuGruposCR').style.display = esPA ? 'none' : '';
-  document.getElementById('menuGruposPA').style.display = esPA ? '' : 'none';
-  const paisLbl = document.getElementById('paisActualLabel');
-  if (paisLbl) paisLbl.textContent = esPA ? 'Panamá 🇵🇦' : 'Costa Rica 🇨🇷';
-
-  // Sidebar: mismo criterio
-  document.getElementById('navItemsCR').style.display = esPA ? 'none' : '';
-  document.getElementById('navItemsPA').style.display = esPA ? '' : 'none';
-
-  // Controles del topbar y de moneda/modo-venta que solo aplican a CR
-  const topbarCR = document.getElementById('topbarControlsCR');
-  if (topbarCR) topbarCR.style.display = esPA ? 'none' : 'contents';
-  const sidebarFooter = document.getElementById('sidebarFooter');
-  if (sidebarFooter) sidebarFooter.style.display = esPA ? 'none' : '';
-
-  document.getElementById('menuPrincipal').classList.remove('hidden');
-
-  if (esPA) {
-    initPAFechasPorDefecto();
-  }
-}
-
-// Rellena los rangos de fecha de Reporte/Canales de Panamá con los
-// últimos 14 días, solo si todavía están vacíos (primera vez).
-function initPAFechasPorDefecto(){
-  const hoy = new Date();
-  const hace14 = new Date(Date.now() - 13*86400000);
-  const pad = n => String(n).padStart(2,'0');
-  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  ['paRepFechaInicio','paCanFechaInicio'].forEach(id=>{
-    const el = document.getElementById(id);
-    if (el && !el.value) el.value = fmt(hace14);
-  });
-  ['paRepFechaFin','paCanFechaFin'].forEach(id=>{
-    const el = document.getElementById(id);
-    if (el && !el.value) el.value = fmt(hoy);
-  });
-}
-
-// Formateador de moneda para Panamá — los datos ya vienen en USD nativo
-// (InvuPOS), así que NUNCA se dividen por el tipo de cambio de CR.
-function fmtUSD(n){
-  const v = num(n, 0);
-  const signo = v < 0 ? '-' : '';
-  const abs = Math.abs(v);
-  return signo + '$' + abs.toLocaleString('en-US', {maximumFractionDigits: 0});
-}
-
-async function fetchPA(action, params){
-  if (!APPS_SCRIPT_URL_PA || APPS_SCRIPT_URL_PA.indexOf('PEGAR_AQUI') === 0) {
-    throw new Error('Falta configurar APPS_SCRIPT_URL_PA en el HTML (todavía tiene el valor de ejemplo).');
-  }
-  const qs = new URLSearchParams({ action, token: APPS_SCRIPT_TOKEN_PA, ...params });
-  const resp = await fetch(`${APPS_SCRIPT_URL_PA}?${qs.toString()}`);
-  const data = await resp.json();
-  if (data && data.error) throw new Error(data.message || 'Error del servidor de Panamá');
-  return data;
-}
-
-// ── PANAMÁ · DASHBOARD ──────────────────────────────────────
-async function cargarPADashboard(){
-  const empty = document.getElementById('paDashEmpty');
-  try{
-    empty.style.display = 'block';
-    empty.querySelector('.empty-txt').textContent = 'Cargando datos de Panamá...';
-    const data = await fetchPA('resumen', { tienda: 'todas' });
-    empty.style.display = 'none';
-
-    setTxt('paKHoy', fmtUSD(data.hoy?.ventas));
-    setTxt('paKHoyPedidos', (data.hoy?.pedidos||0).toLocaleString('en-US'));
-
-    setTxt('paKSemana', fmtUSD(data.semana?.ventas));
-    const dS = data.semana?.vsSemanaPasada;
-    const elS = document.getElementById('paKSemanaDelta');
-    if (dS===null || dS===undefined) { elS.textContent = 'Sin semana previa'; elS.className='kpi-delta d-neu'; }
-    else { elS.textContent = (dS>=0?'+':'')+dS.toFixed(1)+'% vs semana pasada'; elS.className = 'kpi-delta ' + (dS>=0?'d-pos':'d-neg'); }
-
-    setTxt('paKMes', fmtUSD(data.mes?.ventas));
-    const dM = data.mes?.vsMesPasado;
-    const elM = document.getElementById('paKMesDelta');
-    if (dM===null || dM===undefined) { elM.textContent = 'Sin mes previo equivalente'; elM.className='kpi-delta d-neu'; }
-    else { elM.textContent = (dM>=0?'+':'')+dM.toFixed(1)+'% vs mismo tramo mes pasado'; elM.className = 'kpi-delta ' + (dM>=0?'d-pos':'d-neg'); }
-
-    setTxt('paKTicket', fmtUSD(data.mes?.ticketPromedio));
-    setTxt('paKMesPedidos', (data.mes?.pedidos||0).toLocaleString('en-US'));
-
-  }catch(e){
-    empty.style.display = 'block';
-    empty.querySelector('.empty-txt').textContent = 'Error: ' + e.message;
-    console.error('cargarPADashboard:', e);
-  }
-}
-
-// ── PANAMÁ · REPORTE DIARIO ──────────────────────────────────
-async function cargarPAReporte(){
-  const fi = document.getElementById('paRepFechaInicio').value;
-  const ff = document.getElementById('paRepFechaFin').value;
-  const tbody = document.getElementById('paRepBody');
-  if (!fi || !ff) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Elegí un rango de fechas</td></tr>'; return; }
-
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Cargando...</td></tr>';
-  setTxt('paRepTag', `${fi} → ${ff}`);
-  try{
-    const data = await fetchPA('historialDiario', { tienda: 'todas', fechaInicio: fi, fechaFin: ff });
-    const dias = Array.isArray(data) ? data : [];
-    if (!dias.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Sin datos en ese rango</td></tr>'; document.getElementById('paRepFoot').innerHTML=''; return; }
-
-    const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    let totalVentas = 0, totalPedidos = 0;
-    tbody.innerHTML = dias.map(d=>{
-      const f = new Date(d.fecha+'T12:00:00');
-      const ticket = d.transacciones>0 ? d.ventasNetas/d.transacciones : 0;
-      totalVentas += d.ventasNetas; totalPedidos += d.transacciones;
-      return `<tr>
-        <td>${d.fecha}</td>
-        <td>${diasSemana[f.getDay()]}</td>
-        <td style="text-align:center">${d.transacciones}</td>
-        <td style="text-align:right;font-family:var(--mono)">${fmtUSD(d.ventasNetas)}</td>
-        <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${fmtUSD(ticket)}</td>
-      </tr>`;
-    }).join('');
-
-    const ticketProm = totalPedidos>0 ? totalVentas/totalPedidos : 0;
-    document.getElementById('paRepFoot').innerHTML = `<tr class="total-row">
-      <td colspan="2">TOTAL</td>
-      <td style="text-align:center">${totalPedidos}</td>
-      <td style="text-align:right;font-family:var(--mono)">${fmtUSD(totalVentas)}</td>
-      <td style="text-align:right;font-family:var(--mono)">${fmtUSD(ticketProm)}</td>
-    </tr>`;
-
-  }catch(e){
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:24px">Error: ${e.message}</td></tr>`;
-    console.error('cargarPAReporte:', e);
-  }
-}
-
-// ── PANAMÁ · CANALES ──────────────────────────────────────────
-let paChartCanales = null;
-async function cargarPACanales(){
-  const fi = document.getElementById('paCanFechaInicio').value;
-  const ff = document.getElementById('paCanFechaFin').value;
-  const grid = document.getElementById('paCanalesGrid');
-  if (!fi || !ff) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:24px">Elegí un rango de fechas</div>'; return; }
-
-  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:24px">Cargando...</div>';
-  setTxt('paCanTag', `${fi} → ${ff}`);
-  try{
-    const data = await fetchPA('historialCanales', { tienda: 'todas', fechaInicio: fi, fechaFin: ff });
-    const dias = Array.isArray(data) ? data : [];
-
-    const totales = { uber: 0, peya: 0, tienda: 0 };
-    dias.forEach(d=>{ totales.uber += d.uber||0; totales.peya += d.peya||0; totales.tienda += d.tienda||0; });
-    const totalGeneral = totales.uber + totales.peya + totales.tienda;
-
-    const CANAL_INFO = [
-      { key:'uber',   label:'Uber Eats',   color:'#5FAF48' },
-      { key:'peya',   label:'Pedidos Ya',  color:'#E0A62A' },
-      { key:'tienda', label:'Mostrador',   color:'#2FA9C4' },
-    ];
-
-    grid.innerHTML = CANAL_INFO.map(c=>{
-      const val = totales[c.key];
-      const pctVal = totalGeneral>0 ? (val/totalGeneral*100) : 0;
-      return `<div style="background:var(--surface2);border-radius:12px;padding:14px;text-align:center">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">${c.label}</div>
-        <div style="font-size:20px;font-weight:800;margin:4px 0;color:${c.color}">${fmtUSD(val)}</div>
-        <div style="font-size:11px;color:var(--muted)">${pctVal.toFixed(1)}%</div>
-      </div>`;
-    }).join('');
-
-    const labels = dias.map(d=>d.fecha.slice(5));
-    if (paChartCanales) paChartCanales.destroy();
-    const ctx = document.getElementById('paChartCanales').getContext('2d');
-    paChartCanales = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: CANAL_INFO.map(c=>({
-          label: c.label,
-          data: dias.map(d=>d[c.key]||0),
-          backgroundColor: c.color,
-        }))
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        scales: { x: { stacked: true, ticks:{color:'#7070a0', font:{size:10}} }, y: { stacked: true, ticks:{color:'#7070a0', callback:v=>fmtUSD(v)} } },
-        plugins: { legend: { position:'bottom', labels:{color:'#7070a0', font:{size:11}} } }
-      }
-    });
-
-  }catch(e){
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--red);padding:24px">Error: ${e.message}</div>`;
-    console.error('cargarPACanales:', e);
-  }
 }
 
 // Claves de vista tal como se usan en data-section / abrirVista()
