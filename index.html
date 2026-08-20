@@ -765,6 +765,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   font-size:13px;color:rgba(255,255,255,.6);text-align:center;
   margin-bottom:40px;max-width:420px;
 }
+/* .menu-inner is align-items:center (to center menu-todas-btn/menu-logout),
+   which makes #menuGruposCR/#menuGruposPA shrink-to-fit their content by
+   default — collapsing the auto-fit .menu-grid below to a single column
+   instead of using the full available width. Force them to stretch. */
+#menuGruposCR, #menuGruposPA{ width:100%;align-self:stretch; }
 .menu-grupo{ width:100%;margin-bottom:38px; }
 .menu-grupo-label{
   font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
