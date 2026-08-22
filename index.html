@@ -256,6 +256,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 #dashKpis .kpi-sub{margin-top:2px;}
 #dashKpis .kpi-delta{margin-top:4px;padding:1px 7px;}
 #section-dashboard .grid-2 .chart-wrap{height:140px;}
+#section-dashboard .grid-2{align-items:start;}
 
 /* ── 2-COL GRID ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
@@ -2111,6 +2112,19 @@ window.fetch = function(url, options) {
 // ── Forecast/Budget: igual que el dashboard, usa el endpoint principal ──
 // Llama ?day=lastDay&month=X&year=X&tienda=X y lee forecastMensual de la respuesta
 
+// El plugin de datalabels se carga por CDN pero nunca se registraba —
+// todos los "datalabels:{display:false}" de los charts de este archivo
+// eran no-ops. Se registra acá, con el default global en 'false': varios
+// charts (Reporte Diario, Proyección, Día de la Semana, Estacionalidad,
+// Canales de Panamá) nunca configuraron esta opción asumiendo que estaba
+// inactiva, y el plugin muestra etiquetas por defecto si no se le dice lo
+// contrario. Cada chart que sí quiera etiquetas las pide explícitamente
+// (ver renderChartCanales) y esa config local gana sobre este default.
+if (typeof ChartDataLabels !== 'undefined') {
+  Chart.register(ChartDataLabels);
+  Chart.defaults.set('plugins.datalabels', { display: false });
+}
+
 // ── Chart.js global defaults — override browser black ──
 Chart.defaults.color          = '#7070a0';
 Chart.defaults.borderColor    = 'rgba(42,42,58,.5)';
@@ -2611,11 +2625,11 @@ function renderChartTiendas(data, tipo) {
 // en el backend de CR) — no un cajón de restos. Colores validados contra
 // daltonismo (protanopia/deuteranopia) con el script de la skill dataviz.
 const CANAL_CFG_DASH = [
-  { key:'otros', name:'Venta Presencial',    group:'En tienda',          color:'#7B4FE0' },
-  { key:'uber',  name:'Uber Eats',           group:'Apps de delivery',   color:'#1F93AD' },
-  { key:'peya',  name:'Pedidos Ya',          group:'Apps de delivery',   color:'#4A7FE0' },
-  { key:'didi',  name:'Didi',                group:'Apps de delivery',   color:'#B8850F' },
-  { key:'olo',   name:'OLO · Página Web',    group:'Pedidos en línea',   color:'#E5427A' },
+  { key:'otros', name:'Venta Presencial',    short:'Presencial', group:'En tienda',          color:'#7B4FE0' },
+  { key:'uber',  name:'Uber Eats',           short:'Uber',       group:'Apps de delivery',   color:'#1F93AD' },
+  { key:'peya',  name:'Pedidos Ya',          short:'PeYa',       group:'Apps de delivery',   color:'#4A7FE0' },
+  { key:'didi',  name:'Didi',                short:'Didi',       group:'Apps de delivery',   color:'#B8850F' },
+  { key:'olo',   name:'OLO · Página Web',    short:'OLO',        group:'Pedidos en línea',   color:'#E5427A' },
 ];
 
 let canalesChartTipo = 'doughnut';
@@ -2644,7 +2658,20 @@ function renderChartCanales(total, tipo) {
     } : {
       responsive:true,maintainAspectRatio:false,cutout:'65%',
       animation:{ duration:700, easing:'easeOutQuart', animateRotate:true, animateScale:true },
-      plugins:{ legend:{display:false}, datalabels:{display:false},
+      plugins:{ legend:{display:false},
+        datalabels:{
+          color:'#fff', font:{weight:'700', size:10},
+          display:(ctx) => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+num(b),0);
+            const v = num(ctx.dataset.data[ctx.dataIndex]);
+            return total>0 && (v/total*100) >= 3; // oculta canales en 0 y franjas demasiado finas para el texto
+          },
+          formatter:(value, ctx) => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+num(b),0);
+            const pct = total>0 ? Math.round(value/total*100) : 0;
+            return pct+'%';
+          }
+        },
         tooltip:{callbacks:{label:ctx=>' '+fmtK(ctx.raw)}} }
     }
   });
