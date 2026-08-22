@@ -2675,10 +2675,11 @@ function renderMargenContribucion(data){
     const costo  = num(t.costoAcum||t.costoDia||0);
     const margen = venta-costo;
     const margenPct = venta>0 ? (margen/venta*100) : 0;
+    const costoPct  = 100-margenPct; // costo% es siempre el complemento a 100 del margen%, igual que en Toteat
     return `<div class="margen-row">
-      <div class="top"><span class="tienda">${t.tienda.replace('Oakberry ','')}</span><span class="margen-pct">${margenPct.toFixed(1)}%</span></div>
+      <div class="top"><span class="tienda">${t.tienda.replace('Oakberry ','')}</span><span class="margen-pct">${margenPct.toFixed(1)}% margen</span></div>
       <div class="margen-bar"><span style="width:${Math.max(0,Math.min(100,margenPct)).toFixed(1)}%"></span></div>
-      <div class="sub"><span>Costo ${crc(costo)}</span><span>Margen ${crc(margen)}</span></div>
+      <div class="sub"><span>Costo ${crc(costo)} · ${costoPct.toFixed(1)}%</span><span>Margen ${crc(margen)} · ${margenPct.toFixed(1)}%</span></div>
     </div>`;
   }).join('');
 }
