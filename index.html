@@ -281,6 +281,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 }
 .tab-pill.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
 
+/* ── Canales de Venta: desglose por grupo (presencial / delivery / web) ── */
+.canal-group-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);margin:10px 0 4px;}
+.canal-group-label:first-child{margin-top:0;}
+.canal-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;}
+.canal-row .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+.canal-row .name{flex:1;color:var(--text);font-weight:600;}
+.canal-row .amt{font-family:var(--mono);color:var(--text);}
+.canal-row .pct{font-family:var(--mono);color:var(--muted);width:38px;text-align:right;}
+
+/* ── Margen de Contribución (reemplaza Métodos de Pago) ── */
+.margen-row{padding-bottom:9px;border-bottom:1px solid var(--border);}
+.margen-row:last-child{border:none;padding-bottom:0;}
+.margen-row .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.margen-row .tienda{font-size:11.5px;font-weight:700;color:var(--text);}
+.margen-row .margen-pct{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--lime);}
+.margen-row .sub{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:var(--mono);}
+.margen-bar{height:5px;border-radius:3px;background:rgba(229,66,122,.35);overflow:hidden;margin:5px 0;}
+.margen-bar span{display:block;height:100%;background:var(--lime);border-radius:3px;}
+
 /* ── PROYECCIÓN: Calendar grid ── */
 .cal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .cal-item{
@@ -1170,18 +1189,26 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <div class="card">
           <div class="card-header">
             <span class="card-title">Canales de Venta</span>
-            <span class="card-tag" id="canalesTag">Día</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="card-tag" id="canalesTag">Día</span>
+              <div class="tab-pills">
+                <button class="tab-pill active" onclick="switchCanalesChart('doughnut',this)">Circular</button>
+                <button class="tab-pill" onclick="switchCanalesChart('bar',this)">Barras</button>
+              </div>
+            </div>
           </div>
           <div class="card-body"><div class="chart-wrap"><canvas id="chartCanales"></canvas></div></div>
+          <div id="canalesBreakdown" style="padding:0 18px 16px"></div>
         </div>
       </div>
 
       <div class="grid-3">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">Métodos de Pago</span>
+            <span class="card-title">Margen de Contribución</span>
+            <span class="card-tag">Acum</span>
           </div>
-          <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="chartPagos"></canvas></div></div>
+          <div class="card-body" id="margenContribucion" style="display:flex;flex-direction:column;gap:10px"></div>
         </div>
         <div class="card" style="grid-column:span 2">
           <div class="card-header">
@@ -2493,18 +2520,16 @@ function renderDashboard(data) {
     elDA.title = 'Promedio de crecimiento vs. mismo día de semana del año anterior, solo entre tiendas que ya existían en esa fecha';
   }
 
-  // Descuentos & pagos
+  // Descuentos
   setTxt('descDia',  crc(total.descuentos));  setTxt('descAcum',      crc(total.descuentosAcum||0));
   setTxt('ticketDia',crc(ticket));             const ticketA=total.transaccionesAcum>0?total.ventasAcumuladas/total.transaccionesAcum:0;
   setTxt('ticketAcum',crc(ticketA));
-  setTxt('pTarjetaDia',crc(total.uber||0));    setTxt('pTarjetaAcum',crc(total.uberAcum||0));
-  setTxt('pEfectivoDia',crc(total.didi||0));   setTxt('pEfectivoAcum',crc(total.didiAcum||0));
-  setTxt('pSinpeDia',crc(total.peya||0));      setTxt('pSinpeAcum',crc(total.peyaAcum||0));
 
   renderTablaTiendas(data);
   renderChartTiendas(data);
   renderChartCanales(total);
-  renderChartPagos(total);
+  renderCanalesBreakdown(total);
+  renderMargenContribucion(data);
 }
 
 function renderTablaTiendas(data) {
@@ -2569,33 +2594,93 @@ function renderChartTiendas(data, tipo) {
   });
 }
 
-function renderChartCanales(total) {
-  const data = [num(total.uber),num(total.peya),num(total.didi),num(total.olo),num(total.otros)];
+// Canal real → nombre visible + a qué grupo pertenece + color.
+// 'otros' es la venta presencial (tarjeta+efectivo+sinpe, ver clasificarPagos
+// en el backend de CR) — no un cajón de restos. Colores validados contra
+// daltonismo (protanopia/deuteranopia) con el script de la skill dataviz.
+const CANAL_CFG_DASH = [
+  { key:'otros', name:'Venta Presencial',    group:'En tienda',          color:'#7B4FE0' },
+  { key:'uber',  name:'Uber Eats',           group:'Apps de delivery',   color:'#1F93AD' },
+  { key:'peya',  name:'Pedidos Ya',          group:'Apps de delivery',   color:'#4A7FE0' },
+  { key:'didi',  name:'Didi',                group:'Apps de delivery',   color:'#B8850F' },
+  { key:'olo',   name:'OLO · Página Web',    group:'Pedidos en línea',   color:'#E5427A' },
+];
+
+let canalesChartTipo = 'doughnut';
+
+function renderChartCanales(total, tipo) {
+  if (tipo) canalesChartTipo = tipo;
+  const isBar = canalesChartTipo === 'bar';
+  const data   = CANAL_CFG_DASH.map(c => num(total[c.key]));
+  const colors = CANAL_CFG_DASH.map(c => c.color);
+  const labels = CANAL_CFG_DASH.map(c => c.name);
+
   if(charts.canales) charts.canales.destroy();
   const ctx = document.getElementById('chartCanales').getContext('2d');
   charts.canales = new Chart(ctx, {
-    type:'doughnut',
-    data:{ labels:['Tarjeta','Sinpe/Trans','Efectivo','OLO','Otros'], datasets:[{ data, backgroundColor:['#a855f7','#5af5c8','#f5c85a','#5af5a8','#7070a0'], borderWidth:0, hoverOffset:6 }] },
-    options:{
+    type: isBar ? 'bar' : 'doughnut',
+    data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, hoverOffset:6, borderRadius:isBar?6:0 }] },
+    options: isBar ? {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.x)}} },
+      scales:{
+        x:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11},callback:v=>fmtK(v)}},
+        y:{grid:{display:false},ticks:{color:'#7070a0',font:{size:11}}}
+      }
+    } : {
       responsive:true,maintainAspectRatio:false,cutout:'65%',
-      plugins:{ legend:{position:'bottom',labels:{color:'#7070a0',font:{size:11},padding:12}}, datalabels:{display:false},
+      plugins:{ legend:{display:false}, datalabels:{display:false},
         tooltip:{callbacks:{label:ctx=>' '+fmtK(ctx.raw)}} }
     }
   });
 }
 
-function renderChartPagos(total) {
-  const data = [num(total.uberAcum),num(total.peyaAcum),num(total.didiAcum),num(total.otrosAcum)];
-  if(charts.pagos) charts.pagos.destroy();
-  const ctx = document.getElementById('chartPagos').getContext('2d');
-  charts.pagos = new Chart(ctx, {
-    type:'doughnut',
-    data:{ labels:['Tarjeta','Sinpe','Efectivo','Otros'], datasets:[{ data, backgroundColor:['#a855f7','#5af5c8','#f5c85a','#7070a0'], borderWidth:0 }] },
-    options:{
-      responsive:true,maintainAspectRatio:false,cutout:'60%',
-      plugins:{ legend:{position:'bottom',labels:{color:'#7070a0',font:{size:10},padding:8}}, datalabels:{display:false} }
-    }
+function switchCanalesChart(type, btn){
+  btn.parentElement.querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if (!datosGlobales) return;
+  const total = datosGlobales.find(r=>r.tienda==='TODAS')||datosGlobales[0];
+  renderChartCanales(total, type);
+}
+
+// Lista agrupada debajo del gráfico — el gráfico solo no alcanza para decir
+// "tanto fue presencial vs. delivery vs. página web", así que el desglose
+// con montos y % vive acá, no solo como leyenda de colores.
+function renderCanalesBreakdown(total){
+  const el = document.getElementById('canalesBreakdown');
+  if (!el) return;
+  const totalSum = CANAL_CFG_DASH.reduce((s,c)=>s+num(total[c.key]),0);
+  let html = '', lastGroup = null;
+  CANAL_CFG_DASH.forEach(c=>{
+    if (c.group !== lastGroup) { html += `<div class="canal-group-label">${c.group}</div>`; lastGroup = c.group; }
+    const val = num(total[c.key]);
+    const pct = totalSum>0 ? (val/totalSum*100) : 0;
+    html += `<div class="canal-row"><span class="dot" style="background:${c.color}"></span><span class="name">${c.name}</span><span class="amt">${crc(val)}</span><span class="pct">${pct.toFixed(1)}%</span></div>`;
   });
+  el.innerHTML = html;
+}
+
+// Reemplaza "Métodos de Pago" (que repetía los mismos campos de Canales,
+// mal etiquetados). costoAcum/costoDia ya los calcula el backend — este
+// mismo patrón ya existe en Análisis → Rentabilidad, acá solo se reutiliza
+// en la vista principal.
+function renderMargenContribucion(data){
+  const el = document.getElementById('margenContribucion');
+  if (!el) return;
+  const tiendas = data.filter(r=>r.tienda!=='TODAS');
+  if (!tiendas.length){ el.innerHTML = '<div style="font-size:11px;color:var(--muted)">Sin datos para el rango seleccionado.</div>'; return; }
+  el.innerHTML = tiendas.map(t=>{
+    const venta  = num(t.ventasAcumuladas||t.ventasNetas||0);
+    const costo  = num(t.costoAcum||t.costoDia||0);
+    const margen = venta-costo;
+    const margenPct = venta>0 ? (margen/venta*100) : 0;
+    return `<div class="margen-row">
+      <div class="top"><span class="tienda">${t.tienda.replace('Oakberry ','')}</span><span class="margen-pct">${margenPct.toFixed(1)}%</span></div>
+      <div class="margen-bar"><span style="width:${Math.max(0,Math.min(100,margenPct)).toFixed(1)}%"></span></div>
+      <div class="sub"><span>Costo ${crc(costo)}</span><span>Margen ${crc(margen)}</span></div>
+    </div>`;
+  }).join('');
 }
 
 function switchDashChart(type,btn,chartId){
