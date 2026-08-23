@@ -2711,7 +2711,7 @@ function renderCanalesBreakdown(total, comparativo){
   let lastGroup = null;
   const filas = CANAL_CFG_DASH.map(c=>{
     const filaGrupo = c.group !== lastGroup
-      ? (lastGroup=c.group, `<tr class="canal-group-row"><td colspan="6">${c.group}</td></tr>`)
+      ? (lastGroup=c.group, `<tr class="canal-group-row"><td colspan="7">${c.group}</td></tr>`)
       : '';
     const val = num(total[c.key]);
     const pctDia = totalSum>0 ? (val/totalSum*100) : 0;
@@ -2722,6 +2722,9 @@ function renderCanalesBreakdown(total, comparativo){
     const acumCell = comp
       ? `<td style="border-left:1px solid var(--border)">${crc(comp.acum)}</td>`
       : `<td style="border-left:1px solid var(--border);color:var(--muted2)">…</td>`;
+    const pctAcumCell = comp
+      ? `<td>${comp.pctAcum.toFixed(1)}%</td>`
+      : `<td style="color:var(--muted2)">…</td>`;
     const varCell = comp
       ? `<td style="color:${colorPct(comp.varAcum)}">${pct(comp.varAcum)}</td>`
       : `<td style="color:var(--muted2)">…</td>`;
@@ -2731,6 +2734,7 @@ function renderCanalesBreakdown(total, comparativo){
       <td>${pctDia.toFixed(1)}%</td>
       ${crecCell}
       ${acumCell}
+      ${pctAcumCell}
       ${varCell}
     </tr>`;
   }).join('');
@@ -2738,7 +2742,7 @@ function renderCanalesBreakdown(total, comparativo){
     <thead><tr>
       <th style="text-align:left">Canal</th><th>Día</th><th>%</th>
       <th title="vs. mismo día, 7 días atrás">Crec%</th>
-      <th style="border-left:1px solid var(--border)">Acum</th>
+      <th style="border-left:1px solid var(--border)">Acum</th><th>%</th>
       <th title="vs. mismo tramo, mes pasado">Var%</th>
     </tr></thead>
     <tbody>${filas}</tbody>
@@ -2789,6 +2793,7 @@ async function cargarCanalesComparativo(total){
     };
     const acumActual = sumaRango(iso(inicioMesActual), fechaFinInput);
     const acumPasado = sumaRango(iso(mesPasadoIni), iso(diaEquivPasado));
+    const totalAcum = CANAL_CFG_DASH.reduce((s,c)=>s+num(acumActual[c.key]),0);
 
     const comparativo = {};
     CANAL_CFG_DASH.forEach(c=>{
@@ -2798,7 +2803,8 @@ async function cargarCanalesComparativo(total){
       const acumVal    = acumActual[c.key];
       const pasadoVal  = acumPasado[c.key];
       const varAcum  = pasadoVal>0 ? ((acumVal-pasadoVal)/pasadoVal*100) : (acumVal>0 ? 100 : 0);
-      comparativo[c.key] = { crecDia, acum:acumVal, varAcum };
+      const pctAcum  = totalAcum>0 ? (acumVal/totalAcum*100) : 0;
+      comparativo[c.key] = { crecDia, acum:acumVal, varAcum, pctAcum };
     });
 
     renderCanalesBreakdown(total, comparativo);
