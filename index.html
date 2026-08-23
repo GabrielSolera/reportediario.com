@@ -996,6 +996,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <button class="pennant-btn" onclick="abrirVista('pa-reporte','Reporte Diario Panamá')"><div class="pennant-icon" style="background:#5FAF48">📅</div><span class="pennant-label">Reporte Diario</span></button>
           <button class="pennant-btn" onclick="abrirVista('pa-canales','Canales Panamá')"><div class="pennant-icon" style="background:#E0A62A">📊</div><span class="pennant-label">Canales</span></button>
           <button class="pennant-btn" onclick="abrirVista('pa-productos','Ventas Producto Panamá')"><div class="pennant-icon" style="background:#7B4FE0">🥣</div><span class="pennant-label">Ventas Producto</span></button>
+          <button class="pennant-btn" onclick="abrirVista('pa-proyeccion','Proyección Panamá')"><div class="pennant-icon" style="background:#a855f7">📈</div><span class="pennant-label">Proyección</span></button>
         </div>
       </div>
     </div>
@@ -1079,6 +1080,9 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div>
       <div class="nav-item" data-section="pa-productos">
         <span class="nav-icon">🥣</span><span class="nav-label">Ventas Producto</span>
+      </div>
+      <div class="nav-item" data-section="pa-proyeccion">
+        <span class="nav-icon">📈</span><span class="nav-label">Proyección</span>
       </div>
       <div class="nav-item" onclick="cambiarPais()" style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px">
         <span class="nav-icon">🌐</span><span class="nav-label">Cambiar país</span>
@@ -2074,6 +2078,111 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div>
     </div>
     <!-- ═══════════ FIN PANAMÁ · VENTAS PRODUCTO ═══════════ -->
+
+    <!-- ═══════════ PANAMÁ · PROYECCIÓN ═══════════ -->
+    <div class="section" id="section-pa-proyeccion">
+
+      <div class="proy-controls">
+        <span class="ctrl-label">Proyectar</span>
+        <select class="ctrl-select" id="paProyMonth"></select>
+        <div class="ctrl-divider"></div>
+        <span class="ctrl-label">Historial</span>
+        <input type="date" class="ctrl-input" id="paProyHistFrom" style="width:130px">
+        <span class="date-sep">→</span>
+        <input type="date" class="ctrl-input" id="paProyHistTo" style="width:130px">
+        <div class="ctrl-divider"></div>
+        <button class="btn btn-primary" id="paProyRunBtn" onclick="runProjectionPA()">▶ Proyectar</button>
+        <button class="btn btn-lime" id="paProyExcelBtn" onclick="exportProyExcelPA()" style="display:none">⬇ Excel</button>
+      </div>
+
+      <div class="kpi-grid" id="paProyKpis">
+        <div class="kpi k-purple">
+          <div class="kpi-label">Proyección del Mes</div>
+          <div class="kpi-value" id="paPkTotal">—</div>
+          <div class="kpi-sub" id="paPkTotalSub">Ejecutá la proyección</div>
+          <div class="kpi-delta d-neu" id="paPkVsAnterior" style="margin-top:6px">—</div>
+        </div>
+        <div class="kpi k-lime">
+          <div class="kpi-label">Promedio Diario</div>
+          <div class="kpi-value" id="paPkAvg">—</div>
+          <div class="kpi-sub" id="paPkAvgSub">—</div>
+        </div>
+        <div class="kpi k-amber">
+          <div class="kpi-label">Mejor Día Esperado</div>
+          <div class="kpi-value" id="paPkBest">—</div>
+          <div class="kpi-sub" id="paPkBestSub">—</div>
+        </div>
+        <div class="kpi k-teal">
+          <div class="kpi-label">Efecto Calendario</div>
+          <div class="kpi-value" id="paPkCal" style="font-size:17px">—</div>
+          <div class="kpi-sub" id="paPkCalSub">vs mes anterior</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="align-items:start">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Proyección día a día</span>
+            <div class="tab-pills">
+              <button class="tab-pill active" onclick="switchProyChartPA('bar',this)">Barras</button>
+              <button class="tab-pill" onclick="switchProyChartPA('line',this)">Línea</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap-tall">
+              <canvas id="paProyChart"></canvas>
+              <div class="empty-state" id="paProyChartEmpty">
+                <div class="empty-icon">📊</div>
+                <div class="empty-txt">Seleccioná opciones y presioná Proyectar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚡ Efecto Calendario</span>
+            <span class="card-tag" id="paCalTag">—</span>
+          </div>
+          <div class="card-body">
+            <div class="cal-grid">
+              <div class="cal-item"><div class="cal-item-label">Lunes</div><div class="cal-compare"><span class="cal-prev" id="paCalL1">—</span><span class="cal-arr" id="paCalA1">→</span><span class="cal-next" id="paCalN1">—</span></div></div>
+              <div class="cal-item"><div class="cal-item-label">Martes</div><div class="cal-compare"><span class="cal-prev" id="paCalL2">—</span><span class="cal-arr" id="paCalA2">→</span><span class="cal-next" id="paCalN2">—</span></div></div>
+              <div class="cal-item"><div class="cal-item-label">Miércoles</div><div class="cal-compare"><span class="cal-prev" id="paCalL3">—</span><span class="cal-arr" id="paCalA3">→</span><span class="cal-next" id="paCalN3">—</span></div></div>
+              <div class="cal-item"><div class="cal-item-label">Jueves</div><div class="cal-compare"><span class="cal-prev" id="paCalL4">—</span><span class="cal-arr" id="paCalA4">→</span><span class="cal-next" id="paCalN4">—</span></div></div>
+              <div class="cal-item"><div class="cal-item-label">Viernes</div><div class="cal-compare"><span class="cal-prev" id="paCalL5">—</span><span class="cal-arr" id="paCalA5">→</span><span class="cal-next" id="paCalN5">—</span></div></div>
+              <div class="cal-item" style="border-color:rgba(168,85,247,.3)"><div class="cal-item-label" style="color:var(--accent)">Sábado</div><div class="cal-compare"><span class="cal-prev" id="paCalL6">—</span><span class="cal-arr" id="paCalA6">→</span><span class="cal-next" id="paCalN6">—</span></div></div>
+              <div class="cal-item" style="border-color:rgba(245,200,90,.3)"><div class="cal-item-label" style="color:var(--amber)">Domingo</div><div class="cal-compare"><span class="cal-prev" id="paCalL0">—</span><span class="cal-arr" id="paCalA0">→</span><span class="cal-next" id="paCalN0">—</span></div></div>
+            </div>
+            <div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:center">Panamá aún no tiene calendario de feriados cargado — el efecto solo compara días de semana.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Detalle Diario</span>
+          <span class="card-tag" id="paProyTableTag">—</span>
+        </div>
+        <div class="table-scroll">
+          <table class="proy-table">
+            <thead><tr>
+              <th style="text-align:left">Fecha</th>
+              <th style="text-align:left">Día</th>
+              <th style="text-align:right;color:#7070a0">Budget</th>
+              <th style="text-align:right">Venta</th>
+              <th style="text-align:right">Desv. $</th>
+              <th style="text-align:right">Desv. %</th>
+            </tr></thead>
+            <tbody id="paProyTableBody">
+              <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-txt">Sin datos</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    <!-- ═══════════ FIN PANAMÁ · PROYECCIÓN ═══════════ -->
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -6344,6 +6453,23 @@ function initPAFechasPorDefecto(){
     const el = document.getElementById(id);
     if (el && !el.value) el.value = fmt(hoy);
   });
+
+  // Proyección PA — selector de mes (actual + 6 siguientes)
+  const selProy = document.getElementById('paProyMonth');
+  if (selProy && !selProy.options.length) {
+    const y = hoy.getFullYear(), m = hoy.getMonth();
+    for(let i=0;i<=6;i++){
+      const dt = new Date(y, m+i, 1);
+      const val = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}`;
+      const lbl = dt.toLocaleDateString('es-PA',{month:'long',year:'numeric'});
+      selProy.appendChild(new Option(lbl.charAt(0).toUpperCase()+lbl.slice(1)+(i===0?' (actual)':''), val));
+    }
+    selProy.value = `${y}-${pad(m+1)}`;
+  }
+  const histTo   = document.getElementById('paProyHistTo');
+  const histFrom = document.getElementById('paProyHistFrom');
+  if (histTo && !histTo.value)     histTo.value   = fmt(new Date(hoy.getFullYear(), hoy.getMonth(), 0));
+  if (histFrom && !histFrom.value) histFrom.value = fmt(new Date(hoy.getFullYear(), hoy.getMonth()-2, 1));
 }
 
 // Formateador de moneda para Panamá — los datos ya vienen en USD nativo
@@ -6580,8 +6706,455 @@ function renderPAProductos(){
   }).join('');
 }
 
+// ═══════════════════════════════════════════════════════════
+//  PANAMÁ · PROYECCIÓN — motor de un solo local, en USD
+//  (mismo motor que CR: promedio ponderado por recencia + tendencia
+//  exponencial + calibración con datos reales del mes en curso. Sin
+//  efecto feriados —Panamá aún no tiene calendario cargado— y sin
+//  desglose por sucursal —PA tiene un solo local—.)
+// ═══════════════════════════════════════════════════════════
+let paProyChart = null, paProyChartType = 'bar', paProyData = null;
+
+const fmtKUSD = n => {
+  const v = num(n);
+  const signo = v < 0 ? '-' : '';
+  const abs = Math.abs(v);
+  if (abs >= 1000000) return signo + '$' + (abs/1000000).toFixed(2) + 'M';
+  if (abs >= 1000) return signo + '$' + Math.round(abs/1000) + 'K';
+  return signo + '$' + Math.round(abs).toLocaleString('en-US');
+};
+
+async function fetchPADiario(fromDate, toDate){
+  const data = await fetchPA('historialDiario', { tienda:'todas', fechaInicio:fromDate, fechaFin:toDate });
+  const byDate = {};
+  (Array.isArray(data) ? data : []).forEach(row=>{
+    if(row.fecha) byDate[row.fecha] = { ventas: Number(row.ventasNetas)||0, trans: Number(row.transacciones)||0 };
+  });
+  return byDate;
+}
+
+async function runProjectionPA(){
+  const monthVal = document.getElementById('paProyMonth').value;
+  const histFrom = document.getElementById('paProyHistFrom').value;
+  const histTo   = document.getElementById('paProyHistTo').value;
+  if(!histFrom||!histTo){ alert('Seleccioná el rango de historial'); return; }
+  const [tY,tM] = monthVal.split('-').map(Number);
+
+  // Hoy en Panamá (UTC-5)
+  const _paNow   = new Date(Date.now() - 5*60*60*1000);
+  const today    = new Date(_paNow.getUTCFullYear(), _paNow.getUTCMonth(), _paNow.getUTCDate());
+  const isCurMes = today.getFullYear()===tY && today.getMonth()+1===tM;
+  const lastRealDay = isCurMes ? today.getDate() : 0;
+
+  showLoader(true,'Calculando proyección Panamá...','Historial base...');
+  document.getElementById('paProyRunBtn').disabled = true;
+  document.getElementById('paProyExcelBtn').style.display = 'none';
+
+  try{
+    const historical = await fetchPADiario(histFrom, histTo);
+    const totalDias = Object.keys(historical).length;
+    if(totalDias === 0){
+      throw new Error('El historial llegó vacío desde el Apps Script de Panamá.\n\nVerificá el rango de fechas (PA solo tiene datos desde el 9-may-2026).');
+    }
+    if(totalDias < 7){
+      const ok = confirm(`⚠️ Pocos datos de historial (${totalDias} días).\nLa proyección puede ser poco confiable.\n¿Continuás?`);
+      if(!ok){ showLoader(false); document.getElementById('paProyRunBtn').disabled=false; return; }
+    }
+
+    let currentMonth = {};
+    if(lastRealDay >= 1){
+      const pad = n=>String(n).padStart(2,'0');
+      const curFrom = `${tY}-${pad(tM)}-01`;
+      const curTo   = `${tY}-${pad(tM)}-${pad(lastRealDay)}`;
+      setStep('Datos reales del mes en curso...');
+      try{ currentMonth = await fetchPADiario(curFrom, curTo); }
+      catch(e){ console.warn('No se pudo cargar mes actual PA:', e); currentMonth = {}; }
+    }
+
+    setStep('Calculando promedios, calibración y tendencia...');
+    await new Promise(r=>setTimeout(r,60));
+
+    paProyData = buildProjectionPA(historical, currentMonth, lastRealDay, tY, tM, histFrom, histTo);
+
+    setStep('Cargando presupuesto...');
+    try{
+      const ppto = await fetchPA('forecast', { month:tM, year:tY, tienda:'todas' });
+      const pptoTodas = ppto && ppto['TODAS'];
+      paProyData.forecastPorDia  = pptoTodas?.porDia  || {};
+      paProyData.forecastMensual = pptoTodas?.mensual || 0;
+    }catch(e){
+      console.warn('Presupuesto PA no disponible todavía:', e.message);
+      paProyData.forecastPorDia  = {};
+      paProyData.forecastMensual = 0;
+    }
+
+    setStep('Renderizando...');
+    await new Promise(r=>setTimeout(r,50));
+
+    renderProyeccionPA(paProyData);
+    document.getElementById('paProyExcelBtn').style.display = 'flex';
+
+  }catch(e){ alert('Error en proyección:\n\n'+e.message); console.error(e); }
+  finally{ showLoader(false); document.getElementById('paProyRunBtn').disabled=false; }
+}
+
+function buildProjectionPA(historical, currentMonth, lastRealDay, tY, tM, histFrom, histTo){
+  const prevM = tM===1?12:tM-1;
+  const prevY = tM===1?tY-1:tY;
+  const tDow  = countDow(tY,tM);
+  const pDow  = countDow(prevY,prevM);
+  const daysInMonth = new Date(tY,tM,0).getDate();
+  const histToDate  = new Date(histTo+'T00:00:00');
+  const _paNow   = new Date(Date.now() - 5*60*60*1000);
+  const todayStr = _paNow.toISOString().split('T')[0];
+
+  function percentile(arr,p){
+    if(!arr.length) return 0;
+    const sorted=[...arr].sort((a,b)=>a-b);
+    const idx=(p/100)*(sorted.length-1);
+    const lo=Math.floor(idx), hi=Math.ceil(idx);
+    return sorted[lo]+(sorted[hi]-sorted[lo])*(idx-lo);
+  }
+
+  const entries = Object.entries(historical).filter(([,v])=>v&&v.ventas>0).sort((a,b)=>a[0].localeCompare(b[0]));
+  const N = entries.length;
+  const lastDate = N>0 ? new Date(entries[N-1][0]+'T00:00:00') : histToDate;
+
+  const buckets = [[],[],[],[],[],[],[]];
+  entries.forEach(([dateStr,obj])=>{
+    const d = new Date(dateStr+'T00:00:00');
+    const dow = d.getDay();
+    const daysAgo = Math.max(0, Math.round((lastDate-d)/86400000));
+    const weight  = Math.exp(-daysAgo/60);
+    buckets[dow].push({val:obj.ventas, weight});
+  });
+
+  const baseAvg = buckets.map(b=>{
+    if(!b.length) return 0;
+    const vals = b.map(x=>x.val);
+    const lo = percentile(vals,15), hi = percentile(vals,85);
+    let filtered = b.filter(x=>x.val>=lo && x.val<=hi);
+    if(!filtered.length) filtered = b;
+    const sumW = filtered.reduce((s,x)=>s+x.weight,0);
+    return sumW>0 ? filtered.reduce((s,x)=>s+x.val*x.weight,0)/sumW : 0;
+  });
+
+  const pts = entries.filter(([,obj])=>obj.ventas>0).map(([,obj],i)=>({x:i,y:Math.log(obj.ventas)}));
+  let trendPerDay = 0;
+  if(pts.length>=7){
+    const n=pts.length;
+    const sx=pts.reduce((s,p)=>s+p.x,0)/n, sy=pts.reduce((s,p)=>s+p.y,0)/n;
+    const numerator=pts.reduce((s,p)=>s+(p.x-sx)*(p.y-sy),0);
+    const den=pts.reduce((s,p)=>s+(p.x-sx)**2,0);
+    if(den!==0){
+      const b=numerator/den;
+      trendPerDay=Math.max(-0.015,Math.min(0.015,Math.exp(b)-1));
+    }
+  }
+
+  const calFactor = [1,1,1,1,1,1,1];
+  const realDays = Object.keys(currentMonth).filter(d=>currentMonth[d]&&currentMonth[d].ventas>0).length;
+  const calWeight = Math.min(0.70, realDays*0.10);
+  if(realDays > 0){
+    const realByDow = [[],[],[],[],[],[],[]], modelByDow = [[],[],[],[],[],[],[]];
+    Object.entries(currentMonth).forEach(([dateStr,obj])=>{
+      const amount = obj&&obj.ventas ? obj.ventas : 0;
+      if(amount<=0) return;
+      const d = new Date(dateStr+'T00:00:00');
+      const dow = d.getDay();
+      const ahead = Math.round((d-histToDate)/86400000);
+      const modelVal = baseAvg[dow] * Math.max(0.5,1+trendPerDay*ahead);
+      if(modelVal>0){ realByDow[dow].push(amount); modelByDow[dow].push(modelVal); }
+    });
+    for(let dow=0;dow<7;dow++){
+      if(realByDow[dow].length>0){
+        const avgReal  = realByDow[dow].reduce((s,v)=>s+v,0)/realByDow[dow].length;
+        const avgModel = modelByDow[dow].reduce((s,v)=>s+v,0)/modelByDow[dow].length;
+        if(avgModel>0){
+          const rawFactor = avgReal/avgModel;
+          const cappedFactor = Math.max(0.5,Math.min(1.5,rawFactor));
+          calFactor[dow] = (1-calWeight) + calWeight*cappedFactor;
+        }
+      }
+    }
+  }
+
+  const days = [];
+  for(let day=1; day<=daysInMonth; day++){
+    const date = new Date(tY,tM-1,day);
+    const dow  = date.getDay();
+    const dateStr = date.toISOString().split('T')[0];
+    const isWeekend = dow===0||dow===6;
+    const daysAhead = Math.round((date-histToDate)/86400000);
+    const isReal = day<=lastRealDay;
+
+    let projected, low, high, isActualReal=true;
+    if(isReal){
+      const realObj = currentMonth[dateStr];
+      const realVal = realObj ? (realObj.ventas||0) : 0;
+      if(realVal>0){
+        projected = Math.round(realVal); low = projected; high = projected;
+      } else {
+        const proj = Math.round(baseAvg[dow] * Math.max(0.5,1+trendPerDay*daysAhead) * calFactor[dow]);
+        projected = proj; low = Math.round(proj*.87); high = Math.round(proj*1.13);
+        isActualReal = false;
+      }
+    } else {
+      const proj = Math.round(baseAvg[dow] * Math.max(0.5,1+trendPerDay*daysAhead) * calFactor[dow]);
+      const v = isWeekend?.20:.13;
+      projected = proj; low = Math.round(proj*(1-v)); high = Math.round(proj*(1+v));
+      isActualReal = false;
+    }
+
+    const confBase = isWeekend?68:80;
+    const confData = Math.min(20,Math.floor(N/4));
+    const confCal  = lastRealDay>=3?10:0;
+    const confTime = Math.min(15,Math.floor(Math.max(0,daysAhead-lastRealDay)/5));
+    const confidence = isReal&&isActualReal ? 100 : Math.max(35, confBase+confData+confCal-confTime);
+
+    days.push({
+      date:dateStr, dateObj:date, dow,
+      dayName:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dow],
+      projected,
+      low:  isReal&&isActualReal ? projected : low,
+      high: isReal&&isActualReal ? projected : high,
+      isWeekend, isFeriado:false, feriadoName:'',
+      confidence, isToday: dateStr===todayStr, isReal: isReal&&isActualReal,
+    });
+  }
+
+  const prevMStr = String(prevM).padStart(2,'0');
+  let totalMesAnteriorReal = 0;
+  Object.entries(historical).forEach(([dateStr,obj])=>{
+    if(dateStr.startsWith(`${prevY}-${prevMStr}`) && obj && obj.ventas) totalMesAnteriorReal += obj.ventas;
+  });
+
+  return {days, tDow, pDow, tY, tM, prevY, prevM, histFrom, histTo, lastRealDay, totalMesAnteriorReal, baseDias:N};
+}
+
+function renderProyeccionPA(data){
+  renderProyKPIsPA(data);
+  renderProyChartPA(data);
+  renderCalEffectPA(data);
+  renderProyTablePA(data);
+}
+
+function renderProyKPIsPA(data){
+  const total = data.days.reduce((s,d)=>s+d.projected,0);
+  const avg   = Math.round(total/data.days.length);
+  const best  = data.days.reduce((b,d)=>d.projected>b.projected?d:b,data.days[0]);
+  const satD  = data.tDow[6]-data.pDow[6], sunD = data.tDow[0]-data.pDow[0];
+  const calEff = satD+sunD;
+
+  setTxt('paPkTotal', fmtKUSD(total));
+  const ml = new Date(data.tY,data.tM-1).toLocaleDateString('es-PA',{month:'long',year:'numeric'});
+  setTxt('paPkTotalSub', ml.charAt(0).toUpperCase()+ml.slice(1));
+
+  const elVsAnt = document.getElementById('paPkVsAnterior');
+  if(elVsAnt){
+    const totalMesAnterior = data.totalMesAnteriorReal || 0;
+    const mesAntNombre = new Date(data.prevY, data.prevM-1).toLocaleDateString('es-PA',{month:'long'});
+    const esConfiable = totalMesAnterior>0 && totalMesAnterior > total*0.05;
+    if(esConfiable){
+      const deltaPct = (total-totalMesAnterior)/totalMesAnterior*100;
+      elVsAnt.className = 'kpi-delta ' + (deltaPct>=0?'d-pos':'d-neg');
+      elVsAnt.textContent = (deltaPct>=0?'+':'')+deltaPct.toFixed(1)+'% vs '+mesAntNombre;
+    } else {
+      elVsAnt.className = 'kpi-delta d-neu';
+      elVsAnt.textContent = 'Sin dato confiable del mes anterior';
+    }
+  }
+  setTxt('paPkAvg', fmtKUSD(avg));
+  setTxt('paPkAvgSub', `${data.days.length} días · ${data.histFrom} → ${data.histTo}`);
+  setTxt('paPkBest', fmtKUSD(best.projected));
+  setTxt('paPkBestSub', best.dayName+' '+best.date.slice(8));
+
+  const calStr = calEff===0?'±0 fines de semana':calEff>0?`+${calEff} fin${calEff>1?'es':''} de semana`:`${calEff} fin${calEff<-1?'es':''} de semana`;
+  const calEl = document.getElementById('paPkCal');
+  if(calEl){ calEl.textContent=calStr; calEl.style.color = calEff>0?'var(--teal)':calEff<0?'var(--red)':'var(--muted)'; }
+  setTxt('paPkCalSub', `Sáb: ${data.pDow[6]}→${data.tDow[6]} | Dom: ${data.pDow[0]}→${data.tDow[0]}`);
+}
+
+function renderProyChartPA(data){
+  document.getElementById('paProyChartEmpty').style.display='none';
+  const labels = data.days.map(d=>d.date.slice(8)+'\n'+d.dayName.slice(0,3));
+  const values = data.days.map(d=>d.projected);
+  const lows   = data.days.map(d=>d.low);
+  const highs  = data.days.map(d=>d.high);
+  const colors = data.days.map(d=>d.dow===6?'rgba(168,85,247,.7)':d.dow===0?'rgba(245,200,90,.6)':'rgba(168,85,247,.35)');
+  const borders = data.days.map(d=>d.dow===6?'#a855f7':d.dow===0?'#f5c85a':'#a855f7');
+
+  if(paProyChart) paProyChart.destroy();
+  const ctx = document.getElementById('paProyChart').getContext('2d');
+  const rangeSets = [
+    {label:'Rango alto',data:highs,type:'line',borderColor:'rgba(168,85,247,.2)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+    {label:'Rango bajo',data:lows,type:'line',borderColor:'rgba(168,85,247,.15)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:'-1',backgroundColor:'rgba(168,85,247,.05)'},
+  ];
+  const opts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtKUSD(ctx.parsed.y)}}},
+    scales:{
+      x:{grid:{color:'rgba(42,42,58,.6)'},ticks:{color:'#7070a0',font:{size:9},maxRotation:0}},
+      y:{grid:{color:'rgba(42,42,58,.6)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtKUSD(v)}}
+    }
+  };
+  if(paProyChartType==='bar'){
+    paProyChart = new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Proyección',data:values,backgroundColor:colors,borderColor:borders,borderWidth:1,borderRadius:4},...rangeSets]},options:opts});
+  } else {
+    paProyChart = new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Proyección',data:values,borderColor:'#a855f7',borderWidth:2,pointBackgroundColor:borders,pointRadius:4,tension:.3,fill:false},...rangeSets]},options:opts});
+  }
+}
+
+function switchProyChartPA(type,btn){
+  paProyChartType = type;
+  document.querySelectorAll('#section-pa-proyeccion .tab-pill').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if(paProyData) renderProyChartPA(paProyData);
+}
+
+function renderCalEffectPA(data){
+  const map = [[1,'paCalL1','paCalA1','paCalN1'],[2,'paCalL2','paCalA2','paCalN2'],[3,'paCalL3','paCalA3','paCalN3'],
+               [4,'paCalL4','paCalA4','paCalN4'],[5,'paCalL5','paCalA5','paCalN5'],[6,'paCalL6','paCalA6','paCalN6'],[0,'paCalL0','paCalA0','paCalN0']];
+  for(const [dow,lId,aId,nId] of map){
+    const prev=data.pDow[dow], next=data.tDow[dow];
+    setTxt(lId,prev); setTxt(nId,next);
+    const aEl = document.getElementById(aId);
+    if(aEl){
+      if(next>prev){aEl.textContent='↑';aEl.className='cal-arr arr-up';}
+      else if(next<prev){aEl.textContent='↓';aEl.className='cal-arr arr-dn';}
+      else{aEl.textContent='=';aEl.className='cal-arr';}
+    }
+  }
+  const pm = new Date(data.prevY,data.prevM-1).toLocaleDateString('es-PA',{month:'short'});
+  const nm = new Date(data.tY,data.tM-1).toLocaleDateString('es-PA',{month:'short'});
+  setTxt('paCalTag', `${pm.charAt(0).toUpperCase()+pm.slice(1)} → ${nm.charAt(0).toUpperCase()+nm.slice(1)}`);
+}
+
+function renderProyTablePA(data){
+  const ml = new Date(data.tY,data.tM-1).toLocaleDateString('es-PA',{month:'long',year:'numeric'});
+  setTxt('paProyTableTag', ml.charAt(0).toUpperCase()+ml.slice(1));
+  const tbody = document.getElementById('paProyTableBody');
+
+  const fmtDesvPct = (v) => {
+    if(v===null) return `<span style="color:var(--muted)">—</span>`;
+    const color = v>=0 ? 'var(--teal)' : 'var(--red)';
+    return `<span style="color:${color}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+  };
+
+  tbody.innerHTML = '';
+  let totBudget=0, totProy=0, totReal=0;
+  let insertedDivider = false;
+
+  for(const d of data.days){
+    if(!d.isReal && !d.isToday && !insertedDivider){
+      insertedDivider = true;
+      const sep = document.createElement('tr');
+      sep.innerHTML = `<td colspan="6" style="
+        padding:6px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;
+        text-transform:uppercase;color:#a855f7;background:rgba(168,85,247,.06);
+        border-top:1px solid rgba(168,85,247,.25);border-bottom:1px solid rgba(168,85,247,.1)">
+        ▾ Proyectado — días restantes del mes
+      </td>`;
+      tbody.appendChild(sep);
+    }
+
+    const tr = document.createElement('tr');
+    if(d.isToday) tr.className='row-today';
+    else if(!d.isReal) tr.style.opacity='0.72';
+    else if(d.isWeekend) tr.className='row-weekend';
+
+    let badges='';
+    if(d.isToday) badges+=`<span class="badge-sm b-hoy">HOY</span>`;
+    if(d.dow===6) badges+=`<span class="badge-sm b-sat">SÁB</span>`;
+    if(d.dow===0) badges+=`<span class="badge-sm b-sun">DOM</span>`;
+
+    const dayNum = new Date(d.date+'T12:00:00').getDate();
+    const budget = data.forecastPorDia ? (num(data.forecastPorDia[dayNum]) || 0) : 0;
+    const proy   = d.projected || 0;
+    const real   = d.isReal ? d.projected : null;
+
+    totBudget += budget;
+    totProy   += proy;
+    if(real!==null) totReal += real;
+
+    let ventaCell;
+    if(d.isToday){
+      ventaCell = `<span style="color:var(--accent);font-weight:700">${fmtUSD(real)}
+        <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:3px">parcial</span></span>`;
+    } else if(real !== null){
+      ventaCell = `<span style="color:var(--teal);font-weight:700">${fmtUSD(real)}</span>`;
+    } else {
+      ventaCell = `<span style="color:#9090b8;font-style:italic">${fmtUSD(proy)}</span>`;
+    }
+
+    const ventaRef = real !== null ? real : proy;
+    const desv     = budget>0 ? ventaRef-budget : null;
+    const desvPct  = budget>0 ? (ventaRef-budget)/budget*100 : null;
+
+    const isProy = real===null && !d.isToday;
+    const posFmt = isProy ? '#4a7a6a' : 'var(--teal)';
+    const negFmt = isProy ? '#7a4a4a' : 'var(--red)';
+    const desvFmtStr = desv!==null
+      ? `<span style="color:${desv>=0?posFmt:negFmt}">${desv>=0?'+':''}${fmtUSD(Math.abs(desv))}${desv<0?' ▼':' ▲'}</span>`
+      : '<span style="color:var(--muted)">—</span>';
+    const desvPctStr = desvPct!==null ? fmtDesvPct(desvPct) : '<span style="color:var(--muted)">—</span>';
+    const budgetStr = budget>0 ? `<span style="color:var(--muted)">${fmtUSD(budget)}</span>` : '<span style="color:var(--muted)">—</span>';
+
+    tr.innerHTML = `
+      <td style="color:var(--muted);font-family:var(--mono);font-size:11px">${d.date}</td>
+      <td style="font-weight:${real!==null?'700':'500'};color:${real!==null?'var(--text)':'#7070a0'}">${d.dayName} ${badges}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:right">${budgetStr}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:right">${ventaCell}</td>
+      <td style="text-align:right;font-family:var(--mono);font-size:12px">${desvFmtStr}</td>
+      <td style="text-align:right">${desvPctStr}</td>`;
+    tbody.appendChild(tr);
+  }
+
+  const desvTotPct  = totBudget>0 ? (totReal-totBudget)/totBudget*100 : null;
+  const desvProyPct = totBudget>0 ? (totProy-totBudget)/totBudget*100 : null;
+  const tfoot = `
+    <tr style="background:rgba(90,245,200,.06);font-weight:700;border-top:1px solid rgba(90,245,200,.2)">
+      <td colspan="2" style="padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--teal)">✓ Real acumulado</td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${totBudget>0?fmtUSD(totBudget):'—'}</td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--teal)">${totReal>0?fmtUSD(totReal):'—'}</td>
+      <td style="text-align:right;font-family:var(--mono)">${desvTotPct!==null?(desvTotPct>=0?'<span style="color:var(--teal)">':'<span style="color:var(--red)">') + fmtUSD(Math.abs(totReal-totBudget))+'</span>':'—'}</td>
+      <td style="text-align:right">${desvTotPct!==null?fmtDesvPct(desvTotPct):'—'}</td>
+    </tr>
+    <tr style="background:rgba(168,85,247,.06);font-weight:700;border-top:1px solid rgba(168,85,247,.15)">
+      <td colspan="2" style="padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#a855f7">◈ Proyección mes</td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${totBudget>0?fmtUSD(totBudget):'—'}</td>
+      <td style="text-align:right;font-family:var(--mono);color:#a855f7">${fmtUSD(totProy)}</td>
+      <td style="text-align:right;font-family:var(--mono)">${desvProyPct!==null?(desvProyPct>=0?'<span style="color:#7a5faa">':'<span style="color:#7a4a5a">') + fmtUSD(Math.abs(totProy-totBudget))+'</span>':'—'}</td>
+      <td style="text-align:right">${desvProyPct!==null?fmtDesvPct(desvProyPct):'—'}</td>
+    </tr>`;
+  tbody.insertAdjacentHTML('beforeend', tfoot);
+}
+
+function exportProyExcelPA(){
+  if(!paProyData){ alert('Generá la proyección primero'); return; }
+  const wb = XLSX.utils.book_new();
+  const resumen = [
+    ['OAKBERRY PANAMÁ — PROYECCIÓN DE VENTAS'],
+    [`Mes proyectado: ${new Date(paProyData.tY,paProyData.tM-1).toLocaleDateString('es-PA',{month:'long',year:'numeric'})}`],
+    [`Historial base: ${paProyData.histFrom} → ${paProyData.histTo}`],
+    [`Generado: ${new Date().toLocaleString('es-PA')}`],
+    [],
+    ['Fecha','Día semana','Proyección (US$)','Rango Bajo (US$)','Rango Alto (US$)','Confianza %'],
+  ];
+  paProyData.days.forEach(d=>{
+    resumen.push([d.date, d.dayName, d.projected, d.low, d.high, d.confidence+'%']);
+  });
+  const total = paProyData.days.reduce((s,d)=>s+d.projected,0);
+  resumen.push(['TOTAL','',total,'','','']);
+  const ws = XLSX.utils.aoa_to_sheet(resumen);
+  ws['!cols'] = [{wch:12},{wch:12},{wch:18},{wch:16},{wch:16},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'Proyección PA');
+  const fname = `Oakberry_PA_Proyeccion_${paProyData.tY}-${String(paProyData.tM).padStart(2,'0')}.xlsx`;
+  XLSX.writeFile(wb,fname);
+}
+
 // Claves de vista tal como se usan en data-section / abrirVista()
-const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado','pa-dashboard','pa-reporte','pa-canales','pa-productos'];
+const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado','pa-dashboard','pa-reporte','pa-canales','pa-productos','pa-proyeccion'];
 
 function vistasPermitidas() {
   const session = getSession();
