@@ -265,7 +265,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 #section-dashboard .grid-2 > .card:first-child .card-body{flex:1;display:flex;min-height:0;}
 #section-dashboard .grid-2 > .card:first-child .chart-wrap{flex:1;height:auto;}
 #section-dashboard .grid-2 > .card:last-child .card-body{flex:none;}
-#section-dashboard .grid-2 > .card:last-child .chart-wrap{height:110px;}
+#section-dashboard .grid-2 > .card:last-child .chart-wrap{height:90px;}
 #canalesBreakdown{flex:1;min-height:0;overflow-y:auto;}
 
 /* ── 2-COL GRID ── */
@@ -303,14 +303,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 }
 .tab-pill.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
 
-/* ── Canales de Venta: desglose por grupo (presencial / delivery / web) ── */
-.canal-group-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);margin:5px 0 2px;}
-.canal-group-label:first-child{margin-top:0;}
-.canal-row{display:flex;align-items:center;gap:8px;padding:2px 0;font-size:11.5px;}
-.canal-row .dot{width:9px;height:9px;border-radius:50%;flex:none;}
-.canal-row .name{flex:1;color:var(--text);font-weight:600;}
-.canal-row .amt{font-family:var(--mono);color:var(--text);}
-.canal-row .pct{font-family:var(--mono);color:var(--muted);width:38px;text-align:right;}
+/* ── Canales de Venta: tabla Día/Acum por canal, mismo patrón que
+   Detalle por Tienda pero compacta para caber en la tarjeta angosta ── */
+.canal-table{font-size:10.5px;}
+.canal-table thead th{padding:3px 8px;font-size:8px;}
+.canal-table tbody td{padding:1px 8px;font-size:10.5px;line-height:1.25;}
+.canal-table tbody td:first-child{font-size:10.5px;display:flex;align-items:center;gap:5px;}
+.canal-table .dot{width:7px;height:7px;border-radius:50%;flex:none;display:inline-block;}
+.canal-group-row td{
+  padding:3px 8px 1px;font-size:8px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--muted2);border-bottom:none;
+}
 
 /* ── Margen de Contribución (reemplaza Métodos de Pago) ── */
 .margen-row{padding-bottom:9px;border-bottom:1px solid var(--border);}
@@ -2564,6 +2567,7 @@ function renderDashboard(data) {
   renderChartTiendas(data);
   renderChartCanales(total);
   renderCanalesBreakdown(total);
+  cargarCanalesComparativo(total);
   renderMargenContribucion(data);
 }
 
@@ -2695,21 +2699,110 @@ function switchCanalesChart(type, btn){
   renderChartCanales(total, type);
 }
 
-// Lista agrupada debajo del gráfico — el gráfico solo no alcanza para decir
-// "tanto fue presencial vs. delivery vs. página web", así que el desglose
-// con montos y % vive acá, no solo como leyenda de colores.
-function renderCanalesBreakdown(total){
+// Tabla debajo del gráfico, mismo patrón que "Detalle por Tienda" pero por
+// canal: Día (venta, % del día, Crec% vs. mismo día 7 días atrás) y Acum
+// (venta del mes, Var% vs. el mismo tramo del mes pasado). Se pinta de
+// entrada con lo que ya tenemos (Día); Crec%/Acum/Var% llegan un toque
+// después vía cargarCanalesComparativo, que sí necesita una consulta aparte.
+function renderCanalesBreakdown(total, comparativo){
   const el = document.getElementById('canalesBreakdown');
   if (!el) return;
   const totalSum = CANAL_CFG_DASH.reduce((s,c)=>s+num(total[c.key]),0);
-  let html = '', lastGroup = null;
-  CANAL_CFG_DASH.forEach(c=>{
-    if (c.group !== lastGroup) { html += `<div class="canal-group-label">${c.group}</div>`; lastGroup = c.group; }
+  let lastGroup = null;
+  const filas = CANAL_CFG_DASH.map(c=>{
+    const filaGrupo = c.group !== lastGroup
+      ? (lastGroup=c.group, `<tr class="canal-group-row"><td colspan="6">${c.group}</td></tr>`)
+      : '';
     const val = num(total[c.key]);
-    const pct = totalSum>0 ? (val/totalSum*100) : 0;
-    html += `<div class="canal-row"><span class="dot" style="background:${c.color}"></span><span class="name">${c.name}</span><span class="amt">${crc(val)}</span><span class="pct">${pct.toFixed(1)}%</span></div>`;
-  });
-  el.innerHTML = html;
+    const pctDia = totalSum>0 ? (val/totalSum*100) : 0;
+    const comp = comparativo && comparativo[c.key];
+    const crecCell = comp
+      ? `<td style="color:${colorPct(comp.crecDia)}">${pct(comp.crecDia)}</td>`
+      : `<td style="color:var(--muted2)">…</td>`;
+    const acumCell = comp
+      ? `<td style="border-left:1px solid var(--border)">${crc(comp.acum)}</td>`
+      : `<td style="border-left:1px solid var(--border);color:var(--muted2)">…</td>`;
+    const varCell = comp
+      ? `<td style="color:${colorPct(comp.varAcum)}">${pct(comp.varAcum)}</td>`
+      : `<td style="color:var(--muted2)">…</td>`;
+    return filaGrupo + `<tr>
+      <td><span class="dot" style="background:${c.color}"></span>${c.name}</td>
+      <td>${crc(val)}</td>
+      <td>${pctDia.toFixed(1)}%</td>
+      ${crecCell}
+      ${acumCell}
+      ${varCell}
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<table class="store-table canal-table">
+    <thead><tr>
+      <th style="text-align:left">Canal</th><th>Día</th><th>%</th>
+      <th title="vs. mismo día, 7 días atrás">Crec%</th>
+      <th style="border-left:1px solid var(--border)">Acum</th>
+      <th title="vs. mismo tramo, mes pasado">Var%</th>
+    </tr></thead>
+    <tbody>${filas}</tbody>
+  </table>`;
+}
+
+// Crec%/Acum/Var% necesitan datos que NO vienen en la carga principal del
+// Dashboard (esa solo trae hoy + acumulado de HOY) — se resuelven con una
+// consulta aparte a historialCanales (el mismo endpoint que ya usa Análisis
+// → Canales → Tendencia), pidiendo desde el 1° del mes pasado hasta la
+// fecha vista. De esa serie diaria se sacan los 3 puntos que hacen falta:
+// el mismo día hace 7 días, el acumulado del mes actual, y el acumulado del
+// mismo tramo del mes pasado — sin tocar el backend de CR para nada de esto.
+async function cargarCanalesComparativo(total){
+  try{
+    const fechaFinInput = document.getElementById('fechaFin').value;
+    const tiendaSel = document.getElementById('tiendaSelect').value;
+    if(!fechaFinInput || !tiendaSel) return;
+    const storeKey = tiendaSel==='todas' ? 'all' : tiendaSel;
+
+    const pad = n=>String(n).padStart(2,'0');
+    const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const hoy = new Date(fechaFinInput+'T12:00:00');
+
+    const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    const mesPasadoIni    = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
+    const diaEquivPasado  = new Date(mesPasadoIni.getFullYear(), mesPasadoIni.getMonth(),
+      Math.min(hoy.getDate(), new Date(mesPasadoIni.getFullYear(), mesPasadoIni.getMonth()+1, 0).getDate()));
+    const hace7 = new Date(hoy); hace7.setDate(hoy.getDate()-7);
+
+    const resp = await fetch(`${APPS_SCRIPT_URL}?action=historialCanales&tienda=${storeKey}&fechaInicio=${iso(mesPasadoIni)}&fechaFin=${fechaFinInput}`);
+    const serie = await resp.json();
+    if(!Array.isArray(serie)) return;
+
+    const porFecha = {};
+    serie.forEach(r=>{ porFecha[r.fecha] = r; });
+    const filaHace7 = porFecha[iso(hace7)] || {};
+
+    const sumaRango = (desde, hasta) => {
+      const out = {uber:0, peya:0, didi:0, olo:0, otros:0};
+      Object.keys(porFecha).forEach(f=>{
+        if(f>=desde && f<=hasta){
+          const r = porFecha[f];
+          Object.keys(out).forEach(k => out[k]+=num(r[k]));
+        }
+      });
+      return out;
+    };
+    const acumActual = sumaRango(iso(inicioMesActual), fechaFinInput);
+    const acumPasado = sumaRango(iso(mesPasadoIni), iso(diaEquivPasado));
+
+    const comparativo = {};
+    CANAL_CFG_DASH.forEach(c=>{
+      const hoyVal   = num(total[c.key]);
+      const hace7Val = num(filaHace7[c.key]);
+      const crecDia  = hace7Val>0 ? ((hoyVal-hace7Val)/hace7Val*100) : (hoyVal>0 ? 100 : 0);
+      const acumVal    = acumActual[c.key];
+      const pasadoVal  = acumPasado[c.key];
+      const varAcum  = pasadoVal>0 ? ((acumVal-pasadoVal)/pasadoVal*100) : (acumVal>0 ? 100 : 0);
+      comparativo[c.key] = { crecDia, acum:acumVal, varAcum };
+    });
+
+    renderCanalesBreakdown(total, comparativo);
+  } catch(e){ console.warn('Canales comparativo error:', e); }
 }
 
 // Reemplaza "Métodos de Pago" (que repetía los mismos campos de Canales,
