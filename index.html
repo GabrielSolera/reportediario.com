@@ -998,6 +998,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <button class="pennant-btn" onclick="abrirVista('pa-productos','Ventas Producto Panamá')"><div class="pennant-icon" style="background:#7B4FE0">🥣</div><span class="pennant-label">Ventas Producto</span></button>
           <button class="pennant-btn" onclick="abrirVista('pa-proyeccion','Proyección Panamá')"><div class="pennant-icon" style="background:#a855f7">📈</div><span class="pennant-label">Proyección</span></button>
           <button class="pennant-btn" onclick="abrirVista('pa-analisis','Análisis Panamá')"><div class="pennant-icon" style="background:#E5427A">🔬</div><span class="pennant-label">Análisis</span></button>
+          <button class="pennant-btn" onclick="abrirVista('pa-seguimiento','Seguimiento Panamá')"><div class="pennant-icon" style="background:#5AF5C8">🎯</div><span class="pennant-label">Seguimiento</span></button>
         </div>
       </div>
     </div>
@@ -1087,6 +1088,9 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div>
       <div class="nav-item" data-section="pa-analisis">
         <span class="nav-icon">🔬</span><span class="nav-label">Análisis</span>
+      </div>
+      <div class="nav-item" data-section="pa-seguimiento">
+        <span class="nav-icon">🎯</span><span class="nav-label">Seguimiento</span>
       </div>
       <div class="nav-item" onclick="cambiarPais()" style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px">
         <span class="nav-icon">🌐</span><span class="nav-label">Cambiar país</span>
@@ -2307,6 +2311,62 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div><!-- /paAnlContent -->
     </div>
     <!-- ═══════════ FIN PANAMÁ · ANÁLISIS ═══════════ -->
+
+    <!-- ═══════════ PANAMÁ · SEGUIMIENTO MENSUAL ═══════════ -->
+    <div class="section" id="section-pa-seguimiento">
+
+      <div class="proy-controls" style="gap:10px;margin-bottom:20px">
+        <span class="ctrl-label">Mes</span>
+        <input type="month" class="ctrl-input" id="paSegMes" style="font-family:var(--mono);font-size:13px">
+        <button class="btn btn-primary" id="paSegRunBtn" onclick="cargarSeguimientoPA()">
+          <span>▶</span> Cargar
+        </button>
+        <button class="btn btn-ghost" id="paSegExcelBtn" onclick="exportSeguimientoExcelPA()" style="display:none">
+          <span>⬇</span> Excel
+        </button>
+        <div id="paSegStatus" style="font-size:12px;color:var(--muted)"></div>
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px" id="paSegKpis">
+        <div class="kpi k-purple"><div class="kpi-label">Ventas Netas Mes</div><div class="kpi-value" id="paSkTotal">$0</div><div class="kpi-sub" id="paSkTotalSub">—</div></div>
+        <div class="kpi k-teal"><div class="kpi-label">vs Año Anterior</div><div class="kpi-value" id="paSkCrecimiento">—</div><div class="kpi-sub" id="paSkCrecimientoSub">—</div></div>
+        <div class="kpi k-lime"><div class="kpi-label">vs Presupuesto</div><div class="kpi-value" id="paSkDesvPpto">—</div><div class="kpi-sub" id="paSkDesvPptoSub">—</div></div>
+        <div class="kpi k-amber"><div class="kpi-label">Pedidos Totales</div><div class="kpi-value" id="paSkPedidos">0</div><div class="kpi-sub" id="paSkPedidosSub">—</div></div>
+        <div class="kpi k-red"><div class="kpi-label">Ticket Medio</div><div class="kpi-value" id="paSkTicket">$0</div><div class="kpi-sub" id="paSkTicketSub">—</div></div>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:700;font-size:14px">Detalle Diario — <span id="paSegTableTag">—</span></div>
+          <div style="font-size:11px;color:var(--muted)">Ventas Netas (USD)</div>
+        </div>
+        <div class="scroll-box" style="-webkit-overflow-scrolling:touch">
+          <table id="paSegTable" class="store-table" style="width:100%;min-width:760px">
+            <thead>
+              <tr>
+                <th style="width:42px;text-align:center">Día</th>
+                <th style="width:80px">Día semana</th>
+                <th style="text-align:right">Budget</th>
+                <th style="text-align:right;color:var(--accent)">Ventas Netas</th>
+                <th style="text-align:right">% vs Ppto Acum.</th>
+                <th style="text-align:right">Pedidos</th>
+                <th style="text-align:right;color:var(--muted)" title="Mismo día de semana, misma semana del mes — año anterior">Año Ant. (≡dow)</th>
+                <th style="text-align:right;color:var(--muted)">Pedidos A.A.</th>
+                <th style="text-align:right">Crec. %</th>
+                <th style="text-align:right">Crec. Pedidos %</th>
+                <th style="text-align:right">Ticket Medio</th>
+              </tr>
+            </thead>
+            <tbody id="paSegTbody">
+              <tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-txt">Seleccioná el mes y tocá Cargar</div></div></td></tr>
+            </tbody>
+            <tfoot id="paSegTfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    <!-- ═══════════ FIN PANAMÁ · SEGUIMIENTO MENSUAL ═══════════ -->
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -6594,6 +6654,9 @@ function initPAFechasPorDefecto(){
   const histFrom = document.getElementById('paProyHistFrom');
   if (histTo && !histTo.value)     histTo.value   = fmt(new Date(hoy.getFullYear(), hoy.getMonth(), 0));
   if (histFrom && !histFrom.value) histFrom.value = fmt(new Date(hoy.getFullYear(), hoy.getMonth()-2, 1));
+
+  const segMes = document.getElementById('paSegMes');
+  if (segMes && !segMes.value) segMes.value = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}`;
 }
 
 // Formateador de moneda para Panamá — los datos ya vienen en USD nativo
@@ -7594,8 +7657,245 @@ async function cargarCompararFechasPA(){
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  PANAMÁ · SEGUIMIENTO MENSUAL — un solo local, USD
+//  (mismo motor que CR: diarización de presupuesto por peso DOW +
+//  comparación año anterior por mismo día de semana/semana ordinal)
+// ═══════════════════════════════════════════════════════════
+let paSegData = null;
+const PA_DOW_WEIGHTS = [1.30,1.00,0.85,0.88,0.92,1.10,1.20]; // Dom Lun Mar Mié Jue Vie Sáb
+
+async function cargarSeguimientoPA(){
+  const mesVal = document.getElementById('paSegMes').value;
+  if(!mesVal){ alert('Seleccioná el mes'); return; }
+  const [tY, tM] = mesVal.split('-').map(Number);
+
+  const _paHoy = new Date(Date.now() - 5*60*60*1000);
+  const hoy = new Date(_paHoy.getUTCFullYear(), _paHoy.getUTCMonth(), _paHoy.getUTCDate());
+  const esMesActual = hoy.getFullYear()===tY && hoy.getMonth()+1===tM;
+  const lastDay = esMesActual ? hoy.getDate() : new Date(tY,tM,0).getDate();
+  const daysInMonth = new Date(tY,tM,0).getDate();
+
+  if(lastDay < 1){
+    document.getElementById('paSegStatus').textContent = 'Sin datos aún para este mes';
+    return;
+  }
+
+  const pad = n=>String(n).padStart(2,'0');
+  const fechaInicio = `${tY}-${pad(tM)}-01`;
+  const fechaFin    = `${tY}-${pad(tM)}-${pad(lastDay)}`;
+  const aaPY = tY-1;
+  const aaLastDay = Math.min(lastDay, new Date(aaPY,tM,0).getDate());
+  const aaFechaInicio = `${aaPY}-${pad(tM)}-01`;
+  const aaFechaFin    = `${aaPY}-${pad(tM)}-${pad(aaLastDay)}`;
+
+  document.getElementById('paSegRunBtn').disabled = true;
+  document.getElementById('paSegStatus').textContent = 'Cargando...';
+  document.getElementById('paSegExcelBtn').style.display = 'none';
+  showLoader(true,'Cargando Seguimiento Panamá...','Consultando período actual...');
+
+  try{
+    setStep('Ventas actuales...');
+    const curMap = await fetchPADiario(fechaInicio, fechaFin);
+    setStep('Año anterior...');
+    let aaMap = {};
+    try{ aaMap = await fetchPADiario(aaFechaInicio, aaFechaFin); }catch(e){ aaMap = {}; }
+
+    setStep('Cargando presupuesto...');
+    let pptoMensualTotal = 0;
+    const pptoPorDia = {};
+    try{
+      const ppto = await fetchPA('forecast', { month:tM, year:tY, tienda:'todas' });
+      const row = ppto && ppto['TODAS'];
+      pptoMensualTotal = row?.mensual || 0;
+      if(row?.porDia) Object.entries(row.porDia).forEach(([d,v])=>{ pptoPorDia[Number(d)] = v; });
+    }catch(e){ console.warn('Presupuesto PA no disponible todavía:', e.message); }
+
+    setStep('Construyendo tabla...');
+    await new Promise(r=>setTimeout(r,50));
+
+    const rows = [];
+    for(let d=1; d<=daysInMonth; d++){
+      const dateStr = `${tY}-${pad(tM)}-${pad(d)}`;
+      const dateObj = new Date(tY,tM-1,d);
+      const hasData = d <= lastDay;
+      const obj = curMap[dateStr] || {};
+      const ventasNetas = obj.ventas || 0;
+      const transacciones = obj.trans || 0;
+
+      const dow = dateObj.getDay();
+      const weekNum = Math.floor((d-1)/7);
+      const firstDay = new Date(aaPY, tM-1, 1);
+      const firstDow = firstDay.getDay();
+      const diff = (dow - firstDow + 7) % 7;
+      const firstOcc = new Date(aaPY, tM-1, 1+diff);
+      let aaDate = new Date(aaPY, tM-1, firstOcc.getDate() + weekNum*7);
+      if(aaDate.getMonth() !== tM-1) aaDate = new Date(aaDate.getFullYear(), aaDate.getMonth(), aaDate.getDate()-7);
+      const aaDateStr = `${aaDate.getFullYear()}-${pad(aaDate.getMonth()+1)}-${pad(aaDate.getDate())}`;
+      const aaObj = aaMap[aaDateStr] || {};
+
+      rows.push({ d, dateStr, dateObj,
+        dayName: ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][dow],
+        ventasNetas, transacciones, aaVentas: aaObj.ventas||0, aaTrans: aaObj.trans||0, hasData,
+        aaDateLabel: `${aaDate.getDate()}/${aaDate.getMonth()+1}/${aaDate.getFullYear()}`,
+        dowWeight: PA_DOW_WEIGHTS[dow] });
+    }
+
+    const totalWeight = rows.reduce((s,r)=>s+r.dowWeight,0);
+    let pptoAcum=0, acumVentas=0, acumTrans=0, acumAA=0, acumAATrans=0;
+    rows.forEach(r=>{
+      if(pptoPorDia[r.d] != null) r.diarizacion = Math.round(pptoPorDia[r.d]);
+      else if(pptoMensualTotal > 0) r.diarizacion = Math.round(pptoMensualTotal * r.dowWeight / totalWeight);
+      else r.diarizacion = 0;
+      pptoAcum += r.diarizacion;
+      r.pptoAcum = pptoAcum;
+      if(r.hasData){
+        acumVentas += r.ventasNetas;
+        acumTrans  += r.transacciones;
+        acumAA     += r.aaVentas;
+        acumAATrans+= r.aaTrans;
+      }
+      r.acumVentas = acumVentas;
+      r.acumTrans  = acumTrans;
+    });
+
+    paSegData = { rows, tY, tM, lastDay, daysInMonth,
+      pptoMensualTotal, acumVentas, acumTrans, acumAA, acumAATrans,
+      fechaInicio, fechaFin, aaFechaInicio, aaFechaFin };
+
+    renderSeguimientoPA(paSegData);
+    document.getElementById('paSegExcelBtn').style.display = 'flex';
+
+  }catch(e){
+    alert('Error cargando seguimiento:\n'+e.message);
+    console.error(e);
+  }finally{
+    showLoader(false);
+    document.getElementById('paSegRunBtn').disabled = false;
+  }
+}
+
+function renderSeguimientoPA(data){
+  const {rows,tY,tM,lastDay,daysInMonth,pptoMensualTotal,acumVentas,acumTrans,acumAA,acumAATrans} = data;
+
+  const pptoStr = pptoMensualTotal>0 ? fmtUSD(pptoMensualTotal) : 'no configurado';
+  document.getElementById('paSegStatus').textContent = `Datos hasta día ${lastDay} · Presupuesto: ${pptoStr}`;
+
+  const ML = new Date(tY,tM-1).toLocaleDateString('es-PA',{month:'long',year:'numeric'});
+  document.getElementById('paSegTableTag').textContent = (ML.charAt(0).toUpperCase()+ML.slice(1)) + ' · San Francisco';
+
+  const ticketMedio = acumTrans>0 ? acumVentas/acumTrans : 0;
+  const crecPct = acumAA>0 ? ((acumVentas-acumAA)/acumAA)*100 : null;
+  const pptoProrrateado = pptoMensualTotal>0 ? pptoMensualTotal*lastDay/daysInMonth : 0;
+  const desvPpto = pptoProrrateado>0 ? ((acumVentas-pptoProrrateado)/pptoProrrateado)*100 : null;
+  const crecTrans = acumAATrans>0 ? ((acumTrans-acumAATrans)/acumAATrans)*100 : null;
+
+  setTxt('paSkTotal', fmtUSD(acumVentas));
+  setTxt('paSkTotalSub', `${lastDay} días · Meta: ${pptoMensualTotal>0?fmtUSD(pptoMensualTotal):'—'}`);
+
+  const crecEl = document.getElementById('paSkCrecimiento');
+  crecEl.textContent = crecPct!==null ? (crecPct>=0?'+':'')+crecPct.toFixed(1)+'%' : '—';
+  crecEl.style.color = crecPct!==null ? (crecPct>=0?'var(--teal)':'var(--red)') : 'var(--muted)';
+  setTxt('paSkCrecimientoSub', acumAA>0 ? `AA: ${fmtUSD(acumAA)}` : 'Sin dato AA');
+
+  const desvEl = document.getElementById('paSkDesvPpto');
+  desvEl.textContent = desvPpto!==null ? (desvPpto>=0?'+':'')+desvPpto.toFixed(1)+'%' : 'Sin ppto';
+  desvEl.style.color = desvPpto!==null ? (desvPpto>=0?'var(--teal)':'var(--red)') : 'var(--muted)';
+  setTxt('paSkDesvPptoSub', `Ppto ${lastDay}d: ${pptoProrrateado>0?fmtUSD(Math.round(pptoProrrateado)):'—'}`);
+
+  setTxt('paSkPedidos', acumTrans>0 ? acumTrans.toLocaleString('en-US') : '—');
+  setTxt('paSkPedidosSub', crecTrans!==null ? `AA: ${acumAATrans.toLocaleString('en-US')} (${crecTrans>=0?'+':''}${crecTrans.toFixed(1)}%)` : '—');
+  setTxt('paSkTicket', fmtUSD(ticketMedio));
+  setTxt('paSkTicketSub', acumAATrans>0 ? `AA: ${fmtUSD(Math.round(acumAA/acumAATrans))}` : '—');
+
+  const tbody = document.getElementById('paSegTbody');
+  const tfoot = document.getElementById('paSegTfoot');
+  tbody.innerHTML = '';
+
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    if(!r.hasData) tr.style.opacity = '0.35';
+    if(r.d === lastDay && r.hasData) tr.classList.add('row-today');
+
+    const varPpto = r.pptoAcum>0 && r.hasData ? ((r.acumVentas-r.pptoAcum)/r.pptoAcum)*100 : null;
+    const crec = r.aaVentas>0 && r.hasData ? ((r.ventasNetas-r.aaVentas)/r.aaVentas)*100 : null;
+    const crecT = r.aaTrans>0 && r.hasData ? ((r.transacciones-r.aaTrans)/r.aaTrans)*100 : null;
+    const ticket = r.transacciones>0 ? r.ventasNetas/r.transacciones : null;
+
+    const usd = (v) => v&&v>0 ? `<span style="font-family:var(--mono)">${fmtUSD(v)}</span>` : '<span style="color:var(--muted)">—</span>';
+    const numFmt = (v) => v&&v>0 ? `<span style="font-family:var(--mono)">${v.toLocaleString('en-US')}</span>` : '<span style="color:var(--muted)">—</span>';
+
+    tr.innerHTML = `
+      <td style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--muted);font-size:12px">${r.d}</td>
+      <td style="font-size:12px;color:var(--muted)">${r.dayName}</td>
+      <td style="text-align:right">${r.diarizacion>0?usd(r.diarizacion):'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:right">${r.hasData?'<span style="font-family:var(--mono);color:var(--accent);font-weight:700">'+fmtUSD(r.ventasNetas)+'</span>':'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:right">${fmtPctColor(varPpto)}</td>
+      <td style="text-align:right">${r.hasData?numFmt(r.transacciones):'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:right" title="${r.aaDateLabel||''}">${r.aaVentas>0?usd(r.aaVentas):'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:right">${r.aaTrans>0?numFmt(r.aaTrans):'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:right">${fmtPctColor(crec)}</td>
+      <td style="text-align:right">${fmtPctColor(crecT)}</td>
+      <td style="text-align:right">${ticket?usd(ticket):'<span style="color:var(--muted)">—</span>'}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const totalAA = rows.filter(r=>r.hasData).reduce((s,r)=>s+r.aaVentas,0);
+  const totalAATrans = rows.filter(r=>r.hasData).reduce((s,r)=>s+r.aaTrans,0);
+  const desvFinal = pptoProrrateado>0 ? ((acumVentas-pptoProrrateado)/pptoProrrateado)*100 : null;
+  const totalCrecPct = totalAA>0 ? ((acumVentas-totalAA)/totalAA)*100 : null;
+  const totalCrecTrans = acumAATrans>0 ? ((acumTrans-acumAATrans)/acumAATrans)*100 : null;
+  const ticketTotal = acumTrans>0 ? acumVentas/acumTrans : null;
+  const aaTicketTotal = acumAATrans>0 ? acumAA/acumAATrans : null;
+  const totalDiarz = rows.reduce((s,r)=>s+r.diarizacion,0);
+
+  tfoot.innerHTML = `<tr class="total-row">
+    <td colspan="2" style="padding-left:14px;font-weight:800;font-size:13px">TOTAL / ACUM.</td>
+    <td style="text-align:right;font-family:var(--mono)">${totalDiarz>0?fmtUSD(totalDiarz):'—'}</td>
+    <td style="text-align:right;font-family:var(--mono);color:var(--accent);font-weight:800">${fmtUSD(acumVentas)}</td>
+    <td style="text-align:right">${fmtPctColor(desvFinal)}</td>
+    <td style="text-align:right;font-family:var(--mono)">${acumTrans>0?acumTrans.toLocaleString('en-US'):'—'}</td>
+    <td style="text-align:right;font-family:var(--mono)">${totalAA>0?fmtUSD(totalAA):'—'}</td>
+    <td style="text-align:right;font-family:var(--mono)">${totalAATrans>0?totalAATrans.toLocaleString('en-US'):'—'}</td>
+    <td style="text-align:right">${fmtPctColor(totalCrecPct)}</td>
+    <td style="text-align:right">${fmtPctColor(totalCrecTrans)}</td>
+    <td style="text-align:right;font-family:var(--mono)">${ticketTotal?fmtUSD(ticketTotal):'—'}</td>
+  </tr>
+  <tr style="background:rgba(90,245,200,.04)">
+    <td colspan="2" style="padding:8px 14px;font-size:11px;color:var(--muted)">Proyección cierre mes</td>
+    <td colspan="2" style="font-family:var(--mono);font-weight:700;color:var(--lime);font-size:13px">${lastDay>0?fmtUSD(Math.round(acumVentas/lastDay*daysInMonth)):'—'}</td>
+    <td style="font-size:11px;color:var(--muted)">al ritmo actual</td>
+    <td style="font-size:11px;color:var(--muted)" colspan="2">PR. Crecimiento vs AA:</td>
+    <td>${fmtPctColor(totalCrecPct)}</td>
+    <td style="font-size:11px;color:var(--muted)" colspan="3">Ticket AA: ${aaTicketTotal?fmtUSD(aaTicketTotal):'—'}</td>
+  </tr>`;
+}
+
+function exportSeguimientoExcelPA(){
+  if(!paSegData){ alert('Cargá el seguimiento primero'); return; }
+  const {rows,tY,tM,pptoMensualTotal,acumVentas,acumTrans} = paSegData;
+  const ML = new Date(tY,tM-1).toLocaleDateString('es-PA',{month:'long',year:'numeric'});
+  const wb = XLSX.utils.book_new();
+  const aoa = [
+    ['OAKBERRY PANAMÁ — SEGUIMIENTO MENSUAL'],
+    [`Mes: ${ML}`],
+    [`Presupuesto: ${pptoMensualTotal>0?fmtUSD(pptoMensualTotal):'no configurado'}`],
+    [],
+    ['Día','Día semana','Budget','Ventas Netas','% vs Ppto Acum','Pedidos','Año Ant.','Pedidos AA','Crec %','Crec Pedidos %','Ticket Medio'],
+  ];
+  rows.forEach(r=>{
+    const ticket = r.transacciones>0 ? Math.round(r.ventasNetas/r.transacciones) : '';
+    aoa.push([r.d, r.dayName, r.diarizacion||'', r.hasData?r.ventasNetas:'', '', r.hasData?r.transacciones:'', r.aaVentas||'', r.aaTrans||'', '', '', ticket]);
+  });
+  aoa.push(['TOTAL','','',acumVentas,'',acumTrans,'','','','','']);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = Array(11).fill({wch:14});
+  XLSX.utils.book_append_sheet(wb,ws,'Seguimiento PA');
+  XLSX.writeFile(wb, `Oakberry_PA_Seguimiento_${tY}-${String(tM).padStart(2,'0')}.xlsx`);
+}
+
 // Claves de vista tal como se usan en data-section / abrirVista()
-const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado','pa-dashboard','pa-reporte','pa-canales','pa-productos','pa-proyeccion','pa-analisis'];
+const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado','pa-dashboard','pa-reporte','pa-canales','pa-productos','pa-proyeccion','pa-analisis','pa-seguimiento'];
 
 function vistasPermitidas() {
   const session = getSession();
