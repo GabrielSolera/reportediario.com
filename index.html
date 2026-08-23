@@ -255,8 +255,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 #dashKpis .kpi-value{font-size:19px;}
 #dashKpis .kpi-sub{margin-top:2px;}
 #dashKpis .kpi-delta{margin-top:4px;padding:1px 7px;}
-#section-dashboard .grid-2 .chart-wrap{height:140px;}
+/* Ventas por Tienda y Canales de Venta: mismo alto de tarjeta fijo (en vez
+   de que una se estire para igualar a la otra). El chart de barras llena
+   todo lo suyo; el de Canales se queda chico y le deja el resto del
+   espacio a la lista de desglose, que scrollea si no entra. */
 #section-dashboard .grid-2{align-items:start;}
+#section-dashboard .grid-2 .card{height:460px;display:flex;flex-direction:column;}
+#section-dashboard .grid-2 .card-header{flex:none;}
+#section-dashboard .grid-2 > .card:first-child .card-body{flex:1;display:flex;min-height:0;}
+#section-dashboard .grid-2 > .card:first-child .chart-wrap{flex:1;height:auto;}
+#section-dashboard .grid-2 > .card:last-child .card-body{flex:none;}
+#section-dashboard .grid-2 > .card:last-child .chart-wrap{height:150px;}
+#canalesBreakdown{flex:1;min-height:0;overflow-y:auto;}
 
 /* ── 2-COL GRID ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
