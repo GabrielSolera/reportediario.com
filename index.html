@@ -6209,15 +6209,9 @@ function mostrarDashboard(nombre, usuario) {
   // sesión) — se carga acá, una vez que ya sabemos que el login funcionó.
   if (typeof cargarTipoCambioFn === 'function') cargarTipoCambioFn();
 
-  // Preguntar país solo si todavía no se eligió ninguno en esta sesión de
-  // navegador. Si ya se había elegido antes (mismo dispositivo), se entra
-  // directo a ese país sin volver a preguntar.
-  const paisGuardado = localStorage.getItem('oakberry_pais');
-  if (paisGuardado === 'CR' || paisGuardado === 'PA') {
-    activarPais(paisGuardado);
-  } else {
-    document.getElementById('paisSelectorScreen').classList.remove('hidden');
-  }
+  // Preguntar país siempre, en cada login — a diferencia de antes, ya no se
+  // recuerda la elección entre sesiones (pedido explícito del usuario).
+  document.getElementById('paisSelectorScreen').classList.remove('hidden');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -6226,13 +6220,11 @@ function mostrarDashboard(nombre, usuario) {
 let paisActivo = null; // 'CR' | 'PA'
 
 function elegirPais(pais){
-  localStorage.setItem('oakberry_pais', pais);
   document.getElementById('paisSelectorScreen').classList.add('hidden');
   activarPais(pais);
 }
 
 function cambiarPais(){
-  localStorage.removeItem('oakberry_pais');
   paisActivo = null;
   document.body.classList.remove('modo-vista-unica');
   document.getElementById('menuPrincipal').classList.add('hidden');
