@@ -995,6 +995,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <button class="pennant-btn" onclick="abrirVista('pa-dashboard','Dashboard Panamá')"><div class="pennant-icon" style="background:#2FA9C4">🇵🇦</div><span class="pennant-label">Dashboard</span></button>
           <button class="pennant-btn" onclick="abrirVista('pa-reporte','Reporte Diario Panamá')"><div class="pennant-icon" style="background:#5FAF48">📅</div><span class="pennant-label">Reporte Diario</span></button>
           <button class="pennant-btn" onclick="abrirVista('pa-canales','Canales Panamá')"><div class="pennant-icon" style="background:#E0A62A">📊</div><span class="pennant-label">Canales</span></button>
+          <button class="pennant-btn" onclick="abrirVista('pa-productos','Ventas Producto Panamá')"><div class="pennant-icon" style="background:#7B4FE0">🥣</div><span class="pennant-label">Ventas Producto</span></button>
         </div>
       </div>
     </div>
@@ -1075,6 +1076,9 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div>
       <div class="nav-item" data-section="pa-canales">
         <span class="nav-icon">📊</span><span class="nav-label">Canales</span>
+      </div>
+      <div class="nav-item" data-section="pa-productos">
+        <span class="nav-icon">🥣</span><span class="nav-label">Ventas Producto</span>
       </div>
       <div class="nav-item" onclick="cambiarPais()" style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px">
         <span class="nav-icon">🌐</span><span class="nav-label">Cambiar país</span>
@@ -2011,6 +2015,66 @@ body.modo-vista-unica .hamburger{ display:none !important; }
     </div>
     <!-- ═══════════ FIN PANAMÁ · CANALES ═══════════ -->
 
+    <!-- ═══════════ PANAMÁ · VENTAS PRODUCTO ═══════════ -->
+    <!-- Solo unidades vendidas — fact_ventas_producto no tiene monto/precio
+         (confirmado consultando el esquema real), a diferencia de CR que sí
+         trae venta neta por producto desde Toteat. -->
+    <div class="section" id="section-pa-productos">
+      <div class="proy-controls" style="flex-wrap:wrap;gap:8px">
+        <span class="ctrl-label">Desde</span>
+        <input type="date" class="ctrl-input" id="paProdFechaInicio" style="width:140px">
+        <span class="date-sep">→</span>
+        <input type="date" class="ctrl-input" id="paProdFechaFin" style="width:140px">
+        <button class="btn btn-primary" onclick="cargarPAProductos()">↻ Cargar</button>
+      </div>
+
+      <div id="paProdCatFilters" style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0"></div>
+
+      <div class="kpi-grid" style="margin-bottom:16px">
+        <div class="kpi k-purple">
+          <div class="kpi-label">Total Unidades</div>
+          <div class="kpi-value" id="paProdKTotal">—</div>
+          <div class="kpi-sub" id="paProdKTotalSub">—</div>
+        </div>
+        <div class="kpi k-teal">
+          <div class="kpi-label">#1 del Período</div>
+          <div class="kpi-value" id="paProdKTop" style="font-size:16px;line-height:1.3">—</div>
+          <div class="kpi-sub" id="paProdKTopSub">—</div>
+        </div>
+        <div class="kpi k-amber">
+          <div class="kpi-label">Categorías Activas</div>
+          <div class="kpi-value" id="paProdKCats">—</div>
+        </div>
+        <div class="kpi k-lime">
+          <div class="kpi-label">Promedio / Día</div>
+          <div class="kpi-value" id="paProdKProm">—</div>
+          <div class="kpi-sub">unidades/día</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Detalle por Producto</span>
+          <span class="card-tag" id="paProdTag">—</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="scroll-box">
+            <table class="store-table" id="paProdTable">
+              <thead><tr>
+                <th style="text-align:left;padding-left:16px">Producto</th>
+                <th style="text-align:left">Categoría</th>
+                <th>Unidades</th><th>% del Total</th>
+              </tr></thead>
+              <tbody id="paProdBody">
+                <tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🥣</div><div class="empty-txt">Elegí un rango de fechas y cargá</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══════════ FIN PANAMÁ · VENTAS PRODUCTO ═══════════ -->
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -2302,6 +2366,7 @@ function activarSeccion(sectionKey, label){
     if (sectionKey === 'pa-dashboard') cargarPADashboard();
     if (sectionKey === 'pa-reporte')   cargarPAReporte();
     if (sectionKey === 'pa-canales')   cargarPACanales();
+    if (sectionKey === 'pa-productos') cargarPAProductos();
     return;
   }
   const fechaFinListo = document.getElementById('fechaFin')?.value;
@@ -6271,11 +6336,11 @@ function initPAFechasPorDefecto(){
   const hace14 = new Date(Date.now() - 13*86400000);
   const pad = n => String(n).padStart(2,'0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  ['paRepFechaInicio','paCanFechaInicio'].forEach(id=>{
+  ['paRepFechaInicio','paCanFechaInicio','paProdFechaInicio'].forEach(id=>{
     const el = document.getElementById(id);
     if (el && !el.value) el.value = fmt(hace14);
   });
-  ['paRepFechaFin','paCanFechaFin'].forEach(id=>{
+  ['paRepFechaFin','paCanFechaFin','paProdFechaFin'].forEach(id=>{
     const el = document.getElementById(id);
     if (el && !el.value) el.value = fmt(hoy);
   });
@@ -6438,8 +6503,85 @@ async function cargarPACanales(){
   }
 }
 
+// ── PANAMÁ · VENTAS PRODUCTO ────────────────────────────────────
+// Solo unidades — fact_ventas_producto no tiene monto/precio (ver
+// handleProductosPA en Code_PA.gs). Filtro de categoría es 100% client-side
+// sobre los datos ya cargados, sin volver a pedirle nada al backend.
+let paProdDataCruda = [];
+let paProdCatActiva = 'TODAS';
+
+function paProdFiltrarCategoria(cat, btn){
+  paProdCatActiva = cat;
+  document.querySelectorAll('#paProdCatFilters .tab-pill').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderPAProductos();
+}
+
+async function cargarPAProductos(){
+  const fi = document.getElementById('paProdFechaInicio').value;
+  const ff = document.getElementById('paProdFechaFin').value;
+  const tbody = document.getElementById('paProdBody');
+  if (!fi || !ff) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Elegí un rango de fechas</td></tr>'; return; }
+
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Cargando...</td></tr>';
+  setTxt('paProdTag', `${fi} → ${ff}`);
+  try{
+    const data = await fetchPA('productos', { tienda: 'todas', fechaInicio: fi, fechaFin: ff });
+    paProdDataCruda = Array.isArray(data) ? data : [];
+    paProdCatActiva = 'TODAS';
+
+    const cats = [...new Set(paProdDataCruda.map(p=>p.categoria))].sort();
+    document.getElementById('paProdCatFilters').innerHTML = `<div class="tab-pills">
+      <button class="tab-pill active" onclick="paProdFiltrarCategoria('TODAS',this)">Todas</button>
+      ${cats.map(c=>`<button class="tab-pill" onclick="paProdFiltrarCategoria('${c}',this)">${c}</button>`).join('')}
+    </div>`;
+
+    renderPAProductos();
+  }catch(e){
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--red);padding:24px">Error: ${e.message}</td></tr>`;
+    console.error('cargarPAProductos:', e);
+  }
+}
+
+function renderPAProductos(){
+  const tbody = document.getElementById('paProdBody');
+  const filtrados = paProdCatActiva === 'TODAS'
+    ? paProdDataCruda
+    : paProdDataCruda.filter(p=>p.categoria === paProdCatActiva);
+
+  if (!filtrados.length) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🥣</div><div class="empty-txt">Sin datos para ese filtro</div></div></td></tr>';
+    setTxt('paProdKTotal','0'); setTxt('paProdKTotalSub','—');
+    setTxt('paProdKTop','—'); setTxt('paProdKTopSub','—');
+    setTxt('paProdKCats','0'); setTxt('paProdKProm','0');
+    return;
+  }
+
+  const totalUnidades = filtrados.reduce((s,p)=>s+num(p.unidades),0);
+  const dias = Math.max(1, (new Date(document.getElementById('paProdFechaFin').value+'T12:00:00') - new Date(document.getElementById('paProdFechaInicio').value+'T12:00:00'))/86400000 + 1);
+  const top = filtrados[0]; // ya viene ordenado DESC por unidades desde el backend
+
+  setTxt('paProdKTotal', totalUnidades.toLocaleString('en-US'));
+  setTxt('paProdKTotalSub', `${filtrados.length} productos`);
+  setTxt('paProdKTop', top ? top.producto : '—');
+  setTxt('paProdKTopSub', top ? `${num(top.unidades).toLocaleString('en-US')} unidades` : '—');
+  setTxt('paProdKCats', new Set(filtrados.map(p=>p.categoria)).size);
+  setTxt('paProdKProm', Math.round(totalUnidades/dias).toLocaleString('en-US'));
+
+  tbody.innerHTML = filtrados.map(p=>{
+    const pctVal = totalUnidades>0 ? (num(p.unidades)/totalUnidades*100) : 0;
+    const badge = p.esSignature ? ' ⭐' : '';
+    return `<tr>
+      <td style="padding-left:16px">${p.producto}${badge}</td>
+      <td style="color:var(--muted)">${p.categoria}</td>
+      <td style="text-align:right;font-family:var(--mono)">${num(p.unidades).toLocaleString('en-US')}</td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${pctVal.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
 // Claves de vista tal como se usan en data-section / abrirVista()
-const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado','pa-dashboard','pa-reporte','pa-canales'];
+const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado','pa-dashboard','pa-reporte','pa-canales','pa-productos'];
 
 function vistasPermitidas() {
   const session = getSession();
