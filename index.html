@@ -997,6 +997,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <button class="pennant-btn" onclick="abrirVista('pa-canales','Canales Panamá')"><div class="pennant-icon" style="background:#E0A62A">📊</div><span class="pennant-label">Canales</span></button>
           <button class="pennant-btn" onclick="abrirVista('pa-productos','Ventas Producto Panamá')"><div class="pennant-icon" style="background:#7B4FE0">🥣</div><span class="pennant-label">Ventas Producto</span></button>
           <button class="pennant-btn" onclick="abrirVista('pa-proyeccion','Proyección Panamá')"><div class="pennant-icon" style="background:#a855f7">📈</div><span class="pennant-label">Proyección</span></button>
+          <button class="pennant-btn" onclick="abrirVista('pa-analisis','Análisis Panamá')"><div class="pennant-icon" style="background:#E5427A">🔬</div><span class="pennant-label">Análisis</span></button>
         </div>
       </div>
     </div>
@@ -1083,6 +1084,9 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div>
       <div class="nav-item" data-section="pa-proyeccion">
         <span class="nav-icon">📈</span><span class="nav-label">Proyección</span>
+      </div>
+      <div class="nav-item" data-section="pa-analisis">
+        <span class="nav-icon">🔬</span><span class="nav-label">Análisis</span>
       </div>
       <div class="nav-item" onclick="cambiarPais()" style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px">
         <span class="nav-icon">🌐</span><span class="nav-label">Cambiar país</span>
@@ -2183,6 +2187,126 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 
     </div>
     <!-- ═══════════ FIN PANAMÁ · PROYECCIÓN ═══════════ -->
+
+    <!-- ═══════════ PANAMÁ · ANÁLISIS ═══════════ -->
+    <div class="section" id="section-pa-analisis">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:18px;font-weight:800">Análisis de Desempeño — Panamá</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px" id="paAnlSubtitle">Elegí un rango y presioná Analizar</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="ctrl-label">Desde</span>
+          <input type="date" class="ctrl-input" id="paAnlFechaInicio" style="width:140px">
+          <span class="date-sep">→</span>
+          <input type="date" class="ctrl-input" id="paAnlFechaFin" style="width:140px">
+          <span class="ctrl-label">Comparar vs</span>
+          <div class="tab-pills" id="paAnlPeriodTabs">
+            <button class="tab-pill active" onclick="setPAAnlPeriod(-7,this)">−7 días</button>
+            <button class="tab-pill" onclick="setPAAnlPeriod(-15,this)">−15 días</button>
+            <button class="tab-pill" onclick="setPAAnlPeriod('mes',this)">Mes anterior</button>
+          </div>
+          <button class="btn btn-lime" onclick="cargarAnalisisPA()" id="btnAnalisisPA">↻ Analizar</button>
+        </div>
+      </div>
+
+      <div id="paAnlEmpty" class="card">
+        <div class="card-body">
+          <div class="empty-state" style="padding:56px">
+            <div class="empty-icon">📈</div>
+            <div class="empty-txt">Elegí un rango de fechas y presioná <strong>Analizar</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="paAnlContent" style="display:none">
+
+        <!-- Resumen del período -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">🏆 Resumen del período</div>
+          <div class="kpi-grid" id="paAnlResumenKpis"></div>
+        </div>
+
+        <!-- Día de la Semana -->
+        <div class="card" style="margin-bottom:20px;border:1px solid rgba(47,169,196,.3)">
+          <div class="card-header">
+            <span class="card-title" style="color:var(--teal)">📅 Día de la Semana</span>
+            <button class="tab-pill" id="paBtnFinDeSemana" onclick="togglePAFinDeSemana()">Ver fin de semana</button>
+          </div>
+          <div class="card-body">
+            <div id="paDiaSemanaStats" style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap"></div>
+            <div class="chart-wrap" style="height:180px"><canvas id="paChartDiaSemana"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Comparar dos Fechas -->
+        <div class="card" style="margin-bottom:20px;border:1px solid rgba(229,66,122,.3)">
+          <div class="card-header">
+            <span class="card-title" style="color:var(--red)">🔀 Comparar dos Fechas</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:12px;align-items:end;margin-bottom:16px;flex-wrap:wrap">
+              <div>
+                <div class="ctrl-label" style="margin-bottom:4px">Fecha A</div>
+                <input type="date" class="ctrl-input" id="paCompFechaA">
+              </div>
+              <div>
+                <div class="ctrl-label" style="margin-bottom:4px">Fecha B</div>
+                <input type="date" class="ctrl-input" id="paCompFechaB">
+              </div>
+              <button class="btn btn-lime" onclick="cargarCompararFechasPA()">Comparar</button>
+            </div>
+            <div id="paCompFechasResultado">
+              <div class="empty-state" style="padding:24px"><div class="empty-txt">Elegí dos fechas y presioná Comparar</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canales de Venta -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <span class="card-title">Canales de Venta</span>
+            <span class="card-tag" id="paAnlCanalesTag">Acumulado del período</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div id="paAnlCanalesGrid" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border)"></div>
+            <div style="display:grid;grid-template-columns:1fr 280px;gap:0">
+              <div style="padding:14px;border-right:1px solid var(--border)">
+                <div class="chart-wrap" style="height:200px"><canvas id="paAnlChartCanales"></canvas></div>
+              </div>
+              <div style="padding:14px">
+                <div id="paAnlCanalesDetalle"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rentabilidad -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><span class="card-title">💰 Rentabilidad</span></div>
+          <div class="card-body" style="padding:24px">
+            <div class="empty-state">
+              <div class="empty-icon">—</div>
+              <div class="empty-txt">Panamá todavía no tiene datos de costo cargados en BigQuery — este módulo se habilita cuando estén disponibles.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Productos del período -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🥣 Productos</span>
+            <span class="card-tag" id="paAnlProdTag">del período</span>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div id="paAnlTopProdList"></div>
+          </div>
+        </div>
+
+      </div><!-- /paAnlContent -->
+    </div>
+    <!-- ═══════════ FIN PANAMÁ · ANÁLISIS ═══════════ -->
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -6445,11 +6569,11 @@ function initPAFechasPorDefecto(){
   const hace14 = new Date(Date.now() - 13*86400000);
   const pad = n => String(n).padStart(2,'0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  ['paRepFechaInicio','paCanFechaInicio','paProdFechaInicio'].forEach(id=>{
+  ['paRepFechaInicio','paCanFechaInicio','paProdFechaInicio','paAnlFechaInicio'].forEach(id=>{
     const el = document.getElementById(id);
     if (el && !el.value) el.value = fmt(hace14);
   });
-  ['paRepFechaFin','paCanFechaFin','paProdFechaFin'].forEach(id=>{
+  ['paRepFechaFin','paCanFechaFin','paProdFechaFin','paAnlFechaFin'].forEach(id=>{
     const el = document.getElementById(id);
     if (el && !el.value) el.value = fmt(hoy);
   });
@@ -7153,8 +7277,325 @@ function exportProyExcelPA(){
   XLSX.writeFile(wb,fname);
 }
 
+// ═══════════════════════════════════════════════════════════
+//  PANAMÁ · ANÁLISIS — un solo local, sin costo (Rentabilidad
+//  se muestra vacía a propósito, no se inventa un dato que no existe)
+// ═══════════════════════════════════════════════════════════
+let paAnlPeriod = -7;
+let paAnlDatosRango = null;
+let paVerFinDeSemana = false;
+let paDiaSemanaData = null;
+let paAnlChartCanales = null;
+let paChartDiaSemanaInstance = null;
+
+const PA_CANAL_CFG_ANL = [
+  { key:'uber',   label:'Uber Eats',  color:'#5FAF48' },
+  { key:'peya',   label:'Pedidos Ya', color:'#E0A62A' },
+  { key:'tienda', label:'Mostrador',  color:'#2FA9C4' },
+];
+
+function paAnlPeriodLabel(){
+  if(paAnlPeriod === 'mes') return 'mes anterior (mismo período)';
+  return `${Math.abs(paAnlPeriod)} días atrás`;
+}
+
+function setPAAnlPeriod(p, btn){
+  paAnlPeriod = p;
+  document.querySelectorAll('#paAnlPeriodTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+async function cargarAnalisisPA(){
+  const fi = document.getElementById('paAnlFechaInicio').value;
+  const ff = document.getElementById('paAnlFechaFin').value;
+  if(!fi || !ff){ alert('Elegí el rango de fechas'); return; }
+
+  showLoader(true,'Cargando análisis de Panamá...','');
+  document.getElementById('btnAnalisisPA').disabled = true;
+
+  try{
+    const dIni = new Date(fi+'T12:00:00'), dFin = new Date(ff+'T12:00:00');
+    const lenDias = Math.round((dFin-dIni)/86400000) + 1;
+
+    let refIniD, refFinD;
+    if(paAnlPeriod === 'mes'){
+      refIniD = new Date(dIni); refIniD.setMonth(refIniD.getMonth()-1);
+      refFinD = new Date(dFin); refFinD.setMonth(refFinD.getMonth()-1);
+    } else {
+      refIniD = new Date(dIni); refIniD.setDate(refIniD.getDate()+paAnlPeriod);
+      refFinD = new Date(dFin); refFinD.setDate(refFinD.getDate()+paAnlPeriod);
+    }
+    const pad = n=>String(n).padStart(2,'0');
+    const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+    setStep('Cargando ventas del período...');
+    const [actualMap, refMap] = await Promise.all([
+      fetchPADiario(fi, ff),
+      fetchPADiario(iso(refIniD), iso(refFinD))
+    ]);
+    paAnlDatosRango = actualMap;
+    const sumMap = m => Object.values(m).reduce((acc,d)=>({ventas:acc.ventas+(d.ventas||0), trans:acc.trans+(d.trans||0)}), {ventas:0,trans:0});
+    const actual = sumMap(actualMap), ref = sumMap(refMap);
+    renderPAAnlResumen(actual, ref, lenDias);
+
+    setStep('Cargando día de la semana...');
+    await cargarPADiaSemana();
+
+    setStep('Cargando canales...');
+    await cargarPAAnlCanales(fi, ff);
+
+    setStep('Cargando productos...');
+    await cargarPAAnlProductos(fi, ff);
+
+    setTxt('paAnlCanalesTag', `Acumulado · ${fi} → ${ff}`);
+
+    const cA = document.getElementById('paCompFechaA');
+    const cB = document.getElementById('paCompFechaB');
+    if(cA && !cA.value) cA.value = ff;
+    if(cB && !cB.value){ const d=new Date(ff+'T12:00:00'); d.setFullYear(d.getFullYear()-1); cB.value = d.toISOString().split('T')[0]; }
+
+    document.getElementById('paAnlEmpty').style.display = 'none';
+    document.getElementById('paAnlContent').style.display = 'block';
+    setTxt('paAnlSubtitle', `Período: ${fi} → ${ff} · Comparando ${paAnlPeriodLabel()}`);
+
+  }catch(e){ alert('Error en análisis:\n\n'+e.message); console.error(e); }
+  finally{ showLoader(false); document.getElementById('btnAnalisisPA').disabled=false; }
+}
+
+function renderPAAnlResumen(actual, ref, lenDias){
+  const grid = document.getElementById('paAnlResumenKpis');
+  if(!grid) return;
+  const ticketActual = actual.trans>0 ? actual.ventas/actual.trans : 0;
+  const deltaVentas = ref.ventas>0 ? (actual.ventas-ref.ventas)/ref.ventas*100 : null;
+  const deltaTrans  = ref.trans>0  ? (actual.trans-ref.trans)/ref.trans*100 : null;
+  grid.innerHTML = `
+    <div class="kpi k-purple">
+      <div class="kpi-label">Ventas del período</div>
+      <div class="kpi-value">${fmtUSD(actual.ventas)}</div>
+      ${deltaVentas!==null?`<div class="kpi-delta ${deltaVentas>=0?'d-pos':'d-neg'}">${deltaVentas>=0?'+':''}${deltaVentas.toFixed(1)}% vs ${paAnlPeriodLabel()}</div>`:'<div class="kpi-delta d-neu">sin referencia</div>'}
+    </div>
+    <div class="kpi k-teal">
+      <div class="kpi-label">Transacciones</div>
+      <div class="kpi-value">${actual.trans.toLocaleString('en-US')}</div>
+      ${deltaTrans!==null?`<div class="kpi-delta ${deltaTrans>=0?'d-pos':'d-neg'}">${deltaTrans>=0?'+':''}${deltaTrans.toFixed(1)}%</div>`:'<div class="kpi-delta d-neu">sin referencia</div>'}
+    </div>
+    <div class="kpi k-lime">
+      <div class="kpi-label">Ticket Promedio</div>
+      <div class="kpi-value">${fmtUSD(ticketActual)}</div>
+      <div class="kpi-sub">${lenDias} días</div>
+    </div>
+    <div class="kpi k-amber">
+      <div class="kpi-label">Promedio Diario</div>
+      <div class="kpi-value">${fmtUSD(actual.ventas/lenDias)}</div>
+      <div class="kpi-sub">del período</div>
+    </div>`;
+}
+
+async function cargarPADiaSemana(){
+  const ff = document.getElementById('paAnlFechaFin').value;
+  if(!ff) return;
+  const fechaObj = new Date(ff+'T12:00:00');
+  const dow = fechaObj.getDay();
+  const nombresDia = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const inicio70 = new Date(fechaObj); inicio70.setDate(inicio70.getDate()-70);
+  const pad = n=>String(n).padStart(2,'0');
+  const fmtISO = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const fechaAnioAnt = new Date(fechaObj); fechaAnioAnt.setFullYear(fechaAnioAnt.getFullYear()-1);
+  try{
+    const [hist, aa] = await Promise.all([
+      fetchPA('historialDiario', { tienda:'todas', fechaInicio: fmtISO(inicio70), fechaFin: ff }),
+      fetchPA('historialDiario', { tienda:'todas', fechaInicio: fmtISO(fechaAnioAnt), fechaFin: fmtISO(fechaAnioAnt) })
+    ]);
+    paDiaSemanaData = {
+      hist: Array.isArray(hist) ? hist : [],
+      aa:   Array.isArray(aa)   ? aa   : [],
+      dow, nombresDia
+    };
+    renderPADiaSemana();
+  }catch(e){ console.error('Día de la semana PA:', e); }
+}
+
+function togglePAFinDeSemana(){
+  paVerFinDeSemana = !paVerFinDeSemana;
+  const btn = document.getElementById('paBtnFinDeSemana');
+  if(btn) btn.classList.toggle('active', paVerFinDeSemana);
+  renderPADiaSemana();
+}
+
+function renderPADiaSemana(){
+  if(!paDiaSemanaData) return;
+  const { hist, aa, dow, nombresDia } = paDiaSemanaData;
+
+  const diasFiltro = paVerFinDeSemana ? [5,6,0] : [dow];
+  const ocurrencias = hist.filter(d => diasFiltro.includes(new Date(d.fecha+'T12:00:00').getDay()));
+  ocurrencias.sort((a,b)=> a.fecha.localeCompare(b.fecha));
+  const ultimas10 = ocurrencias.slice(-10);
+
+  const ultimoVal = ultimas10.length ? ultimas10[ultimas10.length-1].ventasNetas : 0;
+  const promAnteriores = ultimas10.length>1
+    ? ultimas10.slice(0,-1).reduce((s,d)=>s+(d.ventasNetas||0),0) / (ultimas10.length-1)
+    : 0;
+  const vsProm = promAnteriores>0 ? ((ultimoVal-promAnteriores)/promAnteriores*100) : null;
+
+  const aaVal = aa.reduce((s,d)=>s+(d.ventasNetas||0),0);
+  const vsAA = aaVal>0 ? ((ultimoVal-aaVal)/aaVal*100) : null;
+
+  const stats = document.getElementById('paDiaSemanaStats');
+  const labelDia = paVerFinDeSemana ? 'fin de semana' : nombresDia[dow];
+  if(stats) stats.innerHTML = `
+    <div>
+      <div style="font-size:9px;color:var(--muted)"><span style="background:rgba(47,169,196,.2);color:var(--teal);padding:1px 5px;border-radius:4px;font-weight:700;margin-right:4px">SSS</span>Último ${labelDia} vs mismo día, año anterior</div>
+      <div style="font-size:20px;font-weight:700;color:${vsAA===null?'var(--muted)':(vsAA>=0?'var(--teal)':'var(--red)')}">${vsAA===null?'—':(vsAA>=0?'+':'')+vsAA.toFixed(1)+'%'}</div>
+    </div>
+    <div>
+      <div style="font-size:9px;color:var(--muted)">Último ${labelDia} vs promedio últimos ${Math.max(ultimas10.length-1,0)} ${labelDia}</div>
+      <div style="font-size:20px;font-weight:700;color:${vsProm===null?'var(--muted)':(vsProm>=0?'var(--teal)':'var(--red)')}">${vsProm===null?'—':(vsProm>=0?'+':'')+vsProm.toFixed(1)+'%'}</div>
+    </div>`;
+
+  if(paChartDiaSemanaInstance) paChartDiaSemanaInstance.destroy();
+  const canvas = document.getElementById('paChartDiaSemana');
+  if(!canvas || !window.Chart) return;
+  const labels = ultimas10.map(d=>{ const f=new Date(d.fecha+'T12:00:00'); return f.getDate()+'/'+(f.getMonth()+1); });
+  const valores = ultimas10.map(d=>d.ventasNetas||0);
+  const colores = ultimas10.map((_,i)=> i===ultimas10.length-1 ? '#2FA9C4' : '#3A3C6B');
+  paChartDiaSemanaInstance = new Chart(canvas.getContext('2d'), {
+    type:'bar',
+    data:{ labels, datasets:[{ data: valores, backgroundColor: colores, borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>fmtUSD(c.parsed.y)}} },
+      scales:{ y:{ ticks:{callback:v=>fmtKUSD(v)} } } }
+  });
+}
+
+async function cargarPAAnlCanales(fi, ff){
+  try{
+    const data = await fetchPA('historialCanales', { tienda:'todas', fechaInicio:fi, fechaFin:ff });
+    const dias = Array.isArray(data) ? data : [];
+    const totales = { uber:0, peya:0, tienda:0 };
+    dias.forEach(d=>{ totales.uber += d.uber||0; totales.peya += d.peya||0; totales.tienda += d.tienda||0; });
+    renderPAAnlCanales(totales);
+  }catch(e){ console.warn('Canales Análisis PA:', e); }
+}
+
+function renderPAAnlCanales(totales){
+  const total = PA_CANAL_CFG_ANL.reduce((s,c)=>s+num(totales[c.key]),0);
+  const grid = document.getElementById('paAnlCanalesGrid');
+  if(!grid) return;
+  grid.innerHTML = PA_CANAL_CFG_ANL.map(c=>{
+    const v = num(totales[c.key]), pct = total>0 ? v/total*100 : 0;
+    return `<div class="canal-kpi">
+      <div class="canal-name"><span class="canal-dot" style="background:${c.color}"></span>${c.label}</div>
+      <div class="canal-pct" style="color:${c.color}">${pct.toFixed(1)}%</div>
+      <div class="canal-value">${fmtUSD(v)}</div>
+    </div>`;
+  }).join('');
+
+  if(paAnlChartCanales) paAnlChartCanales.destroy();
+  const ctx = document.getElementById('paAnlChartCanales').getContext('2d');
+  paAnlChartCanales = new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels: PA_CANAL_CFG_ANL.map(c=>c.label),
+      datasets:[{
+        data: PA_CANAL_CFG_ANL.map(c=>num(totales[c.key])),
+        backgroundColor: PA_CANAL_CFG_ANL.map(c=>c.color+'cc'),
+        borderColor: PA_CANAL_CFG_ANL.map(c=>c.color),
+        borderWidth:2, hoverOffset:8,
+      }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{display:false}, datalabels:{display:false},
+        tooltip:{ backgroundColor:'#1a1a24', callbacks:{ label:ctx=>`${ctx.label}: ${fmtUSD(ctx.raw)} (${total>0?(ctx.raw/total*100).toFixed(1):0}%)` } } } }
+  });
+
+  const det = document.getElementById('paAnlCanalesDetalle');
+  det.innerHTML = '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">Detalle por canal</div>';
+  const sorted = [...PA_CANAL_CFG_ANL].sort((a,b)=>num(totales[b.key])-num(totales[a.key]));
+  sorted.forEach(c=>{
+    const v = num(totales[c.key]), p = total>0 ? v/total*100 : 0;
+    det.innerHTML += `
+      <div class="metrica-row">
+        <span class="metrica-label"><span class="canal-dot" style="background:${c.color}"></span>${c.label}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="metrica-val">${fmtUSD(v)}</span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${p.toFixed(1)}%</span>
+        </span>
+      </div>`;
+  });
+}
+
+async function cargarPAAnlProductos(fi, ff){
+  const list = document.getElementById('paAnlTopProdList');
+  if(!list) return;
+  list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Cargando productos...</div></div>';
+  try{
+    const data = await fetchPA('productos', { tienda:'todas', fechaInicio:fi, fechaFin:ff });
+    const productos = (Array.isArray(data) ? data : []).slice(0,10);
+    setTxt('paAnlProdTag', `${fi} → ${ff}`);
+    if(!productos.length){
+      list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-txt">Sin datos de productos</div></div>';
+      return;
+    }
+    list.innerHTML = '<div style="padding:12px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Top 10 por unidades</div>' +
+      productos.map(p=>`
+        <div style="padding:8px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px">${p.producto}${p.esSignature?' ⭐':''}</span>
+          <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${num(p.unidades).toLocaleString('en-US')} uds</span>
+        </div>`).join('');
+  }catch(e){
+    list.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-txt">Error: ${e.message}</div></div>`;
+  }
+}
+
+async function cargarCompararFechasPA(){
+  const fA = document.getElementById('paCompFechaA').value;
+  const fB = document.getElementById('paCompFechaB').value;
+  const cont = document.getElementById('paCompFechasResultado');
+  if(!fA || !fB){ alert('Elegí ambas fechas'); return; }
+  cont.innerHTML = '<div class="empty-state" style="padding:24px"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Comparando...</div></div>';
+
+  try{
+    const [hA, hB, pA, pB] = await Promise.all([
+      fetchPA('historialDiario', { tienda:'todas', fechaInicio:fA, fechaFin:fA }),
+      fetchPA('historialDiario', { tienda:'todas', fechaInicio:fB, fechaFin:fB }),
+      fetchPA('productos',       { tienda:'todas', fechaInicio:fA, fechaFin:fA }),
+      fetchPA('productos',       { tienda:'todas', fechaInicio:fB, fechaFin:fB }),
+    ]);
+    const diaA = (Array.isArray(hA) && hA[0]) ? hA[0] : { ventasNetas:0, transacciones:0 };
+    const diaB = (Array.isArray(hB) && hB[0]) ? hB[0] : { ventasNetas:0, transacciones:0 };
+    const ticketA = diaA.transacciones>0 ? diaA.ventasNetas/diaA.transacciones : 0;
+    const ticketB = diaB.transacciones>0 ? diaB.ventasNetas/diaB.transacciones : 0;
+    const bowlsA = (Array.isArray(pA)?pA:[]).filter(p=>p.esBowl).reduce((s,p)=>s+num(p.unidades),0);
+    const bowlsB = (Array.isArray(pB)?pB:[]).filter(p=>p.esBowl).reduce((s,p)=>s+num(p.unidades),0);
+
+    const fila = (label, va, vb, formato) => {
+      const delta = vb>0 ? ((va-vb)/vb*100) : null;
+      return `<tr>
+        <td style="padding-left:16px">${label}</td>
+        <td style="text-align:right">${formato(va)}</td>
+        <td style="text-align:right">${formato(vb)}</td>
+        <td style="text-align:right;color:${delta===null?'var(--muted)':(delta>=0?'var(--teal)':'var(--red)')}">${delta===null?'—':(delta>=0?'+':'')+delta.toFixed(1)+'%'}</td>
+      </tr>`;
+    };
+
+    cont.innerHTML = `<table class="store-table" style="width:100%">
+      <thead><tr>
+        <th style="padding-left:16px;text-align:left">Métrica</th>
+        <th>${fA}</th><th>${fB}</th><th>Δ%</th>
+      </tr></thead>
+      <tbody>
+        ${fila('Ventas netas', diaA.ventasNetas||0, diaB.ventasNetas||0, fmtUSD)}
+        ${fila('Transacciones', diaA.transacciones||0, diaB.transacciones||0, num)}
+        ${fila('Ticket medio', ticketA, ticketB, fmtUSD)}
+        ${fila('Bowls vendidos', bowlsA, bowlsB, num)}
+      </tbody></table>`;
+  }catch(e){
+    cont.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-txt">Error: ${e.message}</div></div>`;
+  }
+}
+
 // Claves de vista tal como se usan en data-section / abrirVista()
-const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado','pa-dashboard','pa-reporte','pa-canales','pa-productos','pa-proyeccion'];
+const TODAS_LAS_VISTAS = ['dashboard','reporteDiario','analisis','descuentos','seguimiento','productos','estacionalidad','proyeccion','plproyectado','pa-dashboard','pa-reporte','pa-canales','pa-productos','pa-proyeccion','pa-analisis'];
 
 function vistasPermitidas() {
   const session = getSession();
