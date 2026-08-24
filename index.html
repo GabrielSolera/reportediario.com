@@ -1173,6 +1173,19 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <button class="btn btn-primary" id="btnActualizar" onclick="cargarDatos(true)">↻ Actualizar</button>
     </div>
     <!-- fin topbarControlsCR -->
+    <div id="topbarControlsPA" style="display:none">
+      <span class="ctrl-label">Desde</span>
+      <input type="date" class="ctrl-input" id="paDashFechaInicio" style="width:130px" onchange="cargarPADashboard()">
+      <span class="date-sep">→</span>
+      <input type="date" class="ctrl-input" id="paDashFechaFin" style="width:130px" onchange="cargarPADashboard()">
+      <div class="ctrl-divider"></div>
+      <select class="ctrl-select" id="paDashTienda" style="min-width:150px">
+        <option value="todas">🇵🇦 San Francisco</option>
+      </select>
+      <div class="ctrl-divider"></div>
+      <button class="btn btn-primary" id="paBtnActualizar" onclick="cargarPADashboard()">↻ Actualizar</button>
+    </div>
+    <!-- fin topbarControlsPA -->
       <button class="btn btn-ghost" id="themeToggleBtn" onclick="toggleTema()" title="Cambiar tema claro/oscuro" style="font-size:16px;padding:8px 10px;">🌙</button>
       <button class="btn btn-ghost" id="btnAjustes" onclick="abrirAjustes()" title="Ajustes: usuarios y permisos" style="display:none;font-size:16px;padding:8px 10px;">⚙️</button>
       <div class="ctrl-divider"></div>
@@ -1945,33 +1958,38 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 
     <!-- ═══════════ PANAMÁ · DASHBOARD ═══════════ -->
     <div class="section" id="section-pa-dashboard">
-      <div class="proy-controls" style="flex-wrap:wrap;gap:8px">
-        <span style="font-size:11px;color:var(--muted);font-family:var(--mono)">🇵🇦 San Francisco (La Peatonal) · todo en USD</span>
-        <div style="flex:1"></div>
-        <button class="btn btn-primary" onclick="cargarPADashboard()">↻ Actualizar</button>
-      </div>
-
+      <div id="paFichaRangoFechas" style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:var(--mono)"></div>
       <div class="kpi-grid" id="paDashKpis">
         <div class="kpi k-purple">
           <div class="kpi-label">Ventas de Hoy</div>
           <div class="kpi-value" id="paKHoy">$0</div>
-          <div class="kpi-sub"><span id="paKHoyPedidos">0</span> pedidos</div>
+          <div class="kpi-sub">Forecast: <span id="paKForecast">$0</span></div>
+          <div class="kpi-delta d-neu" id="paKDesvForecast">—</div>
         </div>
         <div class="kpi k-teal">
-          <div class="kpi-label">Semana (lun-hoy)</div>
-          <div class="kpi-value" id="paKSemana">$0</div>
-          <div class="kpi-delta d-neu" id="paKSemanaDelta">—</div>
+          <div class="kpi-label">Crecimiento Semanal</div>
+          <div class="kpi-value" id="paKCrec">—</div>
+          <div class="kpi-sub">vs <span id="paKFechaRef">—</span> (mismo día, semana pasada)</div>
         </div>
         <div class="kpi k-lime">
-          <div class="kpi-label">Mes (1-hoy)</div>
-          <div class="kpi-value" id="paKMes">$0</div>
-          <div class="kpi-delta d-neu" id="paKMesDelta">—</div>
+          <div class="kpi-label">Ventas del Período</div>
+          <div class="kpi-value" id="paKAcum">$0</div>
+          <div class="kpi-delta d-neu" id="paKCrecAcum">—</div>
+          <div class="kpi-sub" style="margin-top:4px">SSS = vs. mismo día de semana, año anterior</div>
         </div>
         <div class="kpi k-amber">
-          <div class="kpi-label">Ticket Promedio (mes)</div>
-          <div class="kpi-value" id="paKTicket">$0</div>
-          <div class="kpi-sub"><span id="paKMesPedidos">0</span> pedidos en el mes</div>
+          <div class="kpi-label">Transacciones</div>
+          <div class="kpi-value" id="paKTrans">0</div>
+          <div class="kpi-sub">Período: <span id="paKTransAcum">0</span> · Ticket: <span id="paKTicket">$0</span></div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Ventas por Día — San Francisco</span>
+          <span class="card-tag" id="paDashChartTag">—</span>
+        </div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="paChartDashDiario"></canvas></div></div>
       </div>
 
       <div id="paDashEmpty" style="display:none" class="empty-state" style="padding:40px"><div class="empty-txt">Cargando datos de Panamá...</div></div>
@@ -6612,6 +6630,8 @@ function activarPais(pais){
   // Controles del topbar y de moneda/modo-venta que solo aplican a CR
   const topbarCR = document.getElementById('topbarControlsCR');
   if (topbarCR) topbarCR.style.display = esPA ? 'none' : 'contents';
+  const topbarPA = document.getElementById('topbarControlsPA');
+  if (topbarPA) topbarPA.style.display = esPA ? 'contents' : 'none';
   const sidebarFooter = document.getElementById('sidebarFooter');
   if (sidebarFooter) sidebarFooter.style.display = esPA ? 'none' : '';
 
@@ -6657,6 +6677,12 @@ function initPAFechasPorDefecto(){
 
   const segMes = document.getElementById('paSegMes');
   if (segMes && !segMes.value) segMes.value = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}`;
+
+  // Dashboard PA — mes en curso por defecto (mismo criterio que el topbar de CR)
+  const dashIni = document.getElementById('paDashFechaInicio');
+  const dashFin = document.getElementById('paDashFechaFin');
+  if (dashIni && !dashIni.value) dashIni.value = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}-01`;
+  if (dashFin && !dashFin.value) dashFin.value = fmt(hoy);
 }
 
 // Formateador de moneda para Panamá — los datos ya vienen en USD nativo
@@ -6680,37 +6706,159 @@ async function fetchPA(action, params){
 }
 
 // ── PANAMÁ · DASHBOARD ──────────────────────────────────────
+// Forecast de un día puntual para Panamá — mismo espíritu que el motor de
+// Proyección (promedio ponderado por recencia + suavizado de outliers +
+// tendencia log-lineal), pero acotado a UN solo día, para el KPI "Ventas
+// de Hoy vs Forecast" del Dashboard. No usa presupuesto (eso es mensual y
+// lineal, vive en BUDGET PA 2026) ni toca el motor de la vista Proyección.
+function estimarVentaEsperadaPA(historyMap, targetDateStr){
+  const targetDate = new Date(targetDateStr+'T00:00:00');
+  const entries = Object.entries(historyMap)
+    .filter(([f,v]) => f < targetDateStr && v && v.ventas>0)
+    .sort((a,b)=>a[0].localeCompare(b[0]));
+  if (!entries.length) return null;
+  const lastDate = new Date(entries[entries.length-1][0]+'T00:00:00');
+
+  const percentile = (arr,p) => {
+    if(!arr.length) return 0;
+    const sorted=[...arr].sort((a,b)=>a-b);
+    const idx=(p/100)*(sorted.length-1);
+    const lo=Math.floor(idx), hi=Math.ceil(idx);
+    return sorted[lo]+(sorted[hi]-sorted[lo])*(idx-lo);
+  };
+
+  const targetDow = targetDate.getDay();
+  const bucket = [];
+  entries.forEach(([f,v])=>{
+    const d = new Date(f+'T00:00:00');
+    if(d.getDay() !== targetDow) return;
+    const daysAgo = Math.max(0, Math.round((lastDate-d)/86400000));
+    bucket.push({ val: v.ventas, weight: Math.exp(-daysAgo/60) });
+  });
+  if(!bucket.length) return null;
+  const vals = bucket.map(x=>x.val);
+  const lo=percentile(vals,15), hi=percentile(vals,85);
+  let filtered = bucket.filter(x=>x.val>=lo && x.val<=hi);
+  if(!filtered.length) filtered = bucket;
+  const sumW = filtered.reduce((s,x)=>s+x.weight,0);
+  const baseAvg = sumW>0 ? filtered.reduce((s,x)=>s+x.val*x.weight,0)/sumW : 0;
+
+  const pts = entries.map(([,v],i)=>({x:i, y:Math.log(v.ventas)}));
+  let trendPerDay = 0;
+  if(pts.length>=7){
+    const n=pts.length;
+    const sx=pts.reduce((s,p)=>s+p.x,0)/n, sy=pts.reduce((s,p)=>s+p.y,0)/n;
+    const numerator=pts.reduce((s,p)=>s+(p.x-sx)*(p.y-sy),0);
+    const den=pts.reduce((s,p)=>s+(p.x-sx)**2,0);
+    if(den!==0){ const b=numerator/den; trendPerDay = Math.max(-0.015, Math.min(0.015, Math.exp(b)-1)); }
+  }
+  const daysAhead = Math.round((targetDate-lastDate)/86400000);
+  return Math.round(baseAvg * Math.max(0.5, 1+trendPerDay*daysAhead));
+}
+
+let paChartDashDiario = null;
+
 async function cargarPADashboard(){
   const empty = document.getElementById('paDashEmpty');
   try{
     empty.style.display = 'block';
     empty.querySelector('.empty-txt').textContent = 'Cargando datos de Panamá...';
-    const data = await fetchPA('resumen', { tienda: 'todas' });
+
+    const resumen = await fetchPA('resumen', { tienda: 'todas' });
+    const hoyStr  = resumen.fechaHoy;
+    const hoyDate = new Date(hoyStr+'T12:00:00');
+    const pad = n=>String(n).padStart(2,'0');
+    const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+    // Historial de ~70 días hacia atrás — alimenta el forecast del día y
+    // sirve de base para el rango elegido si cae dentro de esa ventana.
+    const desde70 = new Date(hoyDate); desde70.setDate(desde70.getDate()-70);
+    const histMap = await fetchPADiario(iso(desde70), hoyStr);
+
     empty.style.display = 'none';
 
-    setTxt('paKHoy', fmtUSD(data.hoy?.ventas));
-    setTxt('paKHoyPedidos', (data.hoy?.pedidos||0).toLocaleString('en-US'));
+    // ── KPI 1: Ventas de Hoy vs Forecast ──
+    const forecastHoy = estimarVentaEsperadaPA(histMap, hoyStr);
+    setTxt('paKHoy', fmtUSD(resumen.hoy?.ventas));
+    setTxt('paKForecast', forecastHoy!==null ? fmtUSD(forecastHoy) : '—');
+    const elDesv = document.getElementById('paKDesvForecast');
+    if(forecastHoy && forecastHoy>0){
+      const desv = (resumen.hoy.ventas - forecastHoy)/forecastHoy*100;
+      elDesv.textContent = (desv>=0?'+':'')+desv.toFixed(1)+'% vs forecast';
+      elDesv.className = 'kpi-delta ' + (desv>=0?'d-pos':'d-neg');
+    } else {
+      elDesv.textContent = 'Forecast no disponible (poca historia)';
+      elDesv.className = 'kpi-delta d-neu';
+    }
 
-    setTxt('paKSemana', fmtUSD(data.semana?.ventas));
-    const dS = data.semana?.vsSemanaPasada;
-    const elS = document.getElementById('paKSemanaDelta');
-    if (dS===null || dS===undefined) { elS.textContent = 'Sin semana previa'; elS.className='kpi-delta d-neu'; }
-    else { elS.textContent = (dS>=0?'+':'')+dS.toFixed(1)+'% vs semana pasada'; elS.className = 'kpi-delta ' + (dS>=0?'d-pos':'d-neg'); }
+    // ── KPI 2: Crecimiento Semanal (hoy vs. mismo día, semana pasada) ──
+    const hace7 = new Date(hoyDate); hace7.setDate(hace7.getDate()-7);
+    const hace7Str = iso(hace7);
+    const hace7Val = histMap[hace7Str] ? histMap[hace7Str].ventas : 0;
+    const crecEl = document.getElementById('paKCrec');
+    if(hace7Val>0){
+      const crec = (resumen.hoy.ventas - hace7Val)/hace7Val*100;
+      crecEl.textContent = (crec>=0?'+':'')+crec.toFixed(1)+'%';
+      crecEl.style.color = crec>=0?'var(--teal)':'var(--red)';
+    } else {
+      crecEl.textContent = '—';
+      crecEl.style.color = 'var(--muted)';
+    }
+    setTxt('paKFechaRef', hace7Str);
 
-    setTxt('paKMes', fmtUSD(data.mes?.ventas));
-    const dM = data.mes?.vsMesPasado;
-    const elM = document.getElementById('paKMesDelta');
-    if (dM===null || dM===undefined) { elM.textContent = 'Sin mes previo equivalente'; elM.className='kpi-delta d-neu'; }
-    else { elM.textContent = (dM>=0?'+':'')+dM.toFixed(1)+'% vs mismo tramo mes pasado'; elM.className = 'kpi-delta ' + (dM>=0?'d-pos':'d-neg'); }
+    // ── KPI 3 y gráfico: rango elegido en el topbar (Desde/Hasta) ──
+    let rangoIni = document.getElementById('paDashFechaInicio').value;
+    let rangoFin = document.getElementById('paDashFechaFin').value;
+    if(!rangoIni || !rangoFin){ rangoIni = hoyStr.slice(0,8)+'01'; rangoFin = hoyStr; }
+    setTxt('paFichaRangoFechas', `Rango: ${rangoIni} → ${rangoFin}`);
 
-    setTxt('paKTicket', fmtUSD(data.mes?.ticketPromedio));
-    setTxt('paKMesPedidos', (data.mes?.pedidos||0).toLocaleString('en-US'));
+    let rangoMap = histMap;
+    if(rangoIni < iso(desde70) || rangoFin > hoyStr){
+      const extra = await fetchPADiario(rangoIni, rangoFin);
+      rangoMap = { ...histMap, ...extra };
+    }
+    const diasRango = Object.entries(rangoMap).filter(([f])=>f>=rangoIni && f<=rangoFin);
+    const acumVentas = diasRango.reduce((s,[,v])=>s+(v.ventas||0),0);
+    const acumTrans  = diasRango.reduce((s,[,v])=>s+(v.trans||0),0);
+
+    setTxt('paKAcum', fmtUSD(acumVentas));
+    const elCrecAcum = document.getElementById('paKCrecAcum');
+    elCrecAcum.textContent = 'Sin dato de año anterior (PA abrió en mayo 2026)';
+    elCrecAcum.className = 'kpi-delta d-neu';
+
+    // ── KPI 4: Transacciones ──
+    setTxt('paKTrans', (resumen.hoy?.pedidos||0).toLocaleString('en-US'));
+    setTxt('paKTransAcum', acumTrans.toLocaleString('en-US'));
+    setTxt('paKTicket', fmtUSD(acumTrans>0 ? acumVentas/acumTrans : 0));
+
+    renderPADashChart(diasRango, rangoIni, rangoFin);
 
   }catch(e){
     empty.style.display = 'block';
     empty.querySelector('.empty-txt').textContent = 'Error: ' + e.message;
     console.error('cargarPADashboard:', e);
   }
+}
+
+function renderPADashChart(diasRango, fi, ff){
+  setTxt('paDashChartTag', `${fi} → ${ff}`);
+  const ordenados = [...diasRango].sort((a,b)=>a[0].localeCompare(b[0]));
+  const labels  = ordenados.map(([f])=>f.slice(5));
+  const valores = ordenados.map(([,v])=>v.ventas||0);
+
+  if(paChartDashDiario) paChartDashDiario.destroy();
+  const ctx = document.getElementById('paChartDashDiario').getContext('2d');
+  paChartDashDiario = new Chart(ctx,{
+    type:'bar',
+    data:{ labels, datasets:[{ data: valores, backgroundColor:'rgba(127,79,224,.55)', borderColor:'#7B4FE0', borderWidth:1, borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, datalabels:{display:false},
+        tooltip:{ backgroundColor:'#1a1a24', callbacks:{ label:c=>' '+fmtUSD(c.parsed.y) } } },
+      scales:{
+        x:{ grid:{color:'rgba(42,42,58,.5)'}, ticks:{color:'#7070a0', font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:15} },
+        y:{ grid:{color:'rgba(42,42,58,.5)'}, ticks:{color:'#7070a0', font:{size:10}, callback:v=>fmtKUSD(v)} }
+      } }
+  });
 }
 
 // ── PANAMÁ · REPORTE DIARIO ──────────────────────────────────
