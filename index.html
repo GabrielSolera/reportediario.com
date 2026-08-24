@@ -1984,12 +1984,55 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         </div>
       </div>
 
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Ventas por Día — San Francisco</span>
+            <span class="card-tag" id="paDashChartTag">—</span>
+          </div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="paChartDashDiario"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Canales de Venta</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="card-tag" id="paDashCanalesTag">Día</span>
+              <div class="tab-pills">
+                <button class="tab-pill active" onclick="switchPADashCanalesChart('doughnut',this)">Circular</button>
+                <button class="tab-pill" onclick="switchPADashCanalesChart('bar',this)">Barras</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="paChartDashCanales"></canvas></div></div>
+          <div id="paDashCanalesBreakdown" style="padding:0 18px 16px"></div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Ventas por Día — San Francisco</span>
-          <span class="card-tag" id="paDashChartTag">—</span>
+          <span class="card-title">Detalle por Tienda</span>
+          <span id="paFichaRangoAcum" style="font-size:10px;color:var(--muted);font-family:var(--mono);font-weight:400"></span>
         </div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="paChartDashDiario"></canvas></div></div>
+        <div style="padding:8px 16px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface2)">
+          <strong>Desv%</strong>: real vs. forecast del día &nbsp;·&nbsp; <strong>Crec%</strong>: vs. mismo día, semana pasada &nbsp;·&nbsp; <strong>SSS%</strong>: vs. mismo día de semana, año anterior
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="scroll-box">
+            <table class="store-table">
+              <thead>
+                <tr>
+                  <th style="padding-left:16px">Tienda</th>
+                  <th>Ventas</th><th>Forecast</th><th title="Diferencia % entre ventas reales del día y el forecast del día">Desv%</th><th title="Crecimiento del día vs. el mismo día de la semana, una semana atrás">Crec%</th>
+                  <th style="border-left:1px solid var(--border)">Acum</th>
+                  <th>Fcst Acum</th><th title="Diferencia % entre lo acumulado del período y el forecast acumulado">Desv%</th><th style="padding-right:16px" title="Same Store Sales: vs. el mismo día de semana, año anterior">SSS%</th>
+                </tr>
+              </thead>
+              <tbody id="paTablaTiendas">
+                <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-txt">Cargando...</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div id="paDashEmpty" style="display:none" class="empty-state" style="padding:40px"><div class="empty-txt">Cargando datos de Panamá...</div></div>
@@ -6833,6 +6876,25 @@ async function cargarPADashboard(){
 
     renderPADashChart(diasRango, rangoIni, rangoFin);
 
+    // ── Detalle por Tienda: forecast acumulado día a día del rango ──
+    // (mismo forecast que usa el KPI de "Hoy", sumado sobre cada día del
+    // período — solo cuenta como base la historia ANTERIOR a cada día, así
+    // que el total no se infla usando datos que "todavía no existían")
+    let fcstAcum = 0;
+    {
+      let d = new Date(rangoIni+'T12:00:00');
+      const finD = new Date(rangoFin+'T12:00:00');
+      while(d <= finD){
+        const f = estimarVentaEsperadaPA(histMap, iso(d));
+        if(f!==null) fcstAcum += f;
+        d.setDate(d.getDate()+1);
+      }
+    }
+    setTxt('paFichaRangoAcum', `Acumulado: ${rangoIni} → ${rangoFin}`);
+    renderTablaTiendaPADash(resumen, forecastHoy, hace7Val, acumVentas, fcstAcum);
+
+    cargarCanalesPADash(rangoIni, rangoFin, hoyStr);
+
   }catch(e){
     empty.style.display = 'block';
     empty.querySelector('.empty-txt').textContent = 'Error: ' + e.message;
@@ -6859,6 +6921,166 @@ function renderPADashChart(diasRango, fi, ff){
         y:{ grid:{color:'rgba(42,42,58,.5)'}, ticks:{color:'#7070a0', font:{size:10}, callback:v=>fmtKUSD(v)} }
       } }
   });
+}
+
+// Detalle por Tienda del Dashboard PA — un solo local, así que es siempre
+// una fila (San Francisco). Mismas columnas que la tabla equivalente de CR
+// (Ventas/Forecast/Desv%/Crec%/Acum/Fcst Acum/Desv%/SSS%), sin la fila TODAS
+// porque no hay nada que sumar.
+function renderTablaTiendaPADash(resumen, forecastHoy, hace7Val, acumVentas, fcstAcum){
+  const tbody = document.getElementById('paTablaTiendas');
+  if(!tbody) return;
+  const ventaDia = resumen.hoy?.ventas || 0;
+  const df  = (forecastHoy && forecastHoy>0) ? (ventaDia-forecastHoy)/forecastHoy*100 : null;
+  const cd  = hace7Val>0 ? (ventaDia-hace7Val)/hace7Val*100 : null;
+  const dfa = fcstAcum>0 ? (acumVentas-fcstAcum)/fcstAcum*100 : null;
+  const fmtPctCell = v => v===null
+    ? '<span style="color:var(--muted)">—</span>'
+    : `<span style="color:${v>=0?'var(--teal)':'var(--red)'}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+
+  tbody.innerHTML = `<tr>
+    <td style="padding-left:16px">Oakberry San Francisco</td>
+    <td style="color:var(--accent)">${fmtUSD(ventaDia)}</td>
+    <td>${forecastHoy!==null?fmtUSD(forecastHoy):'—'}</td>
+    <td>${fmtPctCell(df)}</td>
+    <td>${fmtPctCell(cd)}</td>
+    <td style="border-left:1px solid var(--border);color:var(--lime)">${fmtUSD(acumVentas)}</td>
+    <td>${fcstAcum>0?fmtUSD(fcstAcum):'—'}</td>
+    <td>${fmtPctCell(dfa)}</td>
+    <td style="padding-right:16px;color:var(--muted)" title="Sin datos de año anterior — Panamá abrió en mayo 2026">—</td>
+  </tr>`;
+}
+
+// Canales de Venta del Dashboard PA — mismo patrón que renderChartCanales /
+// renderCanalesBreakdown de CR, con los 3 canales que existen en PA
+// (uber/peya/tienda, ver PA_CANAL_CFG_ANL definido más abajo).
+let paDashCanalesChartTipo = 'doughnut';
+let paChartDashCanales = null;
+let paDashTotalDiaCanales = null;
+
+function renderChartCanalesPADash(totalDia, tipo){
+  if(tipo) paDashCanalesChartTipo = tipo;
+  const isBar = paDashCanalesChartTipo === 'bar';
+  const data   = PA_CANAL_CFG_ANL.map(c=>num(totalDia[c.key]));
+  const colors = PA_CANAL_CFG_ANL.map(c=>c.color);
+  const labels = PA_CANAL_CFG_ANL.map(c=>c.label);
+
+  if(paChartDashCanales) paChartDashCanales.destroy();
+  const ctx = document.getElementById('paChartDashCanales').getContext('2d');
+  paChartDashCanales = new Chart(ctx, {
+    type: isBar ? 'bar' : 'doughnut',
+    data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, hoverOffset:6, borderRadius:isBar?6:0 }] },
+    options: isBar ? {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, datalabels:{display:false},
+        tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtUSD(ctx.parsed.x)}} },
+      scales:{
+        x:{grid:{color:'rgba(42,42,58,.5)'},ticks:{color:'#7070a0',font:{size:11},callback:v=>fmtUSD(v)}},
+        y:{grid:{display:false},ticks:{color:'#7070a0',font:{size:11}}}
+      }
+    } : {
+      responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{ legend:{display:false},
+        datalabels:{
+          color:'#fff', font:{weight:'700', size:10},
+          display:(ctx)=>{ const t=ctx.dataset.data.reduce((a,b)=>a+num(b),0); const v=num(ctx.dataset.data[ctx.dataIndex]); return t>0 && (v/t*100)>=3; },
+          formatter:(value,ctx)=>{ const t=ctx.dataset.data.reduce((a,b)=>a+num(b),0); const pct=t>0?Math.round(value/t*100):0; return pct+'%'; }
+        },
+        tooltip:{ backgroundColor:'#1a1a24', callbacks:{label:ctx=>' '+fmtUSD(ctx.raw)} } }
+    }
+  });
+}
+
+function switchPADashCanalesChart(type, btn){
+  btn.parentElement.querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if(paDashTotalDiaCanales) renderChartCanalesPADash(paDashTotalDiaCanales, type);
+}
+
+function renderCanalesBreakdownPADash(totalDia, comparativo){
+  const el = document.getElementById('paDashCanalesBreakdown');
+  if(!el) return;
+  const totalSum = PA_CANAL_CFG_ANL.reduce((s,c)=>s+num(totalDia[c.key]),0);
+  const filas = PA_CANAL_CFG_ANL.map(c=>{
+    const val = num(totalDia[c.key]);
+    const pctDia = totalSum>0 ? (val/totalSum*100) : 0;
+    const comp = comparativo && comparativo[c.key];
+    const crecCell    = comp ? `<td style="color:${colorPct(comp.crecDia)}">${comp.crecDia>=0?'+':''}${comp.crecDia.toFixed(1)}%</td>` : `<td style="color:var(--muted2)">…</td>`;
+    const acumCell    = comp ? `<td style="border-left:1px solid var(--border)">${fmtUSD(comp.acum)}</td>` : `<td style="border-left:1px solid var(--border);color:var(--muted2)">…</td>`;
+    const pctAcumCell = comp ? `<td>${comp.pctAcum.toFixed(1)}%</td>` : `<td style="color:var(--muted2)">…</td>`;
+    const varCell     = comp ? `<td style="color:${colorPct(comp.varAcum)}">${comp.varAcum>=0?'+':''}${comp.varAcum.toFixed(1)}%</td>` : `<td style="color:var(--muted2)">…</td>`;
+    return `<tr>
+      <td><span class="dot" style="background:${c.color}"></span>${c.label}</td>
+      <td>${fmtUSD(val)}</td>
+      <td>${pctDia.toFixed(1)}%</td>
+      ${crecCell}
+      ${acumCell}
+      ${pctAcumCell}
+      ${varCell}
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<table class="store-table canal-table">
+    <thead><tr>
+      <th style="text-align:left">Canal</th><th>Día</th><th>%</th>
+      <th title="vs. mismo día, 7 días atrás">Crec%</th>
+      <th style="border-left:1px solid var(--border)">Acum</th><th>%</th>
+      <th title="vs. el mismo tramo, período anterior">Var%</th>
+    </tr></thead>
+    <tbody>${filas}</tbody>
+  </table>`;
+}
+
+// Trae historialCanales una sola vez (rango elegido + el tramo anterior
+// equivalente, para el Var%) y de ahí saca: el día de hoy (para el
+// donut/tabla "Día"), el acumulado del rango, y el acumulado del mismo
+// largo de rango inmediatamente anterior.
+async function cargarCanalesPADash(rangoIni, rangoFin, hoyStr){
+  const pad = n=>String(n).padStart(2,'0');
+  const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  try{
+    const rangoIniDate = new Date(rangoIni+'T12:00:00');
+    const rangoFinDate = new Date(rangoFin+'T12:00:00');
+    const lenDias = Math.round((rangoFinDate-rangoIniDate)/86400000)+1;
+    const prevIniDate = new Date(rangoIniDate); prevIniDate.setDate(prevIniDate.getDate()-lenDias);
+    const prevFinDate = new Date(rangoIniDate); prevFinDate.setDate(prevFinDate.getDate()-1);
+    const hace7 = new Date(hoyStr+'T12:00:00'); hace7.setDate(hace7.getDate()-7);
+
+    const fetchIni = [iso(prevIniDate), rangoIni, iso(hace7)].sort()[0];
+    const fetchFin = [rangoFin, hoyStr].sort()[1];
+    const data = await fetchPA('historialCanales', { tienda:'todas', fechaInicio: fetchIni, fechaFin: fetchFin });
+    const serie = Array.isArray(data) ? data : [];
+    const porFecha = {};
+    serie.forEach(r=>{ porFecha[r.fecha] = r; });
+
+    const totalDia = porFecha[hoyStr] || {uber:0, peya:0, tienda:0};
+    paDashTotalDiaCanales = totalDia;
+    renderChartCanalesPADash(totalDia);
+
+    const filaHace7 = porFecha[iso(hace7)] || {};
+    const sumaRango = (desde, hasta) => {
+      const out = {uber:0, peya:0, tienda:0};
+      Object.keys(porFecha).forEach(f=>{
+        if(f>=desde && f<=hasta){ const r=porFecha[f]; Object.keys(out).forEach(k=>out[k]+=num(r[k])); }
+      });
+      return out;
+    };
+    const acumActual   = sumaRango(rangoIni, rangoFin);
+    const acumAnterior = sumaRango(iso(prevIniDate), iso(prevFinDate));
+    const totalAcum    = PA_CANAL_CFG_ANL.reduce((s,c)=>s+num(acumActual[c.key]),0);
+
+    const comparativo = {};
+    PA_CANAL_CFG_ANL.forEach(c=>{
+      const hoyVal   = num(totalDia[c.key]);
+      const hace7Val = num(filaHace7[c.key]);
+      const crecDia  = hace7Val>0 ? ((hoyVal-hace7Val)/hace7Val*100) : (hoyVal>0?100:0);
+      const acumVal     = acumActual[c.key];
+      const anteriorVal = acumAnterior[c.key];
+      const varAcum  = anteriorVal>0 ? ((acumVal-anteriorVal)/anteriorVal*100) : (acumVal>0?100:0);
+      const pctAcum  = totalAcum>0 ? (acumVal/totalAcum*100) : 0;
+      comparativo[c.key] = { crecDia, acum:acumVal, varAcum, pctAcum };
+    });
+    renderCanalesBreakdownPADash(totalDia, comparativo);
+  }catch(e){ console.warn('Canales PA Dashboard error:', e); }
 }
 
 // ── PANAMÁ · REPORTE DIARIO ──────────────────────────────────
