@@ -1,0 +1,15 @@
+{
+  "name": "Oakberry Dashboard",
+  "short_name": "Oakberry",
+  "description": "Dashboard de ventas Oakberry — Costa Rica y Panamá",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#191B36",
+  "theme_color": "#191B36",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
