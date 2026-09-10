@@ -942,12 +942,12 @@ body.modo-vista-unica .hamburger{ display:none !important; }
     <div style="font-size:22px;font-weight:800;margin-bottom:8px;color:var(--text)">¿Qué país querés revisar?</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:28px">Podés cambiar de país en cualquier momento desde el menú.</div>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-      <button onclick="elegirPais('CR')" style="cursor:pointer;width:200px;padding:28px 20px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--font)">
+      <button id="btnPaisCR" onclick="elegirPais('CR')" style="cursor:pointer;width:200px;padding:28px 20px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--font)">
         <span style="font-size:40px">🇨🇷</span>
         <span style="font-size:15px;font-weight:700">Costa Rica</span>
         <span style="font-size:11px;color:var(--muted)">4 tiendas · ₡ / $</span>
       </button>
-      <button onclick="elegirPais('PA')" style="cursor:pointer;width:200px;padding:28px 20px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--font)">
+      <button id="btnPaisPA" onclick="elegirPais('PA')" style="cursor:pointer;width:200px;padding:28px 20px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--font)">
         <span style="font-size:40px">🇵🇦</span>
         <span style="font-size:15px;font-weight:700">Panamá</span>
         <span style="font-size:11px;color:var(--muted)">San Francisco · $</span>
@@ -2552,6 +2552,27 @@ body.modo-vista-unica .hamburger{ display:none !important; }
               <input type="checkbox" id="fUsrTodasVistas" onchange="toggleTodasVistas()"> Todas las vistas
             </label>
             <div id="fUsrVistasGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;padding-left:4px"></div>
+          </div>
+          <div>
+            <div class="ctrl-label" style="margin-bottom:8px">Países permitidos</div>
+            <div style="display:flex;gap:16px;padding-left:4px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+                <input type="checkbox" id="fUsrPaisCR" checked> 🇨🇷 Costa Rica
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+                <input type="checkbox" id="fUsrPaisPA" checked> 🇵🇦 Panamá
+              </label>
+            </div>
+          </div>
+          <div>
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px">
+              <input type="checkbox" id="fUsrExpiraChk" onchange="toggleExpiraUsuario()"> Acceso temporal (expira)
+            </label>
+            <div id="fUsrExpiraWrap" style="display:none;padding-left:4px">
+              <div class="ctrl-label" style="margin-bottom:4px">Días de vigencia desde hoy</div>
+              <input type="number" class="ctrl-input" id="fUsrExpiraDias" min="1" style="width:120px" placeholder="Ej: 15">
+              <div id="fUsrExpiraInfo" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+            </div>
           </div>
           <button class="btn btn-lime" onclick="guardarUsuario()" style="margin-top:8px">Guardar usuario</button>
         </div>
@@ -6761,7 +6782,7 @@ async function doLogin() {
     catch(pe) { throw new Error('Respuesta inválida del servidor: ' + text.substring(0,100)); }
 
     if (data.ok) {
-      setSession({ nombre: data.nombre, usuario: data.usuario, token: data.token, rol: data.rol||'usuario', vistas: data.vistas||'todas' });
+      setSession({ nombre: data.nombre, usuario: data.usuario, token: data.token, rol: data.rol||'usuario', vistas: data.vistas||'todas', paises: data.paises||'CR,PA' });
       mostrarDashboard(data.nombre, data.usuario);
     } else {
       errDiv.textContent = data.mensaje || 'Credenciales incorrectas';
@@ -6794,6 +6815,7 @@ function mostrarDashboard(nombre, usuario) {
 
   // Preguntar país siempre, en cada login — a diferencia de antes, ya no se
   // recuerda la elección entre sesiones (pedido explícito del usuario).
+  aplicarPermisosPaises();
   document.getElementById('paisSelectorScreen').classList.remove('hidden');
 }
 
@@ -6801,6 +6823,17 @@ function mostrarDashboard(nombre, usuario) {
 //  SWITCH DE PAÍS — Costa Rica / Panamá
 // ═══════════════════════════════════════════════════════════
 let paisActivo = null; // 'CR' | 'PA'
+
+// Filtra los botones del selector según session.paises (CSV, ej. "CR,PA" o
+// solo "PA") — pensado para usuarios demo con acceso a un único país.
+function aplicarPermisosPaises() {
+  const session = getSession();
+  const paises = (session && session.paises) ? session.paises.split(',').map(p=>p.trim()) : ['CR','PA'];
+  const btnCR = document.getElementById('btnPaisCR');
+  const btnPA = document.getElementById('btnPaisPA');
+  if (btnCR) btnCR.style.display = paises.includes('CR') ? '' : 'none';
+  if (btnPA) btnPA.style.display = paises.includes('PA') ? '' : 'none';
+}
 
 function elegirPais(pais){
   document.getElementById('paisSelectorScreen').classList.add('hidden');
@@ -6811,6 +6844,7 @@ function cambiarPais(){
   paisActivo = null;
   document.body.classList.remove('modo-vista-unica');
   document.getElementById('menuPrincipal').classList.add('hidden');
+  aplicarPermisosPaises();
   document.getElementById('paisSelectorScreen').classList.remove('hidden');
 }
 
@@ -8592,7 +8626,11 @@ function renderListaUsuarios(usuarios) {
         <div style="font-weight:700;font-size:13px">${u.nombre}</div>
         <div style="font-size:11px;color:var(--muted)">@${u.usuario} · ${u.rol==='admin'?'Administrador':'Usuario'}</div>
       </div>
-      <div style="font-size:10px;color:var(--muted);text-align:right;max-width:160px">${u.vistas==='todas'?'Todas las vistas':(u.vistas.split(',').length+' vista(s)')}</div>
+      <div style="font-size:10px;color:var(--muted);text-align:right;max-width:170px">
+        ${u.vistas==='todas'?'Todas las vistas':(u.vistas.split(',').length+' vista(s)')}<br>
+        ${(u.paises||'CR,PA')==='CR,PA'?'🇨🇷🇵🇦 Ambos países':(u.paises==='PA'?'🇵🇦 Solo Panamá':'🇨🇷 Solo Costa Rica')}
+        ${u.expira?`<br><span style="color:var(--warning,#e0a62a)">Vence ${u.expira}</span>`:''}
+      </div>
     </div>`).join('');
 }
 
@@ -8622,6 +8660,28 @@ function mostrarFormUsuario(usuario) {
     chk.checked = esTodas || vistasActuales.split(',').includes(chk.value);
   });
   toggleTodasVistas();
+
+  // Países permitidos — por defecto ambos (usuarios creados antes de este campo)
+  const paisesActuales = (usuario && usuario.paises) ? usuario.paises : 'CR,PA';
+  document.getElementById('fUsrPaisCR').checked = paisesActuales.includes('CR');
+  document.getElementById('fUsrPaisPA').checked = paisesActuales.includes('PA');
+
+  // Vencimiento — si ya tiene uno, se precarga el checkbox y los días
+  // restantes (redondeados hacia arriba) para que sea fácil de ajustar.
+  const expiraActual = usuario ? (usuario.expira || '') : '';
+  document.getElementById('fUsrExpiraChk').checked = !!expiraActual;
+  document.getElementById('fUsrExpiraDias').value = '';
+  document.getElementById('fUsrExpiraInfo').textContent = expiraActual ? `Vence actualmente: ${expiraActual}` : '';
+  if (expiraActual) {
+    const diasRestantes = Math.ceil((new Date(expiraActual + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+    if (diasRestantes > 0) document.getElementById('fUsrExpiraDias').value = diasRestantes;
+  }
+  toggleExpiraUsuario();
+}
+
+function toggleExpiraUsuario() {
+  const expira = document.getElementById('fUsrExpiraChk').checked;
+  document.getElementById('fUsrExpiraWrap').style.display = expira ? 'block' : 'none';
 }
 
 function volverListaUsuarios() {
@@ -8646,11 +8706,27 @@ async function guardarUsuario() {
   const todas = document.getElementById('fUsrTodasVistas').checked;
   const vistas = todas ? 'todas' : [...document.querySelectorAll('.fUsrVistaChk:checked')].map(c=>c.value).join(',');
 
+  const paisesSeleccionados = [];
+  if (document.getElementById('fUsrPaisCR').checked) paisesSeleccionados.push('CR');
+  if (document.getElementById('fUsrPaisPA').checked) paisesSeleccionados.push('PA');
+  const paises = paisesSeleccionados.join(',');
+
+  const expiraOn = document.getElementById('fUsrExpiraChk').checked;
+  const expiraDias = parseInt(document.getElementById('fUsrExpiraDias').value, 10);
+  let expira = '';
+  if (expiraOn) {
+    if (!expiraDias || expiraDias < 1) { alert('Indicá cuántos días de vigencia tiene este usuario'); return; }
+    const fechaExpira = new Date(new Date().toDateString());
+    fechaExpira.setDate(fechaExpira.getDate() + expiraDias);
+    expira = fechaExpira.toISOString().slice(0,10);
+  }
+
   if (!nombre || !usuario) { alert('Nombre y usuario son obligatorios'); return; }
   if (!ajustesUsuarioEditando && !password) { alert('La contraseña es obligatoria para un usuario nuevo'); return; }
+  if (!paises) { alert('Elegí al menos un país'); return; }
 
   try {
-    const params = new URLSearchParams({ action:'guardarUsuario', nombre, usuario, password, rol, vistas });
+    const params = new URLSearchParams({ action:'guardarUsuario', nombre, usuario, password, rol, vistas, paises, expira });
     const resp = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
     const data = await resp.json();
     if (data.ok) {
