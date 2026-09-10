@@ -1027,7 +1027,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
     </div>
 
     <button class="menu-todas-btn" id="menuTodasBtn" onclick="abrirTodasLasVistas()">Ver todas las vistas →</button>
-    <button class="menu-todas-btn" onclick="cambiarPais()" style="margin-top:10px">🌐 Cambiar país (actual: <span id="paisActualLabel">—</span>)</button>
+    <button class="menu-todas-btn" id="btnCambiarPaisMenu" onclick="cambiarPais()" style="margin-top:10px">🌐 Cambiar país (actual: <span id="paisActualLabel">—</span>)</button>
     <button class="menu-logout" onclick="doLogout()">Cerrar sesión</button>
   </div>
 </div>
@@ -1121,7 +1121,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <span class="nav-badge">AI</span>
       </div>
 
-      <div class="nav-item" onclick="cambiarPais()" style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px">
+      <div class="nav-item" id="navItemCambiarPaisPA" onclick="cambiarPais()" style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px">
         <span class="nav-icon">🌐</span><span class="nav-label">Cambiar país</span>
       </div>
     </div>
@@ -6813,10 +6813,17 @@ function mostrarDashboard(nombre, usuario) {
   // sesión) — se carga acá, una vez que ya sabemos que el login funcionó.
   if (typeof cargarTipoCambioFn === 'function') cargarTipoCambioFn();
 
-  // Preguntar país siempre, en cada login — a diferencia de antes, ya no se
-  // recuerda la elección entre sesiones (pedido explícito del usuario).
-  aplicarPermisosPaises();
-  document.getElementById('paisSelectorScreen').classList.remove('hidden');
+  // Si el usuario solo tiene acceso a un país, ni tiene sentido preguntar
+  // — entra directo a ese país. Solo se pregunta cuando puede ver ambos.
+  const paisesLogin = paisesPermitidos();
+  if (paisesLogin.length === 1) {
+    activarPais(paisesLogin[0]);
+  } else {
+    // Preguntar país siempre, en cada login — a diferencia de antes, ya no se
+    // recuerda la elección entre sesiones (pedido explícito del usuario).
+    aplicarPermisosPaises();
+    document.getElementById('paisSelectorScreen').classList.remove('hidden');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -6824,11 +6831,17 @@ function mostrarDashboard(nombre, usuario) {
 // ═══════════════════════════════════════════════════════════
 let paisActivo = null; // 'CR' | 'PA'
 
-// Filtra los botones del selector según session.paises (CSV, ej. "CR,PA" o
-// solo "PA") — pensado para usuarios demo con acceso a un único país.
-function aplicarPermisosPaises() {
+// Países que la sesión actual puede ver (CSV en session.paises, ej. "CR,PA"
+// o solo "PA") — sin sesión o sin el campo, se asume acceso a ambos.
+function paisesPermitidos() {
   const session = getSession();
-  const paises = (session && session.paises) ? session.paises.split(',').map(p=>p.trim()) : ['CR','PA'];
+  return (session && session.paises) ? session.paises.split(',').map(p=>p.trim()).filter(Boolean) : ['CR','PA'];
+}
+
+// Filtra los botones del selector según los países permitidos — pensado
+// para usuarios demo con acceso a un único país.
+function aplicarPermisosPaises() {
+  const paises = paisesPermitidos();
   const btnCR = document.getElementById('btnPaisCR');
   const btnPA = document.getElementById('btnPaisPA');
   if (btnCR) btnCR.style.display = paises.includes('CR') ? '' : 'none';
@@ -6841,6 +6854,9 @@ function elegirPais(pais){
 }
 
 function cambiarPais(){
+  // Con un solo país permitido no hay nada que elegir — no tiene sentido
+  // mostrar la pantalla de selección para un único botón.
+  if (paisesPermitidos().length === 1) return;
   paisActivo = null;
   document.body.classList.remove('modo-vista-unica');
   document.getElementById('menuPrincipal').classList.add('hidden');
@@ -6857,6 +6873,13 @@ function activarPais(pais){
   document.getElementById('menuGruposPA').style.display = esPA ? '' : 'none';
   const paisLbl = document.getElementById('paisActualLabel');
   if (paisLbl) paisLbl.textContent = esPA ? 'Panamá 🇵🇦' : 'Costa Rica 🇨🇷';
+
+  // "Cambiar país" no tiene sentido si solo hay un país permitido — se oculta.
+  const soloUnPais = paisesPermitidos().length === 1;
+  const btnCambiarMenu = document.getElementById('btnCambiarPaisMenu');
+  if (btnCambiarMenu) btnCambiarMenu.style.display = soloUnPais ? 'none' : '';
+  const navCambiarPA = document.getElementById('navItemCambiarPaisPA');
+  if (navCambiarPA) navCambiarPA.style.display = soloUnPais ? 'none' : '';
 
   // Sidebar: mismo criterio
   document.getElementById('navItemsCR').style.display = esPA ? 'none' : '';
