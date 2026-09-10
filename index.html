@@ -1341,6 +1341,23 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         </div>
       </div>
 
+      <!-- ⏰ VENTAS POR HORA -->
+      <div class="card" style="margin-bottom:16px;border:1px solid rgba(123,79,224,.35)">
+        <div class="card-header">
+          <span class="card-title" style="color:var(--accent)">⏰ Ventas por Hora</span>
+          <span class="card-tag" id="horaPeriodTag">—</span>
+        </div>
+        <div class="card-body">
+          <div id="horaStats" style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap">
+            <div><div class="ctrl-label">Hora pico</div><div style="font-size:20px;font-weight:800;color:var(--lime)" id="horaPicoVal">—</div></div>
+            <div><div class="ctrl-label">Venta promedio esa hora</div><div style="font-size:20px;font-weight:800" id="horaPicoVenta">—</div></div>
+            <div><div class="ctrl-label">Hora más floja (con actividad)</div><div style="font-size:20px;font-weight:800;color:var(--muted)" id="horaFlojaVal">—</div></div>
+          </div>
+          <div class="chart-wrap" style="height:220px"><canvas id="chartVentasPorHora"></canvas></div>
+          <div id="horaEmpty" class="empty-state" style="display:none;padding:16px"><div class="empty-txt">Sin datos de venta por hora para el rango/tienda seleccionados</div></div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="scroll-box">
           <div class="scroll-box" style="-webkit-overflow-scrolling:touch"><table id="tablaReporteDiario" style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
@@ -3296,6 +3313,7 @@ async function cargarReporteDiario() {
   const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`;
   const tbody = document.getElementById('bodyReporte');
   tbody.innerHTML = `<tr><td colspan="100"><div class="empty-state"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Cargando reporte...</div></div></td></tr>`;
+  cargarVentasPorHora();
   try{
     const resp = await fetch(url);
     const data = await resp.json();
@@ -3311,6 +3329,93 @@ async function cargarReporteDiario() {
     }
   }catch(e){
     tbody.innerHTML=`<tr><td colspan="100"><div class="empty-state"><div class="empty-icon">❌</div><div class="empty-txt">${e.message}</div></div></td></tr>`;
+  }
+}
+
+let chartVentasPorHoraInstance = null;
+
+// Reordena las 24 horas (0-23) al orden natural del día de negocio: arranca
+// en la hora de apertura y termina en la madrugada (algunas órdenes cierran
+// después de medianoche pero siguen contando para el día anterior — ver
+// corregirCierreDeDiaEnVistas en el backend). Evita mostrar "00:00" como si
+// fuera el inicio del día cuando en realidad es el cierre tardío del día previo.
+function ordenarHorasNegocio(porHora) {
+  const conDatos = porHora.filter(h => h.ventasPromedio > 0 || h.pedidosPromedio > 0).map(h => h.hora);
+  if (!conDatos.length) return porHora.map(h => h.hora);
+  const primeraHora = Math.min(...conDatos.filter(h => h >= 4)); // primera hora de apertura real (ignora colas de madrugada)
+  const orden = [];
+  for (let i = 0; i < 24; i++) orden.push((primeraHora + i) % 24);
+  return orden;
+}
+
+async function cargarVentasPorHora() {
+  const fi = document.getElementById('fechaInicio').value;
+  const ff = document.getElementById('fechaFin').value;
+  const ts = document.getElementById('tiendaSelect').value;
+  if (!fi || !ff) return;
+  const tag = document.getElementById('horaPeriodTag');
+  if (tag) tag.textContent = fi === ff ? fi : `${fi} → ${ff}`;
+  try {
+    const resp = await fetch(`${APPS_SCRIPT_URL}?action=ventasPorHora&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`);
+    const data = await resp.json();
+    const empty = document.getElementById('horaEmpty');
+    if (!data || data.error || !Array.isArray(data.porHora)) {
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+    const porHora = data.porHora;
+    const conDatos = porHora.some(h => h.ventasPromedio > 0);
+    if (!conDatos) {
+      if (empty) empty.style.display = 'block';
+      if (chartVentasPorHoraInstance) { chartVentasPorHoraInstance.destroy(); chartVentasPorHoraInstance = null; }
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    const orden = ordenarHorasNegocio(porHora);
+    const porHoraMap = {}; porHora.forEach(h => porHoraMap[h.hora] = h);
+    const labels = orden.map(h => `${String(h).padStart(2,'0')}:00`);
+    const ventas = orden.map(h => porHoraMap[h].ventasPromedio);
+    const pedidos = orden.map(h => porHoraMap[h].pedidosPromedio);
+
+    let idxPico = 0, idxFloja = -1;
+    ventas.forEach((v, i) => {
+      if (v > ventas[idxPico]) idxPico = i;
+      if (v > 0 && (idxFloja === -1 || v < ventas[idxFloja])) idxFloja = i;
+    });
+    document.getElementById('horaPicoVal').textContent = labels[idxPico];
+    document.getElementById('horaPicoVenta').textContent = fmtCRC(ventas[idxPico]);
+    document.getElementById('horaFlojaVal').textContent = idxFloja >= 0 ? labels[idxFloja] : '—';
+
+    const ctx = document.getElementById('chartVentasPorHora');
+    if (chartVentasPorHoraInstance) chartVentasPorHoraInstance.destroy();
+    chartVentasPorHoraInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Venta promedio (₡)',
+          data: ventas,
+          backgroundColor: ventas.map((v,i) => i === idxPico ? '#C8F55A' : 'rgba(123,79,224,.65)'),
+          borderRadius: 6,
+          maxBarThickness: 34
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          datalabels: { display: false },
+          tooltip: { callbacks: { afterLabel: (c) => `${pedidos[c.dataIndex]} pedidos prom.` } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
+          y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => fmtK(v) } }
+        }
+      }
+    });
+  } catch (e) {
+    console.error('ventasPorHora:', e);
   }
 }
 
