@@ -2857,6 +2857,14 @@ function activarSeccion(sectionKey, label){
   // de nuevo si volvés a la misma sección enseguida). Proyección queda
   // afuera: necesita que elijas mes y rango de historial antes de correr.
   if (sectionKey.indexOf('pa-') === 0) {
+    // El rango de fechas + tienda del topbar (paDashFechaInicio/Fin) es
+    // propio del Dashboard de Panamá — las demás vistas (Reporte Diario,
+    // Canales, Productos) tienen su PROPIO rango independiente adentro de
+    // la vista. Si se deja visible en el topbar fuera de Dashboard, se ve
+    // como un segundo selector de fechas "duplicado" que no hace nada ahí.
+    const topbarPA = document.getElementById('topbarControlsPA');
+    if (topbarPA) topbarPA.style.display = (sectionKey === 'pa-dashboard') ? 'contents' : 'none';
+
     // Secciones de Panamá: no usan el fechaFin/caché de CR, tienen su
     // propia carga.
     if (sectionKey === 'pa-dashboard') cargarPADashboard();
