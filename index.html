@@ -2115,7 +2115,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <input type="date" class="ctrl-input" id="paRepFechaInicio" style="width:140px">
         <span class="date-sep">→</span>
         <input type="date" class="ctrl-input" id="paRepFechaFin" style="width:140px">
-        <button class="btn btn-primary" onclick="cargarPAReporte()">↻ Cargar</button>
+        <button class="btn btn-primary" onclick="cargarPAReporteDesdeCero()">↻ Cargar</button>
         <div class="tienda-multiselect" id="paReporteCanalMultiselectWrap" style="position:relative">
           <button type="button" class="ctrl-select" id="paReporteCanalMultiselectBtn" onclick="togglePAReporteCanalDropdown(event)" style="cursor:pointer;text-align:left">Todos los canales ▾</button>
           <div id="paReporteCanalDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;z-index:400;min-width:200px;box-shadow:0 8px 20px rgba(0,0,0,.3)">
@@ -2132,12 +2132,23 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <input type="hidden" id="paReporteCanalSelect" value="todos">
         </div>
         <button class="btn btn-lime" id="btnExportarReportePA" onclick="exportarReporteDiarioPA()">⬇ Exportar Excel</button>
+        <button class="tab-pill" id="btnVerSSSReportePA" onclick="togglePAReporteComp()">Comparar con otro período</button>
+      </div>
+      <div id="paReporteCompPanel" style="display:none;flex-direction:column;gap:10px;margin-top:12px;margin-bottom:4px;padding:12px;background:var(--surface2);border-radius:10px">
+        <div style="display:flex;align-items:end;gap:12px;flex-wrap:wrap">
+          <div><div class="ctrl-label" style="margin-bottom:4px">Desde</div><input type="date" class="ctrl-input" id="paReporteCompDesde"></div>
+          <div><div class="ctrl-label" style="margin-bottom:4px">Hasta</div><input type="date" class="ctrl-input" id="paReporteCompHasta"></div>
+          <button class="btn btn-lime" onclick="cargarPAReporteComparacion()">Comparar</button>
+          <span style="font-size:11px;color:var(--muted)">La segunda línea se dibuja alineada por posición del día (día 1 vs día 1, día 2 vs día 2, etc.)</span>
+        </div>
+        <div id="paReporteCompAviso" style="display:none;font-size:11px;color:var(--amber);background:rgba(224,166,42,.12);padding:8px 10px;border-radius:6px"></div>
       </div>
 
       <div class="card" style="margin-top:16px;margin-bottom:16px">
         <div class="card-header"><span class="card-title">Tendencia</span></div>
         <div class="card-body">
           <div class="chart-wrap" style="height:220px"><canvas id="paChartReporteLineal"></canvas></div>
+          <div id="paReporteInsights" style="margin-top:12px"></div>
         </div>
       </div>
 
@@ -2849,7 +2860,7 @@ function activarSeccion(sectionKey, label){
     // Secciones de Panamá: no usan el fechaFin/caché de CR, tienen su
     // propia carga.
     if (sectionKey === 'pa-dashboard') cargarPADashboard();
-    if (sectionKey === 'pa-reporte')   cargarPAReporte();
+    if (sectionKey === 'pa-reporte')   cargarPAReporteDesdeCero();
     if (sectionKey === 'pa-canales')   cargarPACanales();
     if (sectionKey === 'pa-productos') cargarPAProductos();
     return;
@@ -7624,6 +7635,117 @@ function onPAReporteCanalChkChange() {
     btn.textContent = marcados.length + ' canales seleccionados ▾';
   }
 
+  cargarPAReporteDesdeCero();
+}
+
+// ── Comparar con otro período (Panamá) ────────────────────────────────────
+let paReporteVerSSS = false;
+let datosPAReporteSSSRaw = null;   // historialDiario del período comparado
+let datosPAHoraCompRaw = null;     // ventasPorHora del período comparado
+
+function togglePAReporteComp() {
+  const panel = document.getElementById('paReporteCompPanel');
+  const abierto = panel.style.display !== 'none';
+  panel.style.display = abierto ? 'none' : 'flex';
+  if (!abierto) {
+    const fiEl = document.getElementById('paReporteCompDesde');
+    const ffEl = document.getElementById('paReporteCompHasta');
+    if (fiEl && !fiEl.value) {
+      const fi = document.getElementById('paRepFechaInicio').value;
+      const ff = document.getElementById('paRepFechaFin').value;
+      if (fi) fiEl.value = shiftYear(fi, -1);
+      if (ff) ffEl.value = shiftYear(ff, -1);
+    }
+  }
+}
+
+async function cargarPAReporteComparacion() {
+  const fiPrincipal = document.getElementById('paRepFechaInicio').value;
+  const ffPrincipal = document.getElementById('paRepFechaFin').value;
+  const fi = document.getElementById('paReporteCompDesde').value;
+  const ff = document.getElementById('paReporteCompHasta').value;
+  const canal = paReporteCanalActual();
+  if (!fi || !ff) { alert('Elegí ambas fechas'); return; }
+  const btn = document.getElementById('btnVerSSSReportePA');
+  const avisoEl = document.getElementById('paReporteCompAviso');
+
+  if (avisoEl) {
+    const diasPrincipal = diasEntre(fiPrincipal, ffPrincipal);
+    const diasComp = diasEntre(fi, ff);
+    const seSolapan = !(ff < fiPrincipal || fi > ffPrincipal);
+    if (diasPrincipal !== diasComp) {
+      avisoEl.textContent = `⚠️ El rango principal tiene ${diasPrincipal} días y el comparado ${diasComp} — los totales por período no van a ser directamente comparables.`;
+      avisoEl.style.display = 'block';
+    } else if (seSolapan) {
+      avisoEl.textContent = `⚠️ Los dos rangos se solapan en fechas — los días compartidos van a salir idénticos.`;
+      avisoEl.style.display = 'block';
+    } else {
+      avisoEl.style.display = 'none';
+    }
+  }
+
+  try {
+    const [data, dataHora] = await Promise.all([
+      fetchPA('historialDiario', { tienda: 'todas', fechaInicio: fi, fechaFin: ff, canal }),
+      fetchPA('ventasPorHora', { tienda: 'todas', fechaInicio: fi, fechaFin: ff })
+    ]);
+    if (data && !data.error && Array.isArray(data)) {
+      datosPAReporteSSSRaw = data;
+      datosPAHoraCompRaw = (dataHora && !dataHora.error && Array.isArray(dataHora.porHora)) ? dataHora.porHora : null;
+      paReporteVerSSS = true;
+      if (btn) btn.classList.add('active');
+      cargarPAReporte();
+    }
+  } catch(e) { console.error('Comparación reporte PA:', e); }
+}
+
+// Igual que renderReporteInsights() de CR, pero en USD y sobre el
+// contenedor de Panamá.
+function renderPAReporteInsights(labels, totales, totalesComp) {
+  const cont = document.getElementById('paReporteInsights');
+  if (!cont) return;
+  if (!totalesComp) { cont.innerHTML = ''; return; }
+
+  let peorIdx = -1, peorDelta = Infinity, mejorIdx = -1, mejorDelta = -Infinity;
+  let sumaActual = 0, sumaComp = 0;
+  for (let i=0; i<totales.length; i++) {
+    const comp = totalesComp[i];
+    if (comp===null || comp===undefined || comp<=0) continue;
+    const delta = (totales[i]-comp)/comp*100;
+    if (delta < peorDelta) { peorDelta = delta; peorIdx = i; }
+    if (delta > mejorDelta) { mejorDelta = delta; mejorIdx = i; }
+    sumaActual += totales[i];
+    sumaComp += comp;
+  }
+  const deltaTotal = sumaComp > 0 ? (sumaActual-sumaComp)/sumaComp*100 : null;
+
+  let html = '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px">';
+  if (deltaTotal !== null) {
+    const subiendo = deltaTotal >= 0;
+    html += `<div style="background:rgba(123,79,224,.15);border-radius:8px;padding:8px 12px">
+      <span style="color:${subiendo?'var(--teal)':'var(--red)'};font-weight:700">${subiendo?'↑':'↓'} Total del período:</span> ${fmtUSD(sumaActual)} (${subiendo?'+':''}${deltaTotal.toFixed(1)}% vs período comparado, ${fmtUSD(sumaComp)})
+    </div>`;
+  }
+  if (peorIdx >= 0) {
+    html += `<div style="background:rgba(229,66,122,.12);border-radius:8px;padding:8px 12px">
+      <span style="color:var(--red);font-weight:700">↓ Mayor caída:</span> ${labels[peorIdx]} (${peorDelta.toFixed(1)}% vs período comparado)
+    </div>`;
+  }
+  if (mejorIdx >= 0) {
+    html += `<div style="background:rgba(47,169,196,.12);border-radius:8px;padding:8px 12px">
+      <span style="color:var(--teal);font-weight:700">↑ Mayor crecimiento:</span> ${labels[mejorIdx]} (+${mejorDelta.toFixed(1)}% vs período comparado)
+    </div>`;
+  }
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+function cargarPAReporteDesdeCero() {
+  paReporteVerSSS = false;
+  datosPAReporteSSSRaw = null;
+  datosPAHoraCompRaw = null;
+  const btnSSS = document.getElementById('btnVerSSSReportePA');
+  if (btnSSS) btnSSS.classList.remove('active');
   cargarPAReporte();
 }
 
@@ -7675,6 +7797,7 @@ async function cargarPAReporte(){
 
     const labelsTend = dias.map(d => d.fecha.slice(5));
     let datasetsTend, mostrarLeyendaPA;
+    let totalesComp = null;
     if (seleccionadosPA.length && dataCanales && Array.isArray(dataCanales)) {
       const porFechaCanal = {}; dataCanales.forEach(d => porFechaCanal[d.fecha] = d);
       datasetsTend = seleccionadosPA.map(key => ({
@@ -7687,9 +7810,20 @@ async function cargarPAReporte(){
       }));
       mostrarLeyendaPA = true;
     } else {
-      datasetsTend = [{ label: 'Ventas (USD)', data: dias.map(d => d.ventasNetas), borderColor: '#7B4FE0', backgroundColor: 'rgba(123,79,224,.15)', fill: true, tension: .3, pointRadius: 2 }];
+      datasetsTend = [{ label: 'Período actual', data: dias.map(d => d.ventasNetas), borderColor: '#7B4FE0', backgroundColor: 'rgba(123,79,224,.15)', fill: true, tension: .3, pointRadius: 2 }];
       mostrarLeyendaPA = false;
+
+      if (paReporteVerSSS && datosPAReporteSSSRaw) {
+        totalesComp = dias.map((_, i) => datosPAReporteSSSRaw[i] ? datosPAReporteSSSRaw[i].ventasNetas : null);
+        datasetsTend.push({
+          label: 'Período comparado', data: totalesComp,
+          borderColor: '#E5427A', backgroundColor: 'transparent', borderDash: [5,4],
+          tension: .3, pointRadius: 2, pointBackgroundColor: '#E5427A', spanGaps: true
+        });
+        mostrarLeyendaPA = true;
+      }
     }
+    renderPAReporteInsights(labelsTend, dias.map(d => d.ventasNetas), totalesComp);
     if (paChartReporteInstance) paChartReporteInstance.destroy();
     paChartReporteInstance = new Chart(document.getElementById('paChartReporteLineal'), {
       type: 'line',
@@ -7750,26 +7884,38 @@ async function cargarPAVentasPorHora() {
     document.getElementById('paHoraPicoVenta').textContent = fmtUSD(ventas[idxPico]);
     document.getElementById('paHoraFlojaVal').textContent = idxFloja >= 0 ? labels[idxFloja] : '—';
 
+    const datasetsHoraPA = [{
+      label: 'Venta promedio (USD)',
+      type: 'bar',
+      data: ventas,
+      backgroundColor: ventas.map((v,i) => i === idxPico ? '#C8F55A' : 'rgba(123,79,224,.65)'),
+      borderRadius: 6,
+      maxBarThickness: 34,
+      order: 2
+    }];
+    if (paReporteVerSSS && datosPAHoraCompRaw) {
+      const porHoraCompMap = {}; datosPAHoraCompRaw.forEach(h => porHoraCompMap[h.hora] = h);
+      datasetsHoraPA.push({
+        label: 'Período comparado',
+        type: 'line',
+        data: orden.map(h => (porHoraCompMap[h] ? porHoraCompMap[h].ventasPromedio : 0)),
+        borderColor: '#E5427A', backgroundColor: 'transparent', borderDash: [5,4],
+        tension: .3, pointRadius: 2, pointBackgroundColor: '#E5427A', order: 1
+      });
+    }
+    const esComparandoPA = datasetsHoraPA.length > 1;
+
     const ctx = document.getElementById('paChartVentasPorHora');
     if (paChartVentasPorHoraInstance) paChartVentasPorHoraInstance.destroy();
     paChartVentasPorHoraInstance = new Chart(ctx, {
       type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Venta promedio (USD)',
-          data: ventas,
-          backgroundColor: ventas.map((v,i) => i === idxPico ? '#C8F55A' : 'rgba(123,79,224,.65)'),
-          borderRadius: 6,
-          maxBarThickness: 34
-        }]
-      },
+      data: { labels, datasets: datasetsHoraPA },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: { display: esComparandoPA, labels:{color:'var(--muted)',boxWidth:12,font:{size:10}} },
           datalabels: { display: false },
-          tooltip: { callbacks: { afterLabel: (c) => `${pedidos[c.dataIndex]} pedidos prom.` } }
+          tooltip: esComparandoPA ? { callbacks: { label: (c) => `${c.dataset.label}: ${fmtUSD(c.parsed.y)}` } } : { callbacks: { afterLabel: (c) => `${pedidos[c.dataIndex]} pedidos prom.` } }
         },
         scales: {
           x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
