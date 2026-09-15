@@ -2116,6 +2116,22 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <span class="date-sep">→</span>
         <input type="date" class="ctrl-input" id="paRepFechaFin" style="width:140px">
         <button class="btn btn-primary" onclick="cargarPAReporte()">↻ Cargar</button>
+        <div class="tienda-multiselect" id="paReporteCanalMultiselectWrap" style="position:relative">
+          <button type="button" class="ctrl-select" id="paReporteCanalMultiselectBtn" onclick="togglePAReporteCanalDropdown(event)" style="cursor:pointer;text-align:left">Todos los canales ▾</button>
+          <div id="paReporteCanalDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;z-index:400;min-width:200px;box-shadow:0 8px 20px rgba(0,0,0,.3)">
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);margin-bottom:4px">
+              <input type="checkbox" class="pa-reporte-canal-chk" value="tienda" checked onchange="onPAReporteCanalChkChange()"> Venta Presencial
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+              <input type="checkbox" class="pa-reporte-canal-chk" value="uber" checked onchange="onPAReporteCanalChkChange()"> Uber Eats
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+              <input type="checkbox" class="pa-reporte-canal-chk" value="peya" checked onchange="onPAReporteCanalChkChange()"> Pedidos Ya
+            </label>
+          </div>
+          <input type="hidden" id="paReporteCanalSelect" value="todos">
+        </div>
+        <button class="btn btn-lime" id="btnExportarReportePA" onclick="exportarReporteDiarioPA()">⬇ Exportar Excel</button>
       </div>
 
       <div class="card" style="margin-top:16px;margin-bottom:16px">
@@ -2139,6 +2155,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           </div>
           <div class="chart-wrap" style="height:220px"><canvas id="paChartVentasPorHora"></canvas></div>
           <div id="paHoraEmpty" class="empty-state" style="display:none;padding:16px"><div class="empty-txt">Sin datos de venta por hora para el rango seleccionado</div></div>
+          <div id="paHoraCanalAviso" style="display:none;font-size:11px;color:var(--muted);margin-top:8px">InvuPOS no da la hora de cada pago por canal — este gráfico siempre muestra el total combinado.</div>
         </div>
       </div>
 
@@ -7524,18 +7541,75 @@ async function cargarCanalesPADash(rangoIni, rangoFin, hoyStr){
 }
 
 // ── PANAMÁ · REPORTE DIARIO ──────────────────────────────────
+// ── Filtro de canal (multiselect) del Reporte Diario de Panamá ────────────
+// Solo Presencial/Uber Eats/Pedidos Ya — InvuPOS no distingue Didi ni OLO
+// para Panamá.
+const PA_NOMBRES_CANAL_CORTO = { tienda: 'Presencial', uber: 'Uber Eats', peya: 'Pedidos Ya' };
+const PA_CANAL_COLORES_REPORTE = { tienda: '#7B4FE0', uber: '#06C167', peya: '#FF6244' };
+
+function paReporteCanalActual() {
+  const el = document.getElementById('paReporteCanalSelect');
+  return el ? el.value : 'todos';
+}
+
+function togglePAReporteCanalDropdown(ev) {
+  if (ev) ev.stopPropagation();
+  const dd = document.getElementById('paReporteCanalDropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('paReporteCanalMultiselectWrap');
+  const dd = document.getElementById('paReporteCanalDropdown');
+  if (wrap && dd && !wrap.contains(e.target)) dd.style.display = 'none';
+});
+
+function onPAReporteCanalChkChange() {
+  const checks = [...document.querySelectorAll('.pa-reporte-canal-chk')];
+  let marcados = checks.filter(c => c.checked).map(c => c.value);
+
+  if (marcados.length === 0) {
+    checks.forEach(c => c.checked = true);
+    marcados = checks.map(c => c.value);
+  }
+
+  const hidden = document.getElementById('paReporteCanalSelect');
+  const btn = document.getElementById('paReporteCanalMultiselectBtn');
+
+  if (marcados.length === checks.length) {
+    hidden.value = 'todos';
+    btn.textContent = 'Todos los canales ▾';
+  } else if (marcados.length === 1) {
+    hidden.value = marcados[0];
+    btn.textContent = (PA_NOMBRES_CANAL_CORTO[marcados[0]] || marcados[0]) + ' ▾';
+  } else {
+    hidden.value = marcados.join(',');
+    btn.textContent = marcados.length + ' canales seleccionados ▾';
+  }
+
+  cargarPAReporte();
+}
+
+let paReporteReqId = 0;
 let paChartReporteInstance = null;
 async function cargarPAReporte(){
   const fi = document.getElementById('paRepFechaInicio').value;
   const ff = document.getElementById('paRepFechaFin').value;
+  const canal = paReporteCanalActual();
+  const seleccionadosPA = canal !== 'todos' ? canal.split(',') : [];
   const tbody = document.getElementById('paRepBody');
   if (!fi || !ff) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Elegí un rango de fechas</td></tr>'; return; }
 
+  const miReqId = ++paReporteReqId;
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Cargando...</td></tr>';
   setTxt('paRepTag', `${fi} → ${ff}`);
   cargarPAVentasPorHora();
   try{
-    const data = await fetchPA('historialDiario', { tienda: 'todas', fechaInicio: fi, fechaFin: ff });
+    const [data, dataCanales] = await Promise.all([
+      fetchPA('historialDiario', { tienda: 'todas', fechaInicio: fi, fechaFin: ff, canal }),
+      seleccionadosPA.length ? fetchPA('historialCanales', { tienda: 'todas', fechaInicio: fi, fechaFin: ff }) : Promise.resolve(null)
+    ]);
+    if (miReqId !== paReporteReqId) return; // ya hay una llamada más nueva en curso
     const dias = Array.isArray(data) ? data : [];
     if (!dias.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Sin datos en ese rango</td></tr>'; document.getElementById('paRepFoot').innerHTML=''; return; }
 
@@ -7563,14 +7637,29 @@ async function cargarPAReporte(){
     </tr>`;
 
     const labelsTend = dias.map(d => d.fecha.slice(5));
-    const ventasTend = dias.map(d => d.ventasNetas);
+    let datasetsTend, mostrarLeyendaPA;
+    if (seleccionadosPA.length && dataCanales && Array.isArray(dataCanales)) {
+      const porFechaCanal = {}; dataCanales.forEach(d => porFechaCanal[d.fecha] = d);
+      datasetsTend = seleccionadosPA.map(key => ({
+        label: PA_NOMBRES_CANAL_CORTO[key] || key,
+        data: dias.map(d => Math.round((porFechaCanal[d.fecha] && porFechaCanal[d.fecha][key]) || 0)),
+        borderColor: PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0',
+        backgroundColor: (PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0') + '22',
+        pointBackgroundColor: PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0',
+        fill: false, tension: .3, pointRadius: 2
+      }));
+      mostrarLeyendaPA = true;
+    } else {
+      datasetsTend = [{ label: 'Ventas (USD)', data: dias.map(d => d.ventasNetas), borderColor: '#7B4FE0', backgroundColor: 'rgba(123,79,224,.15)', fill: true, tension: .3, pointRadius: 2 }];
+      mostrarLeyendaPA = false;
+    }
     if (paChartReporteInstance) paChartReporteInstance.destroy();
     paChartReporteInstance = new Chart(document.getElementById('paChartReporteLineal'), {
       type: 'line',
-      data: { labels: labelsTend, datasets: [{ label: 'Ventas (USD)', data: ventasTend, borderColor: '#7B4FE0', backgroundColor: 'rgba(123,79,224,.15)', fill: true, tension: .3, pointRadius: 2 }] },
+      data: { labels: labelsTend, datasets: datasetsTend },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, datalabels: { display: false } },
+        plugins: { legend: { display: mostrarLeyendaPA, labels:{color:'var(--muted)',boxWidth:12,font:{size:10}} }, datalabels: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
           y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => fmtUSD(v) } }
@@ -7591,6 +7680,8 @@ async function cargarPAVentasPorHora() {
   if (!fi || !ff) return;
   const tag = document.getElementById('paHoraPeriodTag');
   if (tag) tag.textContent = fi === ff ? fi : `${fi} → ${ff}`;
+  const avisoCanal = document.getElementById('paHoraCanalAviso');
+  if (avisoCanal) avisoCanal.style.display = (paReporteCanalActual() !== 'todos') ? 'block' : 'none';
   try {
     const data = await fetchPA('ventasPorHora', { tienda: 'todas', fechaInicio: fi, fechaFin: ff });
     const empty = document.getElementById('paHoraEmpty');
@@ -7651,6 +7742,45 @@ async function cargarPAVentasPorHora() {
     });
   } catch (e) {
     console.error('cargarPAVentasPorHora:', e);
+  }
+}
+
+// Genera el Excel de Panamá en el servidor (mismo mecanismo que CR: Google
+// Sheet temporal con gráficos nativos, exportado a .xlsx y borrado).
+async function exportarReporteDiarioPA() {
+  const fi = document.getElementById('paRepFechaInicio').value;
+  const ff = document.getElementById('paRepFechaFin').value;
+  const canal = paReporteCanalActual();
+  if (!fi || !ff) { alert('Elegí un rango de fechas primero'); return; }
+
+  const btn = document.getElementById('btnExportarReportePA');
+  const txtOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+
+  try {
+    const data = await fetchPA('exportarReporteExcel', { tienda: 'todas', fechaInicio: fi, fechaFin: ff, canal });
+    if (!data || data.error || !data.base64) {
+      alert('Error generando el Excel: ' + (data?.message || 'respuesta inválida'));
+      return;
+    }
+    const byteChars = atob(data.base64);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = data.filename || `Oakberry_PA_ReporteDiario_${fi}_${ff}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (e) {
+    alert('Error generando el Excel: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = txtOriginal;
   }
 }
 
