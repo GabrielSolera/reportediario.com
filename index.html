@@ -1340,7 +1340,17 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <button class="tab-pill" onclick="setReporteGranularidad('mensual',this)">Mensual</button>
           <button class="tab-pill" onclick="setReporteGranularidad('anual',this)">Anual</button>
         </div>
-        <button class="tab-pill" id="btnVerSSSReporte" onclick="toggleReporteComp()">Comparar con otro período</button>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <select class="ctrl-select" id="reporteCanalSelect" onchange="cargarReporteDiario()">
+            <option value="todos">Todos los canales</option>
+            <option value="otros">Venta Presencial</option>
+            <option value="uber">Uber Eats</option>
+            <option value="peya">Pedidos Ya</option>
+            <option value="didi">Didi</option>
+            <option value="olo">OLO · Página Web</option>
+          </select>
+          <button class="tab-pill" id="btnVerSSSReporte" onclick="toggleReporteComp()">Comparar con otro período</button>
+        </div>
       </div>
       <div id="reporteCompPanel" style="display:none;flex-direction:column;gap:10px;margin-bottom:14px;padding:12px;background:var(--surface2);border-radius:10px">
         <div style="display:flex;align-items:end;gap:12px;flex-wrap:wrap">
@@ -3368,12 +3378,20 @@ let reporteVerSSS = false;
 let datosReporteSSSRaw = null;    // datos crudos del mismo rango, año anterior
 let chartReporteInstance = null;
 
+// Canal seleccionado en el filtro de Reporte Diario ('todos' si no existe
+// el control — por ejemplo la primera vez que carga la página).
+function reporteCanalActual() {
+  const sel = document.getElementById('reporteCanalSelect');
+  return sel ? sel.value : 'todos';
+}
+
 async function cargarReporteDiario() {
   const fi = document.getElementById('fechaInicio').value;
   const ff = document.getElementById('fechaFin').value;
   const ts = document.getElementById('tiendaSelect').value;
+  const canal = reporteCanalActual();
   if(!fi||!ff) return;
-  const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`;
+  const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`;
   const tbody = document.getElementById('bodyReporte');
   tbody.innerHTML = `<tr><td colspan="100"><div class="empty-state"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Cargando reporte...</div></div></td></tr>`;
   cargarVentasPorHora();
@@ -3419,17 +3437,25 @@ async function cargarVentasPorHora() {
   const tag = document.getElementById('horaPeriodTag');
   if (tag) tag.textContent = fi === ff ? fi : `${fi} → ${ff}`;
   try {
-    const resp = await fetch(`${APPS_SCRIPT_URL}?action=ventasPorHora&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`);
+    const canal = reporteCanalActual();
+    const resp = await fetch(`${APPS_SCRIPT_URL}?action=ventasPorHora&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`);
     const data = await resp.json();
     const empty = document.getElementById('horaEmpty');
+    const limpiarStats = () => {
+      document.getElementById('horaPicoVal').textContent = '—';
+      document.getElementById('horaPicoVenta').textContent = '—';
+      document.getElementById('horaFlojaVal').textContent = '—';
+    };
     if (!data || data.error || !Array.isArray(data.porHora)) {
       if (empty) empty.style.display = 'block';
+      limpiarStats();
       return;
     }
     const porHora = data.porHora;
     const conDatos = porHora.some(h => h.ventasPromedio > 0);
     if (!conDatos) {
       if (empty) empty.style.display = 'block';
+      limpiarStats();
       if (chartVentasPorHoraInstance) { chartVentasPorHoraInstance.destroy(); chartVentasPorHoraInstance = null; }
       return;
     }
@@ -3605,7 +3631,8 @@ async function cargarReporteComparacion() {
   }
 
   try {
-    const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`;
+    const canal = reporteCanalActual();
+    const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`;
     const resp = await fetch(url);
     const data = await resp.json();
     if (data && !data.error && Array.isArray(data)) {
