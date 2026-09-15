@@ -1330,7 +1330,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <div style="font-size:12px;color:var(--muted)" id="reporteSubtitle">Ventas por día, por tienda, en el rango seleccionado</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-lime" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
+          <button class="btn btn-lime" id="btnExportarReporte" onclick="exportarReporteDiario()">⬇ Exportar Excel</button>
         </div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
@@ -4006,32 +4006,48 @@ function generarTablaReporte(data, datosSSS) {
   }
 }
 
-function exportarReporteDiario() {
-  if(!datosReporte){ alert('Cargá los datos primero'); return; }
-  const wb = XLSX.utils.book_new();
-  const tiendasSet = new Set();
-  datosReporte.forEach(d=>{ if(d.tiendas) d.tiendas.forEach(t=>{ if(t.tienda) tiendasSet.add(t.tienda); }); });
-  const tiendas=[...tiendasSet].sort();
-  const fechas=datosReporte.map(d=>d.etiqueta||d.fecha);
-  const headers=['Local',...fechas];
-  const rows=[headers];
-  const totPorDia={};
-  tiendas.forEach(tienda=>{
-    const row=[tienda];
-    datosReporte.forEach(dia=>{
-      const td=dia.tiendas?dia.tiendas.find(t=>t.tienda===tienda):null;
-      const v=td?(modoReporte==='bruto'?(td.ventasBrutas||td.ventasNetas||0):(td.ventasNetas||0)):0;
-      if(!totPorDia[dia.fecha]) totPorDia[dia.fecha]=0;
-      totPorDia[dia.fecha]+=v;
-      row.push(v||'');
-    });
-    rows.push(row);
-  });
-  rows.push(['TOTAL',...datosReporte.map(d=>totPorDia[d.fecha]||0)]);
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:22},...fechas.map(()=>({wch:14}))];
-  XLSX.utils.book_append_sheet(wb,ws,'Reporte Diario');
-  XLSX.writeFile(wb,`Oakberry_ReporteDiario_${document.getElementById('fechaInicio').value}_${document.getElementById('fechaFin').value}.xlsx`);
+// Genera el Excel en el servidor (Google Sheet temporal con gráficos
+// nativos, exportado a .xlsx y borrado) — respeta la tienda y el canal
+// que estén filtrados en ese momento, con una pestaña por granularidad
+// (Diario/Semanal/Mensual/Anual) más "Por Canal" y "Ventas por Hora".
+async function exportarReporteDiario() {
+  const fi = document.getElementById('fechaInicio').value;
+  const ff = document.getElementById('fechaFin').value;
+  const ts = document.getElementById('tiendaSelect').value;
+  const canal = reporteCanalActual();
+  if (!fi || !ff) { alert('Elegí un rango de fechas primero'); return; }
+
+  const btn = document.getElementById('btnExportarReporte');
+  const txtOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=exportarReporteExcel&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!data || data.error || !data.base64) {
+      alert('Error generando el Excel: ' + (data?.message || 'respuesta inválida'));
+      return;
+    }
+    const byteChars = atob(data.base64);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = data.filename || `Oakberry_ReporteDiario_${fi}_${ff}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (e) {
+    alert('Error generando el Excel: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = txtOriginal;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
