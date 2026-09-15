@@ -3402,25 +3402,23 @@ const NOMBRES_CANAL_CORTO = {
   otros: 'Presencial', uber: 'Uber Eats', peya: 'Pedidos Ya', didi: 'Didi', olo: 'OLO'
 };
 
-// Recarga solo al CERRAR el dropdown (no en cada click de checkbox) — así
-// marcar varios canales seguidos dispara una sola carga, no una por click.
-// Con una carga por click, clicks rápidos podían resolver fuera de orden y
-// dejar en pantalla los datos de una selección intermedia, no la final.
+// Mismos colores de marca que ya se usan en otras partes del dashboard
+// (tabs de canal en Ventas Producto, CANAL_CFG_DASH) — para que un canal
+// sea siempre el mismo color en toda la app.
+const CANAL_COLORS_REPORTE = {
+  otros: '#7B4FE0', uber: '#06C167', peya: '#FF6244', didi: '#FF6600', olo: '#5af5c8'
+};
+
 function toggleReporteCanalDropdown(ev) {
   if (ev) ev.stopPropagation();
   const dd = document.getElementById('reporteCanalDropdown');
-  const estabaAbierto = dd.style.display !== 'none';
-  dd.style.display = estabaAbierto ? 'none' : 'block';
-  if (estabaAbierto) cargarReporteDiario();
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
 }
 
 document.addEventListener('click', (e) => {
   const wrap = document.getElementById('reporteCanalMultiselectWrap');
   const dd = document.getElementById('reporteCanalDropdown');
-  if (wrap && dd && dd.style.display !== 'none' && !wrap.contains(e.target)) {
-    dd.style.display = 'none';
-    cargarReporteDiario();
-  }
+  if (wrap && dd && !wrap.contains(e.target)) dd.style.display = 'none';
 });
 
 function onReporteCanalChkChange() {
@@ -3446,7 +3444,24 @@ function onReporteCanalChkChange() {
     hidden.value = marcados.join(',');
     btn.textContent = marcados.length + ' canales seleccionados ▾';
   }
+
+  // Recarga en cada click — a diferencia del selector de tiendas, acá no
+  // hace falta esperar a "Actualizar" porque cargarReporteDiario() ahora
+  // descarta cualquier respuesta que no sea la de la llamada más reciente
+  // (ver reporteDiarioReqId), así que llamadas rápidas y solapadas ya no
+  // pueden dejar en pantalla los datos de una selección intermedia.
+  cargarReporteDiario();
 }
+
+// Cada llamada se identifica con un número creciente; si la respuesta llega
+// y ya no es la más reciente (alguien volvió a tocar el filtro mientras
+// tanto), se descarta. Sin esto, dos fetch en vuelo con canales distintos
+// podían resolver fuera de orden y dejar en pantalla los datos "viejos".
+let reporteDiarioReqId = 0;
+
+// {fecha,uber,peya,didi,olo,otros}[] — solo se llena cuando el filtro de
+// canal no es "todos", para poder pintar una línea por canal en Tendencia.
+let datosCanalesReporteRaw = null;
 
 async function cargarReporteDiario() {
   const fi = document.getElementById('fechaInicio').value;
@@ -3454,15 +3469,24 @@ async function cargarReporteDiario() {
   const ts = document.getElementById('tiendaSelect').value;
   const canal = reporteCanalActual();
   if(!fi||!ff) return;
+  const miReqId = ++reporteDiarioReqId;
   const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`;
+  const necesitaCanales = canal !== 'todos';
+  const urlCanales = `${APPS_SCRIPT_URL}?action=historialCanales&tienda=${ts}&fechaInicio=${fi}&fechaFin=${ff}`;
   const tbody = document.getElementById('bodyReporte');
   tbody.innerHTML = `<tr><td colspan="100"><div class="empty-state"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Cargando reporte...</div></div></td></tr>`;
   cargarVentasPorHora();
   try{
-    const resp = await fetch(url);
+    const [resp, respCanales] = await Promise.all([
+      fetch(url),
+      necesitaCanales ? fetch(urlCanales) : Promise.resolve(null)
+    ]);
     const data = await resp.json();
+    const dataCanales = respCanales ? await respCanales.json() : null;
+    if (miReqId !== reporteDiarioReqId) return; // ya hay una llamada más nueva en curso
     if(data&&!data.error&&Array.isArray(data)&&data.length){
       datosReporteRaw = data;
+      datosCanalesReporteRaw = (necesitaCanales && Array.isArray(dataCanales)) ? dataCanales : null;
       datosReporteSSSRaw = null;
       reporteVerSSS = false;
       const btnSSS = document.getElementById('btnVerSSSReporte');
@@ -3472,6 +3496,7 @@ async function cargarReporteDiario() {
       tbody.innerHTML=`<tr><td colspan="100"><div class="empty-state"><div class="empty-icon">❌</div><div class="empty-txt">${data?.message||'Error'}</div></div></td></tr>`;
     }
   }catch(e){
+    if (miReqId !== reporteDiarioReqId) return;
     tbody.innerHTML=`<tr><td colspan="100"><div class="empty-state"><div class="empty-icon">❌</div><div class="empty-txt">${e.message}</div></div></td></tr>`;
   }
 }
@@ -3492,17 +3517,27 @@ function ordenarHorasNegocio(porHora) {
   return orden;
 }
 
+let ventasPorHoraReqId = 0;
+
 async function cargarVentasPorHora() {
   const fi = document.getElementById('fechaInicio').value;
   const ff = document.getElementById('fechaFin').value;
   const ts = document.getElementById('tiendaSelect').value;
   if (!fi || !ff) return;
+  const miReqId = ++ventasPorHoraReqId;
   const tag = document.getElementById('horaPeriodTag');
   if (tag) tag.textContent = fi === ff ? fi : `${fi} → ${ff}`;
   try {
     const canal = reporteCanalActual();
-    const resp = await fetch(`${APPS_SCRIPT_URL}?action=ventasPorHora&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`);
+    const seleccionados = canal !== 'todos' ? canal.split(',') : [];
+    const necesitaCanales = seleccionados.length > 0;
+    const [resp, respCanales] = await Promise.all([
+      fetch(`${APPS_SCRIPT_URL}?action=ventasPorHora&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`),
+      necesitaCanales ? fetch(`${APPS_SCRIPT_URL}?action=ventasPorHoraCanales&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`) : Promise.resolve(null)
+    ]);
     const data = await resp.json();
+    const dataCanales = respCanales ? await respCanales.json() : null;
+    if (miReqId !== ventasPorHoraReqId) return; // ya hay una llamada más nueva en curso
     const empty = document.getElementById('horaEmpty');
     const limpiarStats = () => {
       document.getElementById('horaPicoVal').textContent = '—';
@@ -3539,26 +3574,43 @@ async function cargarVentasPorHora() {
     document.getElementById('horaPicoVenta').textContent = fmtCRC(ventas[idxPico]);
     document.getElementById('horaFlojaVal').textContent = idxFloja >= 0 ? labels[idxFloja] : '—';
 
+    // Con un filtro de canal activo: una barra por canal seleccionado (mismo
+    // color de marca que en Tendencia), en vez de la barra única con la hora
+    // pico resaltada. Las estadísticas de arriba (hora pico, etc.) siguen
+    // calculándose sobre el total combinado — solo el gráfico cambia.
+    let datasets;
+    if (necesitaCanales && dataCanales && !dataCanales.error && Array.isArray(dataCanales.porHora)) {
+      const porHoraCanalesMap = {};
+      dataCanales.porHora.forEach(h => porHoraCanalesMap[h.hora] = h);
+      datasets = seleccionados.map(key => ({
+        label: NOMBRES_CANAL_CORTO[key] || key,
+        data: orden.map(h => (porHoraCanalesMap[h] && porHoraCanalesMap[h][key]) ? porHoraCanalesMap[h][key].ventasPromedio : 0),
+        backgroundColor: CANAL_COLORS_REPORTE[key] || '#7B4FE0',
+        borderRadius: 6,
+        maxBarThickness: seleccionados.length > 1 ? 18 : 34
+      }));
+    } else {
+      datasets = [{
+        label: 'Venta promedio (₡)',
+        data: ventas,
+        backgroundColor: ventas.map((v,i) => i === idxPico ? '#C8F55A' : 'rgba(123,79,224,.65)'),
+        borderRadius: 6,
+        maxBarThickness: 34
+      }];
+    }
+    const esMultiCanal = datasets.length > 1;
+
     const ctx = document.getElementById('chartVentasPorHora');
     if (chartVentasPorHoraInstance) chartVentasPorHoraInstance.destroy();
     chartVentasPorHoraInstance = new Chart(ctx, {
       type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Venta promedio (₡)',
-          data: ventas,
-          backgroundColor: ventas.map((v,i) => i === idxPico ? '#C8F55A' : 'rgba(123,79,224,.65)'),
-          borderRadius: 6,
-          maxBarThickness: 34
-        }]
-      },
+      data: { labels, datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: { display: esMultiCanal, labels:{color:'var(--muted)',boxWidth:12,font:{size:10}} },
           datalabels: { display: false },
-          tooltip: { callbacks: { afterLabel: (c) => `${pedidos[c.dataIndex]} pedidos prom.` } }
+          tooltip: esMultiCanal ? {} : { callbacks: { afterLabel: (c) => `${pedidos[c.dataIndex]} pedidos prom.` } }
         },
         scales: {
           x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
@@ -3618,6 +3670,47 @@ function agruparDatosReporte(data, granularidad) {
   }));
 }
 
+// Igual que agruparDatosReporte, pero para filas {fecha,uber,peya,didi,olo,
+// otros} (historialCanales) — mismo criterio de fecha/semana/mes/año, para
+// que las líneas por canal usen exactamente los mismos "baldes" del eje X
+// que la línea combinada.
+function agruparCanalesReporte(data, granularidad) {
+  if (!data) return [];
+  if (granularidad === 'diario') return data;
+
+  const grupos = {};
+  const orden = [];
+
+  data.forEach(dia => {
+    const f = new Date(dia.fecha + 'T12:00:00');
+    let clave, etiqueta;
+
+    if (granularidad === 'semanal') {
+      const tmp = new Date(f);
+      tmp.setDate(tmp.getDate() + 4 - (tmp.getDay()||7));
+      const inicioAnio = new Date(tmp.getFullYear(), 0, 1);
+      const semanaIso = Math.ceil(((tmp - inicioAnio) / 86400000 + 1) / 7);
+      clave = `${tmp.getFullYear()}-W${String(semanaIso).padStart(2,'0')}`;
+      etiqueta = `Sem ${semanaIso}`;
+    } else if (granularidad === 'mensual') {
+      clave = `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}`;
+      etiqueta = f.toLocaleString('es-ES',{month:'short',year:'2-digit'});
+    } else { // anual
+      clave = `${f.getFullYear()}`;
+      etiqueta = `${f.getFullYear()}`;
+    }
+
+    if (!grupos[clave]) { grupos[clave] = { fecha: clave, etiqueta, uber:0, peya:0, didi:0, olo:0, otros:0 }; orden.push(clave); }
+    grupos[clave].uber  += (dia.uber||0);
+    grupos[clave].peya  += (dia.peya||0);
+    grupos[clave].didi  += (dia.didi||0);
+    grupos[clave].olo   += (dia.olo||0);
+    grupos[clave].otros += (dia.otros||0);
+  });
+
+  return orden.map(clave => grupos[clave]);
+}
+
 function setReporteGranularidad(g, btn) {
   reporteGranularidad = g;
   document.querySelectorAll('#reporteGranTabs .tab-pill').forEach(b=>b.classList.remove('active'));
@@ -3629,8 +3722,9 @@ function aplicarGranularidadReporte() {
   if (!datosReporteRaw) return;
   datosReporte = agruparDatosReporte(datosReporteRaw, reporteGranularidad);
   const datosComp = reporteVerSSS && datosReporteSSSRaw ? agruparDatosReporte(datosReporteSSSRaw, reporteGranularidad) : null;
+  const datosCanales = datosCanalesReporteRaw ? agruparCanalesReporte(datosCanalesReporteRaw, reporteGranularidad) : null;
   generarTablaReporte(datosReporte, datosComp);
-  renderChartReporte(datosReporte, datosComp);
+  renderChartReporte(datosReporte, datosComp, datosCanales);
 }
 
 function toggleReporteComp() {
@@ -3707,42 +3801,67 @@ async function cargarReporteComparacion() {
   } catch(e) { console.error('Comparación reporte:', e); }
 }
 
-function renderChartReporte(data, datosComp) {
+function renderChartReporte(data, datosComp, datosCanales) {
   const canvas = document.getElementById('chartReporteLineal');
   if (!canvas || !window.Chart) return;
   const labels = data.map(d => d.etiqueta || (d.fecha||'').slice(5));
   const _modo = modoVentaGlobal||modoReporte;
   const totales = data.map(d => (d.tiendas||[]).reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0));
 
-  const datasets = [{
-    label: 'Período actual',
-    data: totales,
-    borderColor: '#7B4FE0',
-    backgroundColor: 'rgba(123,79,224,.15)',
-    fill: true,
-    tension: 0.3,
-    pointRadius: 3,
-    pointBackgroundColor: '#7B4FE0'
-  }];
+  const canalSel = reporteCanalActual();
+  const seleccionados = canalSel !== 'todos' ? canalSel.split(',') : [];
+  let datasets, totalesComp = null, mostrarLeyenda, totalesInsight = totales;
 
-  let totalesComp = null;
-  if (datosComp && datosComp.length) {
-    totalesComp = data.map((_, i) => {
-      const dc = datosComp[i];
-      if (!dc || !dc.tiendas) return null;
-      return dc.tiendas.reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0);
-    });
-    datasets.push({
-      label: 'Período comparado',
-      data: totalesComp,
-      borderColor: '#E5427A',
-      backgroundColor: 'transparent',
-      borderDash: [5,4],
+  if (seleccionados.length && datosCanales && datosCanales.length) {
+    // Una línea por canal seleccionado, con su color de marca — en vez del
+    // total combinado, para poder comparar cómo se comporta cada canal.
+    datasets = seleccionados.map(key => ({
+      label: NOMBRES_CANAL_CORTO[key] || key,
+      data: datosCanales.map(d => Math.round(d[key]||0)),
+      borderColor: CANAL_COLORS_REPORTE[key] || '#7B4FE0',
+      backgroundColor: (CANAL_COLORS_REPORTE[key] || '#7B4FE0') + '22',
+      pointBackgroundColor: CANAL_COLORS_REPORTE[key] || '#7B4FE0',
+      fill: false,
       tension: 0.3,
-      pointRadius: 2,
-      pointBackgroundColor: '#E5427A',
-      spanGaps: true
-    });
+      pointRadius: 3,
+      borderWidth: 2
+    }));
+    mostrarLeyenda = true;
+    // Insights (día pico, promedio, etc.) sobre la suma de los canales
+    // visibles — sigue siendo útil aunque el chart ya no muestre un total.
+    totalesInsight = datosCanales.map(d => seleccionados.reduce((s,k)=> s + (d[k]||0), 0));
+  } else {
+    datasets = [{
+      label: 'Período actual',
+      data: totales,
+      borderColor: '#7B4FE0',
+      backgroundColor: 'rgba(123,79,224,.15)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 3,
+      pointBackgroundColor: '#7B4FE0'
+    }];
+    mostrarLeyenda = false;
+
+    if (datosComp && datosComp.length) {
+      totalesComp = data.map((_, i) => {
+        const dc = datosComp[i];
+        if (!dc || !dc.tiendas) return null;
+        return dc.tiendas.reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0);
+      });
+      datasets.push({
+        label: 'Período comparado',
+        data: totalesComp,
+        borderColor: '#E5427A',
+        backgroundColor: 'transparent',
+        borderDash: [5,4],
+        tension: 0.3,
+        pointRadius: 2,
+        pointBackgroundColor: '#E5427A',
+        spanGaps: true
+      });
+      mostrarLeyenda = true;
+    }
   }
 
   if (chartReporteInstance) chartReporteInstance.destroy();
@@ -3752,7 +3871,7 @@ function renderChartReporte(data, datosComp) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: !!totalesComp, labels:{color:'#9494C0',boxWidth:12,font:{size:10}} },
+      plugins: { legend: { display: mostrarLeyenda, labels:{color:'#9494C0',boxWidth:12,font:{size:10}} },
         tooltip: { callbacks: { label: (ctx) => ctx.dataset.label+': '+crc(ctx.parsed.y) } } },
       scales: {
         y: { ticks: { callback: v => crc(v) } },
@@ -3761,7 +3880,7 @@ function renderChartReporte(data, datosComp) {
     }
   });
 
-  renderReporteInsights(labels, totales, totalesComp);
+  renderReporteInsights(labels, totalesInsight, totalesComp);
 }
 
 function renderReporteInsights(labels, totales, totalesComp) {
