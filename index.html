@@ -1204,15 +1204,15 @@ body.modo-vista-unica .hamburger{ display:none !important; }
     <!-- fin topbarControlsCR -->
     <div id="topbarControlsPA" style="display:none">
       <span class="ctrl-label">Desde</span>
-      <input type="date" class="ctrl-input" id="paDashFechaInicio" style="width:130px" onchange="cargarPADashboard()">
+      <input type="date" class="ctrl-input" id="paFechaInicio" style="width:130px">
       <span class="date-sep">→</span>
-      <input type="date" class="ctrl-input" id="paDashFechaFin" style="width:130px" onchange="cargarPADashboard()">
+      <input type="date" class="ctrl-input" id="paFechaFin" style="width:130px">
       <div class="ctrl-divider"></div>
       <select class="ctrl-select" id="paDashTienda" style="min-width:150px">
         <option value="todas">🇵🇦 San Francisco</option>
       </select>
       <div class="ctrl-divider"></div>
-      <button class="btn btn-primary" id="paBtnActualizar" onclick="cargarPADashboard()">↻ Actualizar</button>
+      <button class="btn btn-primary" id="paBtnActualizar" onclick="cargarDatosPA(true)">↻ Actualizar</button>
     </div>
     <!-- fin topbarControlsPA -->
       <button class="btn btn-ghost" id="themeToggleBtn" onclick="toggleTema()" title="Cambiar tema claro/oscuro" style="font-size:16px;padding:8px 10px;">🌙</button>
@@ -2110,31 +2110,42 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 
     <!-- ═══════════ PANAMÁ · REPORTE DIARIO ═══════════ -->
     <div class="section" id="section-pa-reporte">
-      <div class="proy-controls" style="flex-wrap:wrap;gap:8px">
-        <span class="ctrl-label">Desde</span>
-        <input type="date" class="ctrl-input" id="paRepFechaInicio" style="width:140px">
-        <span class="date-sep">→</span>
-        <input type="date" class="ctrl-input" id="paRepFechaFin" style="width:140px">
-        <button class="btn btn-primary" onclick="cargarPAReporteDesdeCero()">↻ Cargar</button>
-        <div class="tienda-multiselect" id="paReporteCanalMultiselectWrap" style="position:relative">
-          <button type="button" class="ctrl-select" id="paReporteCanalMultiselectBtn" onclick="togglePAReporteCanalDropdown(event)" style="cursor:pointer;text-align:left">Todos los canales ▾</button>
-          <div id="paReporteCanalDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;z-index:400;min-width:200px;box-shadow:0 8px 20px rgba(0,0,0,.3)">
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);margin-bottom:4px">
-              <input type="checkbox" class="pa-reporte-canal-chk" value="tienda" checked onchange="onPAReporteCanalChkChange()"> Venta Presencial
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
-              <input type="checkbox" class="pa-reporte-canal-chk" value="uber" checked onchange="onPAReporteCanalChkChange()"> Uber Eats
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
-              <input type="checkbox" class="pa-reporte-canal-chk" value="peya" checked onchange="onPAReporteCanalChkChange()"> Pedidos Ya
-            </label>
-          </div>
-          <input type="hidden" id="paReporteCanalSelect" value="todos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:18px;font-weight:800;margin-bottom:4px">Reporte Diario</div>
+          <div style="font-size:12px;color:var(--muted)">Ventas por día — San Francisco, en el rango seleccionado</div>
         </div>
-        <button class="btn btn-lime" id="btnExportarReportePA" onclick="exportarReporteDiarioPA()">⬇ Exportar Excel</button>
-        <button class="tab-pill" id="btnVerSSSReportePA" onclick="togglePAReporteComp()">Comparar con otro período</button>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-lime" id="btnExportarReportePA" onclick="exportarReporteDiarioPA()">⬇ Exportar Excel</button>
+        </div>
       </div>
-      <div id="paReporteCompPanel" style="display:none;flex-direction:column;gap:10px;margin-top:12px;margin-bottom:4px;padding:12px;background:var(--surface2);border-radius:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div class="tab-pills" id="paReporteGranTabs">
+          <button class="tab-pill active" onclick="setPAReporteGranularidad('diario',this)">Diario</button>
+          <button class="tab-pill" onclick="setPAReporteGranularidad('semanal',this)">Semanal</button>
+          <button class="tab-pill" onclick="setPAReporteGranularidad('mensual',this)">Mensual</button>
+          <button class="tab-pill" onclick="setPAReporteGranularidad('anual',this)">Anual</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="tienda-multiselect" id="paReporteCanalMultiselectWrap" style="position:relative">
+            <button type="button" class="ctrl-select" id="paReporteCanalMultiselectBtn" onclick="togglePAReporteCanalDropdown(event)" style="cursor:pointer;text-align:left">Todos los canales ▾</button>
+            <div id="paReporteCanalDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;z-index:400;min-width:200px;box-shadow:0 8px 20px rgba(0,0,0,.3)">
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);margin-bottom:4px">
+                <input type="checkbox" class="pa-reporte-canal-chk" value="tienda" checked onchange="onPAReporteCanalChkChange()"> Venta Presencial
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+                <input type="checkbox" class="pa-reporte-canal-chk" value="uber" checked onchange="onPAReporteCanalChkChange()"> Uber Eats
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+                <input type="checkbox" class="pa-reporte-canal-chk" value="peya" checked onchange="onPAReporteCanalChkChange()"> Pedidos Ya
+              </label>
+            </div>
+            <input type="hidden" id="paReporteCanalSelect" value="todos">
+          </div>
+          <button class="tab-pill" id="btnVerSSSReportePA" onclick="togglePAReporteComp()">Comparar con otro período</button>
+        </div>
+      </div>
+      <div id="paReporteCompPanel" style="display:none;flex-direction:column;gap:10px;margin-bottom:14px;padding:12px;background:var(--surface2);border-radius:10px">
         <div style="display:flex;align-items:end;gap:12px;flex-wrap:wrap">
           <div><div class="ctrl-label" style="margin-bottom:4px">Desde</div><input type="date" class="ctrl-input" id="paReporteCompDesde"></div>
           <div><div class="ctrl-label" style="margin-bottom:4px">Hasta</div><input type="date" class="ctrl-input" id="paReporteCompHasta"></div>
@@ -2144,7 +2155,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <div id="paReporteCompAviso" style="display:none;font-size:11px;color:var(--amber);background:rgba(224,166,42,.12);padding:8px 10px;border-radius:6px"></div>
       </div>
 
-      <div class="card" style="margin-top:16px;margin-bottom:16px">
+      <div class="card" style="margin-bottom:16px">
         <div class="card-header"><span class="card-title">Tendencia</span></div>
         <div class="card-body">
           <div class="chart-wrap" style="height:220px"><canvas id="paChartReporteLineal"></canvas></div>
@@ -2188,15 +2199,9 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 
     <!-- ═══════════ PANAMÁ · CANALES ═══════════ -->
     <div class="section" id="section-pa-canales">
-      <div class="proy-controls" style="flex-wrap:wrap;gap:8px">
-        <span class="ctrl-label">Desde</span>
-        <input type="date" class="ctrl-input" id="paCanFechaInicio" style="width:140px">
-        <span class="date-sep">→</span>
-        <input type="date" class="ctrl-input" id="paCanFechaFin" style="width:140px">
-        <button class="btn btn-primary" onclick="cargarPACanales()">↻ Cargar</button>
-      </div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:16px">Canales de Venta</div>
 
-      <div class="card" style="margin-top:16px">
+      <div class="card">
         <div class="card-header">
           <span class="card-title">Canales de Venta — San Francisco</span>
           <span class="card-tag" id="paCanTag">—</span>
@@ -2214,13 +2219,8 @@ body.modo-vista-unica .hamburger{ display:none !important; }
          (confirmado consultando el esquema real), a diferencia de CR que sí
          trae venta neta por producto desde Toteat. -->
     <div class="section" id="section-pa-productos">
-      <div class="proy-controls" style="flex-wrap:wrap;gap:8px">
-        <span class="ctrl-label">Desde</span>
-        <input type="date" class="ctrl-input" id="paProdFechaInicio" style="width:140px">
-        <span class="date-sep">→</span>
-        <input type="date" class="ctrl-input" id="paProdFechaFin" style="width:140px">
-        <button class="btn btn-primary" onclick="cargarPAProductos()">↻ Cargar</button>
-      </div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">Ventas Producto</div>
+      <div style="font-size:12px;color:var(--muted)">Unidades vendidas por producto — San Francisco, en el rango seleccionado</div>
 
       <div id="paProdCatFilters" style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0"></div>
 
@@ -2380,13 +2380,9 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
         <div>
           <div style="font-size:18px;font-weight:800">Análisis de Desempeño — Panamá</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px" id="paAnlSubtitle">Elegí un rango y presioná Analizar</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px" id="paAnlSubtitle">Cargá datos desde el topbar para ver el análisis</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="ctrl-label">Desde</span>
-          <input type="date" class="ctrl-input" id="paAnlFechaInicio" style="width:140px">
-          <span class="date-sep">→</span>
-          <input type="date" class="ctrl-input" id="paAnlFechaFin" style="width:140px">
           <span class="ctrl-label">Comparar vs</span>
           <div class="tab-pills" id="paAnlPeriodTabs">
             <button class="tab-pill active" onclick="setPAAnlPeriod(-7,this)">−7 días</button>
@@ -2811,6 +2807,10 @@ document.addEventListener('click', (e) => {
 // ni al entrar, ni al cambiar el filtro de tiendas. Por ahora solo Proyección.
 const VISTAS_SIN_AUTOCARGA = ['proyeccion', 'plproyectado'];
 
+// Mismo criterio para Panamá: Proyección (mes+historial) y Seguimiento (mes)
+// necesitan que elijas algo antes de que tenga sentido cargar solas.
+const VISTAS_PA_SIN_AUTOCARGA = ['pa-proyeccion', 'pa-seguimiento'];
+
 function onTiendaChkChange() {
   const checks = [...document.querySelectorAll('.tienda-chk')];
   let marcadas = checks.filter(c => c.checked).map(c => c.value);
@@ -2857,20 +2857,18 @@ function activarSeccion(sectionKey, label){
   // de nuevo si volvés a la misma sección enseguida). Proyección queda
   // afuera: necesita que elijas mes y rango de historial antes de correr.
   if (sectionKey.indexOf('pa-') === 0) {
-    // El rango de fechas + tienda del topbar (paDashFechaInicio/Fin) es
-    // propio del Dashboard de Panamá — las demás vistas (Reporte Diario,
-    // Canales, Productos) tienen su PROPIO rango independiente adentro de
-    // la vista. Si se deja visible en el topbar fuera de Dashboard, se ve
-    // como un segundo selector de fechas "duplicado" que no hace nada ahí.
+    // Mismo criterio que Costa Rica: el rango de fechas del topbar
+    // (paFechaInicio/Fin) es compartido por todas las vistas de Panamá que
+    // dependen de un rango de fechas — Dashboard, Reporte Diario, Canales,
+    // Productos, Análisis — así que el topbar queda visible en todas ellas
+    // (no solo Dashboard). Proyección y Seguimiento tienen sus propios
+    // controles (mes / historial), igual que en CR.
     const topbarPA = document.getElementById('topbarControlsPA');
-    if (topbarPA) topbarPA.style.display = (sectionKey === 'pa-dashboard') ? 'contents' : 'none';
+    if (topbarPA) topbarPA.style.display = 'contents';
 
-    // Secciones de Panamá: no usan el fechaFin/caché de CR, tienen su
-    // propia carga.
-    if (sectionKey === 'pa-dashboard') cargarPADashboard();
-    if (sectionKey === 'pa-reporte')   cargarPAReporteDesdeCero();
-    if (sectionKey === 'pa-canales')   cargarPACanales();
-    if (sectionKey === 'pa-productos') cargarPAProductos();
+    if (!VISTAS_PA_SIN_AUTOCARGA.includes(sectionKey)) {
+      cargarDatosPA(false).catch(e => console.error('Autoload PA ' + sectionKey + ':', e));
+    }
     return;
   }
   const fechaFinListo = document.getElementById('fechaFin')?.value;
@@ -7198,21 +7196,17 @@ function activarPais(pais){
   }
 }
 
-// Rellena los rangos de fecha de Reporte/Canales de Panamá con los
-// últimos 14 días, solo si todavía están vacíos (primera vez).
+// Rellena el rango de fechas compartido del topbar de Panamá (mes en curso,
+// mismo criterio que initDates() de CR), solo si todavía está vacío.
 function initPAFechasPorDefecto(){
   const hoy = new Date();
-  const hace14 = new Date(Date.now() - 13*86400000);
   const pad = n => String(n).padStart(2,'0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  ['paRepFechaInicio','paCanFechaInicio','paProdFechaInicio','paAnlFechaInicio'].forEach(id=>{
-    const el = document.getElementById(id);
-    if (el && !el.value) el.value = fmt(hace14);
-  });
-  ['paRepFechaFin','paCanFechaFin','paProdFechaFin','paAnlFechaFin'].forEach(id=>{
-    const el = document.getElementById(id);
-    if (el && !el.value) el.value = fmt(hoy);
-  });
+
+  const paIni = document.getElementById('paFechaInicio');
+  const paFin = document.getElementById('paFechaFin');
+  if (paIni && !paIni.value) paIni.value = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}-01`;
+  if (paFin && !paFin.value) paFin.value = fmt(hoy);
 
   // Proyección PA — selector de mes (actual + 6 siguientes)
   const selProy = document.getElementById('paProyMonth');
@@ -7233,12 +7227,21 @@ function initPAFechasPorDefecto(){
 
   const segMes = document.getElementById('paSegMes');
   if (segMes && !segMes.value) segMes.value = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}`;
+}
 
-  // Dashboard PA — mes en curso por defecto (mismo criterio que el topbar de CR)
-  const dashIni = document.getElementById('paDashFechaInicio');
-  const dashFin = document.getElementById('paDashFechaFin');
-  if (dashIni && !dashIni.value) dashIni.value = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}-01`;
-  if (dashFin && !dashFin.value) dashFin.value = fmt(hoy);
+// Dispatcher del botón "Actualizar" del topbar de Panamá — igual que
+// cargarDatos() de CR: mira cuál sección está activa y recarga esa.
+async function cargarDatosPA(forzar=false) {
+  const fi = document.getElementById('paFechaInicio').value;
+  const ff = document.getElementById('paFechaFin').value;
+  if (!fi || !ff) { alert('Seleccioná el rango de fechas'); return; }
+
+  const seccion = document.querySelector('.section.active')?.id;
+  if (seccion === 'section-pa-reporte')   { await cargarPAReporteDesdeCero(); return; }
+  if (seccion === 'section-pa-canales')   { await cargarPACanales(); return; }
+  if (seccion === 'section-pa-productos') { await cargarPAProductos(); return; }
+  if (seccion === 'section-pa-analisis')  { await cargarAnalisisPA(); return; }
+  await cargarPADashboard();
 }
 
 // Formateador de moneda para Panamá — los datos ya vienen en USD nativo
@@ -7363,8 +7366,8 @@ async function cargarPADashboard(){
     setTxt('paKFechaRef', hace7Str);
 
     // ── KPI 3 y gráfico: rango elegido en el topbar (Desde/Hasta) ──
-    let rangoIni = document.getElementById('paDashFechaInicio').value;
-    let rangoFin = document.getElementById('paDashFechaFin').value;
+    let rangoIni = document.getElementById('paFechaInicio').value;
+    let rangoFin = document.getElementById('paFechaFin').value;
     if(!rangoIni || !rangoFin){ rangoIni = hoyStr.slice(0,8)+'01'; rangoFin = hoyStr; }
     setTxt('paFichaRangoFechas', `Rango: ${rangoIni} → ${rangoFin}`);
 
@@ -7646,6 +7649,78 @@ function onPAReporteCanalChkChange() {
   cargarPAReporteDesdeCero();
 }
 
+// ── Granularidad (Diario/Semanal/Mensual/Anual) — igual que CR ───────────
+// agruparDatosReporte()/agruparCanalesReporte() de Costa Rica, pero sobre el
+// formato plano de Panamá {fecha, ventasNetas, transacciones} (una sola
+// tienda, sin desglose por local).
+let paReporteGranularidad = 'diario';
+let datosPAReporteRaw = null;        // historialDiario crudo del rango principal, sin agrupar
+let datosPACanalesReporteRaw = null; // historialCanales crudo del rango principal (solo si hay filtro de canal)
+
+function agruparDatosReportePA(data, granularidad) {
+  if (!data) return [];
+  if (granularidad === 'diario') return data;
+  const grupos = {}, orden = [];
+  data.forEach(dia => {
+    const f = new Date(dia.fecha + 'T12:00:00');
+    let clave, etiqueta;
+    if (granularidad === 'semanal') {
+      const tmp = new Date(f);
+      tmp.setDate(tmp.getDate() + 4 - (tmp.getDay()||7));
+      const inicioAnio = new Date(tmp.getFullYear(), 0, 1);
+      const semanaIso = Math.ceil(((tmp - inicioAnio) / 86400000 + 1) / 7);
+      clave = `${tmp.getFullYear()}-W${String(semanaIso).padStart(2,'0')}`;
+      etiqueta = `Sem ${semanaIso}`;
+    } else if (granularidad === 'mensual') {
+      clave = `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}`;
+      etiqueta = f.toLocaleString('es-ES',{month:'short',year:'2-digit'});
+    } else { // anual
+      clave = `${f.getFullYear()}`;
+      etiqueta = clave;
+    }
+    if (!grupos[clave]) { grupos[clave] = { fecha: clave, etiqueta, ventasNetas: 0, transacciones: 0 }; orden.push(clave); }
+    grupos[clave].ventasNetas   += (dia.ventasNetas||0);
+    grupos[clave].transacciones += (dia.transacciones||0);
+  });
+  return orden.map(clave => grupos[clave]);
+}
+
+function agruparCanalesReportePA(data, granularidad) {
+  if (!data) return null;
+  if (granularidad === 'diario') return data;
+  const grupos = {}, orden = [];
+  data.forEach(dia => {
+    const f = new Date(dia.fecha + 'T12:00:00');
+    let clave, etiqueta;
+    if (granularidad === 'semanal') {
+      const tmp = new Date(f);
+      tmp.setDate(tmp.getDate() + 4 - (tmp.getDay()||7));
+      const inicioAnio = new Date(tmp.getFullYear(), 0, 1);
+      const semanaIso = Math.ceil(((tmp - inicioAnio) / 86400000 + 1) / 7);
+      clave = `${tmp.getFullYear()}-W${String(semanaIso).padStart(2,'0')}`;
+      etiqueta = `Sem ${semanaIso}`;
+    } else if (granularidad === 'mensual') {
+      clave = `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}`;
+      etiqueta = f.toLocaleString('es-ES',{month:'short',year:'2-digit'});
+    } else {
+      clave = `${f.getFullYear()}`;
+      etiqueta = clave;
+    }
+    if (!grupos[clave]) { grupos[clave] = { fecha: clave, etiqueta, tienda:0, uber:0, peya:0 }; orden.push(clave); }
+    grupos[clave].tienda += (dia.tienda||0);
+    grupos[clave].uber   += (dia.uber||0);
+    grupos[clave].peya   += (dia.peya||0);
+  });
+  return orden.map(clave => grupos[clave]);
+}
+
+function setPAReporteGranularidad(g, btn) {
+  paReporteGranularidad = g;
+  document.querySelectorAll('#paReporteGranTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  aplicarGranularidadReportePA();
+}
+
 // ── Comparar con otro período (Panamá) ────────────────────────────────────
 let paReporteVerSSS = false;
 let datosPAReporteSSSRaw = null;   // historialDiario del período comparado
@@ -7659,8 +7734,8 @@ function togglePAReporteComp() {
     const fiEl = document.getElementById('paReporteCompDesde');
     const ffEl = document.getElementById('paReporteCompHasta');
     if (fiEl && !fiEl.value) {
-      const fi = document.getElementById('paRepFechaInicio').value;
-      const ff = document.getElementById('paRepFechaFin').value;
+      const fi = document.getElementById('paFechaInicio').value;
+      const ff = document.getElementById('paFechaFin').value;
       if (fi) fiEl.value = shiftYear(fi, -1);
       if (ff) ffEl.value = shiftYear(ff, -1);
     }
@@ -7668,8 +7743,8 @@ function togglePAReporteComp() {
 }
 
 async function cargarPAReporteComparacion() {
-  const fiPrincipal = document.getElementById('paRepFechaInicio').value;
-  const ffPrincipal = document.getElementById('paRepFechaFin').value;
+  const fiPrincipal = document.getElementById('paFechaInicio').value;
+  const ffPrincipal = document.getElementById('paFechaFin').value;
   const fi = document.getElementById('paReporteCompDesde').value;
   const ff = document.getElementById('paReporteCompHasta').value;
   const canal = paReporteCanalActual();
@@ -7692,6 +7767,10 @@ async function cargarPAReporteComparacion() {
     }
   }
 
+  const btnComparar = avisoEl ? avisoEl.parentElement.querySelector('button.btn-lime') : null;
+  const txtOriginal = btnComparar ? btnComparar.textContent : null;
+  if (btnComparar) { btnComparar.disabled = true; btnComparar.textContent = 'Comparando...'; }
+
   try {
     const [data, dataHora] = await Promise.all([
       fetchPA('historialDiario', { tienda: 'todas', fechaInicio: fi, fechaFin: ff, canal }),
@@ -7702,9 +7781,23 @@ async function cargarPAReporteComparacion() {
       datosPAHoraCompRaw = (dataHora && !dataHora.error && Array.isArray(dataHora.porHora)) ? dataHora.porHora : null;
       paReporteVerSSS = true;
       if (btn) btn.classList.add('active');
-      cargarPAReporte();
+      // No hace falta volver a pedirle el rango principal al servidor — ya
+      // está en datosPAReporteRaw, así que solo se vuelve a renderizar.
+      aplicarGranularidadReportePA();
+      cargarPAVentasPorHora();
+    } else if (avisoEl) {
+      avisoEl.textContent = `⚠️ ${data?.message || 'No se pudo cargar el período comparado.'}`;
+      avisoEl.style.display = 'block';
     }
-  } catch(e) { console.error('Comparación reporte PA:', e); }
+  } catch(e) {
+    console.error('Comparación reporte PA:', e);
+    if (avisoEl) {
+      avisoEl.textContent = `⚠️ Error cargando el período comparado (${e.message}) — probá de nuevo.`;
+      avisoEl.style.display = 'block';
+    }
+  } finally {
+    if (btnComparar) { btnComparar.disabled = false; btnComparar.textContent = txtOriginal; }
+  }
 }
 
 // Igual que renderReporteInsights() de CR, pero en USD y sobre el
@@ -7757,11 +7850,121 @@ function cargarPAReporteDesdeCero() {
   cargarPAReporte();
 }
 
+// Tabla del rango principal — Fecha+Día por fila si es diario, o una fila
+// por período (semana/mes/año) con su etiqueta si hay granularidad aplicada.
+function generarTablaReportePA(dias) {
+  const thead = document.querySelector('#paRepTable thead tr');
+  const tbody = document.getElementById('paRepBody');
+  const esDiario = paReporteGranularidad === 'diario';
+  if (thead) {
+    thead.innerHTML = esDiario
+      ? '<th style="text-align:left">Fecha</th><th style="text-align:left">Día</th><th>Pedidos</th><th>Ventas</th><th>Ticket prom.</th>'
+      : '<th style="text-align:left">Período</th><th>Pedidos</th><th>Ventas</th><th>Ticket prom.</th>';
+  }
+  const colspan = esDiario ? 5 : 4;
+  if (!dias.length) {
+    tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center;color:var(--muted);padding:24px">Sin datos en ese rango</td></tr>`;
+    document.getElementById('paRepFoot').innerHTML = '';
+    return;
+  }
+
+  const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  let totalVentas = 0, totalPedidos = 0;
+  tbody.innerHTML = dias.map(d=>{
+    const ticket = d.transacciones>0 ? d.ventasNetas/d.transacciones : 0;
+    totalVentas += d.ventasNetas; totalPedidos += d.transacciones;
+    if (esDiario) {
+      const f = new Date(d.fecha+'T12:00:00');
+      return `<tr>
+        <td>${d.fecha}</td>
+        <td>${diasSemana[f.getDay()]}</td>
+        <td style="text-align:center">${d.transacciones}</td>
+        <td style="text-align:right;font-family:var(--mono)">${fmtUSD(d.ventasNetas)}</td>
+        <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${fmtUSD(ticket)}</td>
+      </tr>`;
+    }
+    return `<tr>
+      <td>${d.etiqueta || d.fecha}</td>
+      <td style="text-align:center">${d.transacciones}</td>
+      <td style="text-align:right;font-family:var(--mono)">${fmtUSD(d.ventasNetas)}</td>
+      <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${fmtUSD(ticket)}</td>
+    </tr>`;
+  }).join('');
+
+  const ticketProm = totalPedidos>0 ? totalVentas/totalPedidos : 0;
+  document.getElementById('paRepFoot').innerHTML = esDiario
+    ? `<tr class="total-row"><td colspan="2">TOTAL</td><td style="text-align:center">${totalPedidos}</td><td style="text-align:right;font-family:var(--mono)">${fmtUSD(totalVentas)}</td><td style="text-align:right;font-family:var(--mono)">${fmtUSD(ticketProm)}</td></tr>`
+    : `<tr class="total-row"><td>TOTAL</td><td style="text-align:center">${totalPedidos}</td><td style="text-align:right;font-family:var(--mono)">${fmtUSD(totalVentas)}</td><td style="text-align:right;font-family:var(--mono)">${fmtUSD(ticketProm)}</td></tr>`;
+}
+
+function renderChartReportePA(dias, diasComp, datosCanalesAgrupados) {
+  const canal = paReporteCanalActual();
+  const seleccionadosPA = canal !== 'todos' ? canal.split(',') : [];
+  const labelsTend = dias.map(d => d.etiqueta || d.fecha.slice(5));
+  let datasetsTend, mostrarLeyendaPA;
+  let totalesComp = null;
+
+  if (seleccionadosPA.length && datosCanalesAgrupados) {
+    datasetsTend = seleccionadosPA.map(key => ({
+      label: PA_NOMBRES_CANAL_CORTO[key] || key,
+      data: datosCanalesAgrupados.map(d => Math.round(d[key]||0)),
+      borderColor: PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0',
+      backgroundColor: (PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0') + '22',
+      pointBackgroundColor: PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0',
+      fill: false, tension: .3, pointRadius: 2
+    }));
+    mostrarLeyendaPA = true;
+  } else {
+    datasetsTend = [{ label: 'Período actual', data: dias.map(d => d.ventasNetas), borderColor: '#7B4FE0', backgroundColor: 'rgba(123,79,224,.15)', fill: true, tension: .3, pointRadius: 2 }];
+    mostrarLeyendaPA = false;
+
+    if (paReporteVerSSS && diasComp) {
+      totalesComp = dias.map((_, i) => diasComp[i] ? diasComp[i].ventasNetas : null);
+      datasetsTend.push({
+        label: 'Período comparado', data: totalesComp,
+        borderColor: '#E5427A', backgroundColor: 'transparent', borderDash: [5,4],
+        tension: .3, pointRadius: 2, pointBackgroundColor: '#E5427A', spanGaps: true
+      });
+      mostrarLeyendaPA = true;
+    }
+  }
+  renderPAReporteInsights(labelsTend, dias.map(d => d.ventasNetas), totalesComp);
+  if (paChartReporteInstance) paChartReporteInstance.destroy();
+  paChartReporteInstance = new Chart(document.getElementById('paChartReporteLineal'), {
+    type: 'line',
+    data: { labels: labelsTend, datasets: datasetsTend },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: mostrarLeyendaPA, labels:{color:'var(--muted)',boxWidth:12,font:{size:10}} }, datalabels: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => fmtUSD(v) } }
+      }
+    }
+  });
+}
+
+// Re-renderiza tabla + chart + insights a partir de los datos YA cargados
+// (datosPAReporteRaw/datosPACanalesReporteRaw/datosPAReporteSSSRaw), aplicando
+// la granularidad activa — sin volver a pedirle nada al servidor. La usan el
+// cambio de pestaña Diario/Semanal/Mensual/Anual y el comparativo.
+function aplicarGranularidadReportePA() {
+  if (!datosPAReporteRaw) return;
+  const canal = paReporteCanalActual();
+  const seleccionadosPA = canal !== 'todos' ? canal.split(',') : [];
+  const dias = agruparDatosReportePA(datosPAReporteRaw, paReporteGranularidad);
+  const diasComp = (paReporteVerSSS && datosPAReporteSSSRaw) ? agruparDatosReportePA(datosPAReporteSSSRaw, paReporteGranularidad) : null;
+  const datosCanalesAgrupados = (seleccionadosPA.length && datosPACanalesReporteRaw) ? agruparCanalesReportePA(datosPACanalesReporteRaw, paReporteGranularidad) : null;
+
+  generarTablaReportePA(dias);
+  renderChartReportePA(dias, diasComp, datosCanalesAgrupados);
+}
+
 let paReporteReqId = 0;
 let paChartReporteInstance = null;
 async function cargarPAReporte(){
-  const fi = document.getElementById('paRepFechaInicio').value;
-  const ff = document.getElementById('paRepFechaFin').value;
+  const fi = document.getElementById('paFechaInicio').value;
+  const ff = document.getElementById('paFechaFin').value;
   const canal = paReporteCanalActual();
   const seleccionadosPA = canal !== 'todos' ? canal.split(',') : [];
   const tbody = document.getElementById('paRepBody');
@@ -7778,74 +7981,15 @@ async function cargarPAReporte(){
     ]);
     if (miReqId !== paReporteReqId) return; // ya hay una llamada más nueva en curso
     const dias = Array.isArray(data) ? data : [];
-    if (!dias.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">Sin datos en ese rango</td></tr>'; document.getElementById('paRepFoot').innerHTML=''; return; }
-
-    const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    let totalVentas = 0, totalPedidos = 0;
-    tbody.innerHTML = dias.map(d=>{
-      const f = new Date(d.fecha+'T12:00:00');
-      const ticket = d.transacciones>0 ? d.ventasNetas/d.transacciones : 0;
-      totalVentas += d.ventasNetas; totalPedidos += d.transacciones;
-      return `<tr>
-        <td>${d.fecha}</td>
-        <td>${diasSemana[f.getDay()]}</td>
-        <td style="text-align:center">${d.transacciones}</td>
-        <td style="text-align:right;font-family:var(--mono)">${fmtUSD(d.ventasNetas)}</td>
-        <td style="text-align:right;font-family:var(--mono);color:var(--muted)">${fmtUSD(ticket)}</td>
-      </tr>`;
-    }).join('');
-
-    const ticketProm = totalPedidos>0 ? totalVentas/totalPedidos : 0;
-    document.getElementById('paRepFoot').innerHTML = `<tr class="total-row">
-      <td colspan="2">TOTAL</td>
-      <td style="text-align:center">${totalPedidos}</td>
-      <td style="text-align:right;font-family:var(--mono)">${fmtUSD(totalVentas)}</td>
-      <td style="text-align:right;font-family:var(--mono)">${fmtUSD(ticketProm)}</td>
-    </tr>`;
-
-    const labelsTend = dias.map(d => d.fecha.slice(5));
-    let datasetsTend, mostrarLeyendaPA;
-    let totalesComp = null;
-    if (seleccionadosPA.length && dataCanales && Array.isArray(dataCanales)) {
-      const porFechaCanal = {}; dataCanales.forEach(d => porFechaCanal[d.fecha] = d);
-      datasetsTend = seleccionadosPA.map(key => ({
-        label: PA_NOMBRES_CANAL_CORTO[key] || key,
-        data: dias.map(d => Math.round((porFechaCanal[d.fecha] && porFechaCanal[d.fecha][key]) || 0)),
-        borderColor: PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0',
-        backgroundColor: (PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0') + '22',
-        pointBackgroundColor: PA_CANAL_COLORES_REPORTE[key] || '#7B4FE0',
-        fill: false, tension: .3, pointRadius: 2
-      }));
-      mostrarLeyendaPA = true;
-    } else {
-      datasetsTend = [{ label: 'Período actual', data: dias.map(d => d.ventasNetas), borderColor: '#7B4FE0', backgroundColor: 'rgba(123,79,224,.15)', fill: true, tension: .3, pointRadius: 2 }];
-      mostrarLeyendaPA = false;
-
-      if (paReporteVerSSS && datosPAReporteSSSRaw) {
-        totalesComp = dias.map((_, i) => datosPAReporteSSSRaw[i] ? datosPAReporteSSSRaw[i].ventasNetas : null);
-        datasetsTend.push({
-          label: 'Período comparado', data: totalesComp,
-          borderColor: '#E5427A', backgroundColor: 'transparent', borderDash: [5,4],
-          tension: .3, pointRadius: 2, pointBackgroundColor: '#E5427A', spanGaps: true
-        });
-        mostrarLeyendaPA = true;
-      }
+    datosPAReporteRaw = dias;
+    datosPACanalesReporteRaw = (seleccionadosPA.length && Array.isArray(dataCanales)) ? dataCanales : null;
+    if (!dias.length) {
+      generarTablaReportePA([]);
+      document.getElementById('paReporteInsights').innerHTML = '';
+      if (paChartReporteInstance) { paChartReporteInstance.destroy(); paChartReporteInstance = null; }
+      return;
     }
-    renderPAReporteInsights(labelsTend, dias.map(d => d.ventasNetas), totalesComp);
-    if (paChartReporteInstance) paChartReporteInstance.destroy();
-    paChartReporteInstance = new Chart(document.getElementById('paChartReporteLineal'), {
-      type: 'line',
-      data: { labels: labelsTend, datasets: datasetsTend },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: mostrarLeyendaPA, labels:{color:'var(--muted)',boxWidth:12,font:{size:10}} }, datalabels: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
-          y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => fmtUSD(v) } }
-        }
-      }
-    });
-
+    aplicarGranularidadReportePA();
   }catch(e){
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:24px">Error: ${e.message}</td></tr>`;
     console.error('cargarPAReporte:', e);
@@ -7854,8 +7998,8 @@ async function cargarPAReporte(){
 
 let paChartVentasPorHoraInstance = null;
 async function cargarPAVentasPorHora() {
-  const fi = document.getElementById('paRepFechaInicio').value;
-  const ff = document.getElementById('paRepFechaFin').value;
+  const fi = document.getElementById('paFechaInicio').value;
+  const ff = document.getElementById('paFechaFin').value;
   if (!fi || !ff) return;
   const tag = document.getElementById('paHoraPeriodTag');
   if (tag) tag.textContent = fi === ff ? fi : `${fi} → ${ff}`;
@@ -7939,8 +8083,8 @@ async function cargarPAVentasPorHora() {
 // Genera el Excel de Panamá en el servidor (mismo mecanismo que CR: Google
 // Sheet temporal con gráficos nativos, exportado a .xlsx y borrado).
 async function exportarReporteDiarioPA() {
-  const fi = document.getElementById('paRepFechaInicio').value;
-  const ff = document.getElementById('paRepFechaFin').value;
+  const fi = document.getElementById('paFechaInicio').value;
+  const ff = document.getElementById('paFechaFin').value;
   const canal = paReporteCanalActual();
   if (!fi || !ff) { alert('Elegí un rango de fechas primero'); return; }
 
@@ -7978,8 +8122,8 @@ async function exportarReporteDiarioPA() {
 // ── PANAMÁ · CANALES ──────────────────────────────────────────
 let paChartCanales = null;
 async function cargarPACanales(){
-  const fi = document.getElementById('paCanFechaInicio').value;
-  const ff = document.getElementById('paCanFechaFin').value;
+  const fi = document.getElementById('paFechaInicio').value;
+  const ff = document.getElementById('paFechaFin').value;
   const grid = document.getElementById('paCanalesGrid');
   if (!fi || !ff) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:24px">Elegí un rango de fechas</div>'; return; }
 
@@ -8050,8 +8194,8 @@ function paProdFiltrarCategoria(cat, btn){
 }
 
 async function cargarPAProductos(){
-  const fi = document.getElementById('paProdFechaInicio').value;
-  const ff = document.getElementById('paProdFechaFin').value;
+  const fi = document.getElementById('paFechaInicio').value;
+  const ff = document.getElementById('paFechaFin').value;
   const tbody = document.getElementById('paProdBody');
   if (!fi || !ff) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Elegí un rango de fechas</td></tr>'; return; }
 
@@ -8090,7 +8234,7 @@ function renderPAProductos(){
   }
 
   const totalUnidades = filtrados.reduce((s,p)=>s+num(p.unidades),0);
-  const dias = Math.max(1, (new Date(document.getElementById('paProdFechaFin').value+'T12:00:00') - new Date(document.getElementById('paProdFechaInicio').value+'T12:00:00'))/86400000 + 1);
+  const dias = Math.max(1, (new Date(document.getElementById('paFechaFin').value+'T12:00:00') - new Date(document.getElementById('paFechaInicio').value+'T12:00:00'))/86400000 + 1);
   const top = filtrados[0]; // ya viene ordenado DESC por unidades desde el backend
 
   setTxt('paProdKTotal', totalUnidades.toLocaleString('en-US'));
@@ -8588,8 +8732,8 @@ function setPAAnlPeriod(p, btn){
 }
 
 async function cargarAnalisisPA(){
-  const fi = document.getElementById('paAnlFechaInicio').value;
-  const ff = document.getElementById('paAnlFechaFin').value;
+  const fi = document.getElementById('paFechaInicio').value;
+  const ff = document.getElementById('paFechaFin').value;
   if(!fi || !ff){ alert('Elegí el rango de fechas'); return; }
 
   showLoader(true,'Cargando análisis de Panamá...','');
@@ -8674,7 +8818,7 @@ function renderPAAnlResumen(actual, ref, lenDias){
 }
 
 async function cargarPADiaSemana(){
-  const ff = document.getElementById('paAnlFechaFin').value;
+  const ff = document.getElementById('paFechaFin').value;
   if(!ff) return;
   const fechaObj = new Date(ff+'T12:00:00');
   const dow = fechaObj.getDay();
