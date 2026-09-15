@@ -1341,14 +1341,27 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           <button class="tab-pill" onclick="setReporteGranularidad('anual',this)">Anual</button>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <select class="ctrl-select" id="reporteCanalSelect" onchange="cargarReporteDiario()">
-            <option value="todos">Todos los canales</option>
-            <option value="otros">Venta Presencial</option>
-            <option value="uber">Uber Eats</option>
-            <option value="peya">Pedidos Ya</option>
-            <option value="didi">Didi</option>
-            <option value="olo">OLO · Página Web</option>
-          </select>
+          <div class="tienda-multiselect" id="reporteCanalMultiselectWrap" style="position:relative">
+            <button type="button" class="ctrl-select" id="reporteCanalMultiselectBtn" onclick="toggleReporteCanalDropdown(event)" style="cursor:pointer;text-align:left">Todos los canales ▾</button>
+            <div id="reporteCanalDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;z-index:400;min-width:200px;box-shadow:0 8px 20px rgba(0,0,0,.3)">
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);margin-bottom:4px">
+                <input type="checkbox" class="reporte-canal-chk" value="otros" checked onchange="onReporteCanalChkChange()"> Venta Presencial
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+                <input type="checkbox" class="reporte-canal-chk" value="uber" checked onchange="onReporteCanalChkChange()"> Uber Eats
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+                <input type="checkbox" class="reporte-canal-chk" value="peya" checked onchange="onReporteCanalChkChange()"> Pedidos Ya
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+                <input type="checkbox" class="reporte-canal-chk" value="didi" checked onchange="onReporteCanalChkChange()"> Didi
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+                <input type="checkbox" class="reporte-canal-chk" value="olo" checked onchange="onReporteCanalChkChange()"> OLO · Página Web
+              </label>
+            </div>
+            <input type="hidden" id="reporteCanalSelect" value="todos">
+          </div>
           <button class="tab-pill" id="btnVerSSSReporte" onclick="toggleReporteComp()">Comparar con otro período</button>
         </div>
       </div>
@@ -3378,11 +3391,61 @@ let reporteVerSSS = false;
 let datosReporteSSSRaw = null;    // datos crudos del mismo rango, año anterior
 let chartReporteInstance = null;
 
-// Canal seleccionado en el filtro de Reporte Diario ('todos' si no existe
-// el control — por ejemplo la primera vez que carga la página).
+// Canal(es) seleccionado(s) en el filtro de Reporte Diario ('todos' si no
+// existe el control, o CSV de claves ej. "uber,peya" con dos o más).
 function reporteCanalActual() {
-  const sel = document.getElementById('reporteCanalSelect');
-  return sel ? sel.value : 'todos';
+  const el = document.getElementById('reporteCanalSelect');
+  return el ? el.value : 'todos';
+}
+
+const NOMBRES_CANAL_CORTO = {
+  otros: 'Presencial', uber: 'Uber Eats', peya: 'Pedidos Ya', didi: 'Didi', olo: 'OLO'
+};
+
+// Recarga solo al CERRAR el dropdown (no en cada click de checkbox) — así
+// marcar varios canales seguidos dispara una sola carga, no una por click.
+// Con una carga por click, clicks rápidos podían resolver fuera de orden y
+// dejar en pantalla los datos de una selección intermedia, no la final.
+function toggleReporteCanalDropdown(ev) {
+  if (ev) ev.stopPropagation();
+  const dd = document.getElementById('reporteCanalDropdown');
+  const estabaAbierto = dd.style.display !== 'none';
+  dd.style.display = estabaAbierto ? 'none' : 'block';
+  if (estabaAbierto) cargarReporteDiario();
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('reporteCanalMultiselectWrap');
+  const dd = document.getElementById('reporteCanalDropdown');
+  if (wrap && dd && dd.style.display !== 'none' && !wrap.contains(e.target)) {
+    dd.style.display = 'none';
+    cargarReporteDiario();
+  }
+});
+
+function onReporteCanalChkChange() {
+  const checks = [...document.querySelectorAll('.reporte-canal-chk')];
+  let marcados = checks.filter(c => c.checked).map(c => c.value);
+
+  // No dejar que quede en cero — si desmarcaron todos, volver a "todos"
+  if (marcados.length === 0) {
+    checks.forEach(c => c.checked = true);
+    marcados = checks.map(c => c.value);
+  }
+
+  const hidden = document.getElementById('reporteCanalSelect');
+  const btn = document.getElementById('reporteCanalMultiselectBtn');
+
+  if (marcados.length === checks.length) {
+    hidden.value = 'todos';
+    btn.textContent = 'Todos los canales ▾';
+  } else if (marcados.length === 1) {
+    hidden.value = marcados[0];
+    btn.textContent = (NOMBRES_CANAL_CORTO[marcados[0]] || marcados[0]) + ' ▾';
+  } else {
+    hidden.value = marcados.join(',');
+    btn.textContent = marcados.length + ' canales seleccionados ▾';
+  }
 }
 
 async function cargarReporteDiario() {
