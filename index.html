@@ -3962,6 +3962,14 @@ function renderReporteInsights(labels, totales, totalesComp) {
   }
   const deltaTotal = sumaComp > 0 ? (sumaActual-sumaComp)/sumaComp*100 : null;
 
+  // Comparativo activo pero sin un solo día con venta en el período
+  // comparado — la línea punteada queda invisible (todo null); avisarlo en
+  // vez de dejar la caja de insights en blanco sin explicación.
+  if (sumaComp === 0) {
+    cont.innerHTML = '<div style="font-size:11px;color:var(--amber);background:rgba(224,166,42,.12);padding:8px 12px;border-radius:8px">⚠️ El período comparado no tiene ventas registradas para esta tienda — por eso no se ve la línea de comparación.</div>';
+    return;
+  }
+
   let html = '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px">';
   if (deltaTotal !== null) {
     const subiendo = deltaTotal >= 0;
@@ -7785,6 +7793,13 @@ async function cargarPAReporteComparacion() {
       // está en datosPAReporteRaw, así que solo se vuelve a renderizar.
       aplicarGranularidadReportePA();
       cargarPAVentasPorHora();
+      // Sin un solo día de venta en el rango comparado (ej. antes de la
+      // apertura de San Francisco) la línea punteada queda invisible —
+      // avisarlo de una vez, en vez de dejar que el usuario la busque.
+      if (!data.length && avisoEl) {
+        avisoEl.textContent = '⚠️ El período comparado no tiene ventas registradas — San Francisco abrió el 9 de mayo de 2026, revisá que el rango comparado sea posterior a esa fecha.';
+        avisoEl.style.display = 'block';
+      }
     } else if (avisoEl) {
       avisoEl.textContent = `⚠️ ${data?.message || 'No se pudo cargar el período comparado.'}`;
       avisoEl.style.display = 'block';
@@ -7819,6 +7834,15 @@ function renderPAReporteInsights(labels, totales, totalesComp) {
     sumaComp += comp;
   }
   const deltaTotal = sumaComp > 0 ? (sumaActual-sumaComp)/sumaComp*100 : null;
+
+  // Comparativo activo pero sin un solo día con venta en el período
+  // comparado (ej. un rango anterior a la apertura de San Francisco, en
+  // mayo 2026) — la línea punteada queda invisible (todo null); avisarlo
+  // en vez de dejar la caja de insights en blanco sin explicación.
+  if (sumaComp === 0) {
+    cont.innerHTML = '<div style="font-size:11px;color:var(--amber);background:rgba(224,166,42,.12);padding:8px 12px;border-radius:8px">⚠️ El período comparado no tiene ventas registradas — por eso no se ve la línea de comparación. San Francisco abrió el 9 de mayo de 2026: verificá que el rango comparado sea posterior a esa fecha.</div>';
+    return;
+  }
 
   let html = '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px">';
   if (deltaTotal !== null) {
