@@ -2642,14 +2642,26 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_BD4WIfx5BIxR
 const APPS_SCRIPT_URL_PA   = 'https://script.google.com/macros/s/AKfycby2XqW0PkYS2mp5Nu51vG-bHi9QnTPHrKluxwPWsVNq7plc_fLRBy59DG1kF_XZzROxSQ/exec';
 const APPS_SCRIPT_TOKEN_PA = '44e04521-327b-4ed4-8dff-4eefa7a77f02';
 
-// ── Interceptor de sesión ────────────────────────────────────────────
+// ── Interceptor de sesión + reintento anti-flakiness de Apps Script ──────
 // El backend ahora exige un token de sesión válido en TODAS las llamadas
 // (menos login). En vez de agregar "&token=..." a mano en cada uno de los
 // ~26 lugares del archivo que llaman a APPS_SCRIPT_URL, se intercepta fetch
 // una sola vez acá y se lo agrega automáticamente a cualquier llamada al
 // backend que no sea el login.
+//
+// Además, Google Apps Script devuelve de vez en cuando (de forma
+// transitoria, sin relación con el código) una página HTML de error
+// ("no se pudo abrir el archivo en este momento") en lugar del JSON
+// esperado — pasa tanto con el backend de CR como con el de Panamá, y se
+// resuelve solo reintentando a los pocos segundos. Sin este manejo, cada
+// `.json()` de los ~30 fetch() dispersos por el archivo (CR y PA) revienta
+// con "Unexpected token '<'... is not valid JSON" y el usuario ve una
+// alerta random. Se resuelve una sola vez acá para todos.
 const _fetchOriginal = window.fetch.bind(window);
-window.fetch = function(url, options) {
+function _esUrlAppsScript(url) {
+  return typeof url === 'string' && (url.indexOf(APPS_SCRIPT_URL) === 0 || url.indexOf(APPS_SCRIPT_URL_PA) === 0);
+}
+window.fetch = async function(url, options) {
   if (typeof url === 'string' && url.indexOf(APPS_SCRIPT_URL) === 0 && url.indexOf('action=login') === -1) {
     const sesion = getSession();
     if (sesion && sesion.token) {
@@ -2657,25 +2669,37 @@ window.fetch = function(url, options) {
       url = url + separador + 'token=' + encodeURIComponent(sesion.token);
     }
   }
-  return _fetchOriginal(url, options).then(function(resp) {
-    // Si el backend dice que la sesión no es válida, forzar logout limpio
-    // en vez de dejar que cada pantalla falle en silencio por su cuenta.
-    // OJO: solo si de verdad había una sesión activa — si nunca hubo login,
-    // no tiene sentido "avisar que expiró" ni recargar la página (eso fue
-    // justo lo que causó el loop infinito: una llamada disparada sin login
-    // que se reintentaba solo con cada recarga).
-    if (resp.ok && typeof url === 'string' && url.indexOf(APPS_SCRIPT_URL) === 0) {
-      const clon = resp.clone();
-      clon.json().then(function(data) {
-        if (data && data.noAutorizado && getSession()) {
-          alert('Tu sesión expiró. Volvé a iniciar sesión.');
-          clearSession();
-          location.reload();
-        }
-      }).catch(function(){ /* respuesta no era JSON, ignorar */ });
-    }
-    return resp;
-  });
+
+  if (!_esUrlAppsScript(url)) return _fetchOriginal(url, options);
+
+  let resp, texto;
+  const maxIntentos = 3;
+  for (let intento = 1; intento <= maxIntentos; intento++) {
+    resp = await _fetchOriginal(url, options);
+    texto = await resp.text();
+    const pareceHTML = /^\s*</.test(texto); // JSON nunca arranca con "<"
+    if (!pareceHTML || intento === maxIntentos) break;
+    await new Promise(r => setTimeout(r, 900 * intento));
+  }
+
+  // Si el backend dice que la sesión no es válida, forzar logout limpio en
+  // vez de dejar que cada pantalla falle en silencio por su cuenta. OJO:
+  // solo si de verdad había una sesión activa — si nunca hubo login, no
+  // tiene sentido "avisar que expiró" ni recargar la página (eso fue justo
+  // lo que causó el loop infinito: una llamada disparada sin login que se
+  // reintentaba solo con cada recarga).
+  if (resp.ok && typeof url === 'string' && url.indexOf(APPS_SCRIPT_URL) === 0) {
+    try {
+      const data = JSON.parse(texto);
+      if (data && data.noAutorizado && getSession()) {
+        alert('Tu sesión expiró. Volvé a iniciar sesión.');
+        clearSession();
+        location.reload();
+      }
+    } catch(e) { /* respuesta no era JSON, ignorar */ }
+  }
+
+  return new Response(texto, { status: resp.status, statusText: resp.statusText, headers: resp.headers });
 };
 
 // ── Forecast/Budget: igual que el dashboard, usa el endpoint principal ──
