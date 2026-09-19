@@ -7375,12 +7375,23 @@ function estimarVentaEsperadaPA(historyMap, targetDateStr){
 // Forecast, Crec% vs. hace 7 días, Acumulado del rango, Forecast acumulado)
 // a partir del histMap de UNA tienda — mismo criterio que las KPIs del
 // Dashboard en cargarPADashboard(), aplicado por separado a cada tienda.
-function calcularFilaTiendaPA(histMap, hoyStr, hace7Str, rangoIni, rangoFin){
+//
+// budgetPorDia (opcional, {diaDelMes: monto}): respaldo para cuando
+// estimarVentaEsperadaPA no puede calcular nada por falta de historia (ej.
+// una tienda recién abierta, como Brisas del Golf sus primeros días) — en
+// vez de dejar el forecast en blanco, usa el presupuesto cargado para ese
+// día. San Francisco no se ve afectado en la práctica: ya tiene meses de
+// historia, así que casi siempre gana la estimación por historial.
+function calcularFilaTiendaPA(histMap, hoyStr, hace7Str, rangoIni, rangoFin, budgetPorDia){
   const pad = n=>String(n).padStart(2,'0');
   const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const budgetDelDia = fechaStr => {
+    const v = budgetPorDia ? budgetPorDia[Number(fechaStr.slice(8,10))] : null;
+    return (v>0) ? v : null;
+  };
 
   const ventaDia    = histMap[hoyStr] ? histMap[hoyStr].ventas : 0;
-  const forecastHoy = estimarVentaEsperadaPA(histMap, hoyStr);
+  const forecastHoy = estimarVentaEsperadaPA(histMap, hoyStr) ?? budgetDelDia(hoyStr);
   const hace7Val    = histMap[hace7Str] ? histMap[hace7Str].ventas : 0;
 
   const diasRango  = Object.entries(histMap).filter(([f])=>f>=rangoIni && f<=rangoFin);
@@ -7390,7 +7401,8 @@ function calcularFilaTiendaPA(histMap, hoyStr, hace7Str, rangoIni, rangoFin){
   let d = new Date(rangoIni+'T12:00:00');
   const finD = new Date(rangoFin+'T12:00:00');
   while(d <= finD){
-    const f = estimarVentaEsperadaPA(histMap, iso(d));
+    const fStr = iso(d);
+    const f = estimarVentaEsperadaPA(histMap, fStr) ?? budgetDelDia(fStr);
     if(f!==null) fcstAcum += f;
     d.setDate(d.getDate()+1);
   }
@@ -7417,10 +7429,28 @@ async function cargarPADashboard(){
     const desde70 = new Date(hoyDate); desde70.setDate(desde70.getDate()-70);
     const histMap = await fetchPADiario(iso(desde70), hoyStr);
 
+    // Presupuesto del mes actual, por tienda — respaldo de calcularFilaTiendaPA
+    // (y del KPI de arriba) para cuando todavía no hay suficiente historia
+    // para estimarVentaEsperadaPA (tienda recién abierta, ej. Brisas del Golf).
+    const budgetPorDiaPorTienda = {};
+    await Promise.all(PA_STORES.map(async st => {
+      try {
+        const b = await fetchPA('forecast', { month: hoyDate.getMonth()+1, year: hoyDate.getFullYear(), tienda: st.key });
+        budgetPorDiaPorTienda[st.key] = (b && b['TODAS'] && b['TODAS'].porDia) || {};
+      } catch(e) { budgetPorDiaPorTienda[st.key] = {}; }
+    }));
+    const budgetPorDiaTodas = {};
+    PA_STORES.forEach(st => {
+      Object.entries(budgetPorDiaPorTienda[st.key]).forEach(([d,v])=>{
+        budgetPorDiaTodas[d] = (budgetPorDiaTodas[d]||0) + v;
+      });
+    });
+    const budgetPorDiaSel = paTiendaSel()==='todas' ? budgetPorDiaTodas : (budgetPorDiaPorTienda[paTiendaSel()]||{});
+
     empty.style.display = 'none';
 
     // ── KPI 1: Ventas de Hoy vs Forecast ──
-    const forecastHoy = estimarVentaEsperadaPA(histMap, hoyStr);
+    const forecastHoy = estimarVentaEsperadaPA(histMap, hoyStr) ?? ((budgetPorDiaSel[Number(hoyStr.slice(8,10))]>0) ? budgetPorDiaSel[Number(hoyStr.slice(8,10))] : null);
     setTxt('paKHoy', fmtUSD(resumen.hoy?.ventas));
     setTxt('paKForecast', forecastHoy!==null ? fmtUSD(forecastHoy) : '—');
     const elDesv = document.getElementById('paKDesvForecast');
@@ -7429,7 +7459,7 @@ async function cargarPADashboard(){
       elDesv.textContent = (desv>=0?'+':'')+desv.toFixed(1)+'% vs forecast';
       elDesv.className = 'kpi-delta ' + (desv>=0?'d-pos':'d-neg');
     } else {
-      elDesv.textContent = 'Forecast no disponible (poca historia)';
+      elDesv.textContent = 'Forecast no disponible (sin historia ni presupuesto cargado)';
       elDesv.className = 'kpi-delta d-neu';
     }
 
@@ -7499,8 +7529,8 @@ async function cargarPADashboard(){
       });
     });
     const filasTienda = [
-      { key:'TODAS', nombre:'TODAS', ...calcularFilaTiendaPA(histMapTodas, hoyStr, hace7Str, rangoIni, rangoFin) },
-      ...PA_STORES.map(st => ({ key:st.key, nombre:st.nombre, ...calcularFilaTiendaPA(histMapsPorTienda[st.key], hoyStr, hace7Str, rangoIni, rangoFin) }))
+      { key:'TODAS', nombre:'TODAS', ...calcularFilaTiendaPA(histMapTodas, hoyStr, hace7Str, rangoIni, rangoFin, budgetPorDiaTodas) },
+      ...PA_STORES.map(st => ({ key:st.key, nombre:st.nombre, ...calcularFilaTiendaPA(histMapsPorTienda[st.key], hoyStr, hace7Str, rangoIni, rangoFin, budgetPorDiaPorTienda[st.key]) }))
     ];
     renderTablaTiendaPADash(filasTienda);
 
