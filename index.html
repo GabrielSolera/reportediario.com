@@ -950,7 +950,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <button id="btnPaisPA" onclick="elegirPais('PA')" style="cursor:pointer;width:200px;padding:28px 20px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;flex-direction:column;align-items:center;gap:10px;font-family:var(--font)">
         <span style="font-size:40px">🇵🇦</span>
         <span style="font-size:15px;font-weight:700">Panamá</span>
-        <span style="font-size:11px;color:var(--muted)">San Francisco · $</span>
+        <span style="font-size:11px;color:var(--muted)">2 tiendas · $</span>
       </button>
     </div>
   </div>
@@ -1208,8 +1208,10 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <span class="date-sep">→</span>
       <input type="date" class="ctrl-input" id="paFechaFin" style="width:130px">
       <div class="ctrl-divider"></div>
-      <select class="ctrl-select" id="paDashTienda" style="min-width:150px">
-        <option value="todas">🇵🇦 San Francisco</option>
+      <select class="ctrl-select" id="paDashTienda" style="min-width:150px" onchange="cargarDatosPA()">
+        <option value="todas">🇵🇦 Todas las tiendas</option>
+        <option value="SANFRANCISCO">San Francisco</option>
+        <option value="BRISASGOLF">Brisas del Golf</option>
       </select>
       <div class="ctrl-divider"></div>
       <button class="btn btn-primary" id="paBtnActualizar" onclick="cargarDatosPA(true)">↻ Actualizar</button>
@@ -2056,7 +2058,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">Ventas por Día — San Francisco</span>
+            <span class="card-title">Ventas por Día — <span id="paDashTituloTienda">Todas las tiendas</span></span>
             <span class="card-tag" id="paDashChartTag">—</span>
           </div>
           <div class="card-body"><div class="chart-wrap"><canvas id="paChartDashDiario"></canvas></div></div>
@@ -2113,7 +2115,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
         <div>
           <div style="font-size:18px;font-weight:800;margin-bottom:4px">Reporte Diario</div>
-          <div style="font-size:12px;color:var(--muted)">Ventas por día — San Francisco, en el rango seleccionado</div>
+          <div style="font-size:12px;color:var(--muted)">Ventas por día — todas las tiendas, en el rango seleccionado</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <button class="btn btn-lime" id="btnExportarReportePA" onclick="exportarReporteDiarioPA()">⬇ Exportar Excel</button>
@@ -2183,7 +2185,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Reporte Diario — San Francisco</span>
+          <span class="card-title">Reporte Diario — <span id="paRepTituloTienda">Todas las tiendas</span></span>
           <span class="card-tag" id="paRepTag">—</span>
         </div>
         <div class="card-body" style="padding:0;overflow-x:auto">
@@ -2203,7 +2205,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
 
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Canales de Venta — San Francisco</span>
+          <span class="card-title">Canales de Venta — <span id="paCanTituloTienda">Todas las tiendas</span></span>
           <span class="card-tag" id="paCanTag">—</span>
         </div>
         <div class="card-body">
@@ -2220,7 +2222,7 @@ body.modo-vista-unica .hamburger{ display:none !important; }
          trae venta neta por producto desde Toteat. -->
     <div class="section" id="section-pa-productos">
       <div style="font-size:18px;font-weight:800;margin-bottom:4px">Ventas Producto</div>
-      <div style="font-size:12px;color:var(--muted)">Unidades vendidas por producto — San Francisco, en el rango seleccionado</div>
+      <div style="font-size:12px;color:var(--muted)">Unidades vendidas por producto — <span id="paProdTituloTienda">todas las tiendas</span>, en el rango seleccionado</div>
 
       <div id="paProdCatFilters" style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0"></div>
 
@@ -2641,6 +2643,14 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_BD4WIfx5BIxR
 // (PA_API_TOKEN) de ese proyecto.
 const APPS_SCRIPT_URL_PA   = 'https://script.google.com/macros/s/AKfycby2XqW0PkYS2mp5Nu51vG-bHi9QnTPHrKluxwPWsVNq7plc_fLRBy59DG1kF_XZzROxSQ/exec';
 const APPS_SCRIPT_TOKEN_PA = '44e04521-327b-4ed4-8dff-4eefa7a77f02';
+
+// Tiendas de Panamá — debe reflejar exactamente las keys de PA_TIENDAS_CONFIG
+// en el backend (Code_PA.gs) Y las <option> de #paDashTienda en el HTML.
+// Agregar acá cada tienda nueva cuando abra.
+const PA_STORES = [
+  { key: 'SANFRANCISCO', nombre: 'San Francisco' },
+  { key: 'BRISASGOLF',   nombre: 'Brisas del Golf' }
+];
 
 // ── Interceptor de sesión + reintento anti-flakiness de Apps Script ──────
 // El backend ahora exige un token de sesión válido en TODAS las llamadas
@@ -7285,6 +7295,20 @@ function fmtUSD(n){
   return signo + '$' + abs.toLocaleString('en-US', {maximumFractionDigits: 0});
 }
 
+// Tienda actualmente elegida en el selector compartido de Panamá
+// (#paDashTienda, vive en topbarControlsPA) — 'todas' o una key de PA_STORES.
+function paTiendaSel(){
+  return document.getElementById('paDashTienda')?.value || 'todas';
+}
+
+// Nombre legible de la tienda actualmente elegida, para los títulos de las
+// tarjetas (Ventas por Día, Reporte Diario, Canales, Ventas Producto).
+function paNombreTiendaSel(){
+  const sel = paTiendaSel();
+  if(sel === 'todas') return 'Todas las tiendas';
+  return PA_STORES.find(s=>s.key===sel)?.nombre || sel;
+}
+
 async function fetchPA(action, params){
   if (!APPS_SCRIPT_URL_PA || APPS_SCRIPT_URL_PA.indexOf('PEGAR_AQUI') === 0) {
     throw new Error('Falta configurar APPS_SCRIPT_URL_PA en el HTML (todavía tiene el valor de ejemplo).');
@@ -7347,6 +7371,32 @@ function estimarVentaEsperadaPA(historyMap, targetDateStr){
   return Math.round(baseAvg * Math.max(0.5, 1+trendPerDay*daysAhead));
 }
 
+// Calcula las métricas de una fila de "Detalle por Tienda" (Ventas hoy,
+// Forecast, Crec% vs. hace 7 días, Acumulado del rango, Forecast acumulado)
+// a partir del histMap de UNA tienda — mismo criterio que las KPIs del
+// Dashboard en cargarPADashboard(), aplicado por separado a cada tienda.
+function calcularFilaTiendaPA(histMap, hoyStr, hace7Str, rangoIni, rangoFin){
+  const pad = n=>String(n).padStart(2,'0');
+  const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+  const ventaDia    = histMap[hoyStr] ? histMap[hoyStr].ventas : 0;
+  const forecastHoy = estimarVentaEsperadaPA(histMap, hoyStr);
+  const hace7Val    = histMap[hace7Str] ? histMap[hace7Str].ventas : 0;
+
+  const diasRango  = Object.entries(histMap).filter(([f])=>f>=rangoIni && f<=rangoFin);
+  const acumVentas = diasRango.reduce((s,[,v])=>s+(v.ventas||0),0);
+
+  let fcstAcum = 0;
+  let d = new Date(rangoIni+'T12:00:00');
+  const finD = new Date(rangoFin+'T12:00:00');
+  while(d <= finD){
+    const f = estimarVentaEsperadaPA(histMap, iso(d));
+    if(f!==null) fcstAcum += f;
+    d.setDate(d.getDate()+1);
+  }
+  return { ventaDia, forecastHoy, hace7Val, acumVentas, fcstAcum };
+}
+
 let paChartDashDiario = null;
 
 async function cargarPADashboard(){
@@ -7354,8 +7404,9 @@ async function cargarPADashboard(){
   try{
     empty.style.display = 'block';
     empty.querySelector('.empty-txt').textContent = 'Cargando datos de Panamá...';
+    setTxt('paDashTituloTienda', paNombreTiendaSel());
 
-    const resumen = await fetchPA('resumen', { tienda: 'todas' });
+    const resumen = await fetchPA('resumen', { tienda: paTiendaSel() });
     const hoyStr  = resumen.fechaHoy;
     const hoyDate = new Date(hoyStr+'T12:00:00');
     const pad = n=>String(n).padStart(2,'0');
@@ -7424,22 +7475,34 @@ async function cargarPADashboard(){
 
     renderPADashChart(diasRango, rangoIni, rangoFin);
 
-    // ── Detalle por Tienda: forecast acumulado día a día del rango ──
-    // (mismo forecast que usa el KPI de "Hoy", sumado sobre cada día del
-    // período — solo cuenta como base la historia ANTERIOR a cada día, así
-    // que el total no se infla usando datos que "todavía no existían")
-    let fcstAcum = 0;
-    {
-      let d = new Date(rangoIni+'T12:00:00');
-      const finD = new Date(rangoFin+'T12:00:00');
-      while(d <= finD){
-        const f = estimarVentaEsperadaPA(histMap, iso(d));
-        if(f!==null) fcstAcum += f;
-        d.setDate(d.getDate()+1);
-      }
-    }
     setTxt('paFichaRangoAcum', `Acumulado: ${rangoIni} → ${rangoFin}`);
-    renderTablaTiendaPADash(resumen, forecastHoy, hace7Val, acumVentas, fcstAcum);
+
+    // ── Detalle por Tienda: una fila por tienda + TODAS, sin importar cuál
+    // esté elegida en el selector de arriba — mismo criterio que la tabla
+    // equivalente de Costa Rica. Trae el historial de CADA tienda por
+    // separado (no el de la seleccionada) para poder calcular cada fila.
+    const histMapsPorTienda = {};
+    await Promise.all(PA_STORES.map(async st => {
+      let m = await fetchPADiario(iso(desde70), hoyStr, st.key);
+      if(rangoIni < iso(desde70) || rangoFin > hoyStr){
+        const extra = await fetchPADiario(rangoIni, rangoFin, st.key);
+        m = { ...m, ...extra };
+      }
+      histMapsPorTienda[st.key] = m;
+    }));
+    const histMapTodas = {};
+    PA_STORES.forEach(st => {
+      Object.entries(histMapsPorTienda[st.key]).forEach(([f,v])=>{
+        if(!histMapTodas[f]) histMapTodas[f] = { ventas:0, trans:0 };
+        histMapTodas[f].ventas += v.ventas||0;
+        histMapTodas[f].trans  += v.trans||0;
+      });
+    });
+    const filasTienda = [
+      { key:'TODAS', nombre:'TODAS', ...calcularFilaTiendaPA(histMapTodas, hoyStr, hace7Str, rangoIni, rangoFin) },
+      ...PA_STORES.map(st => ({ key:st.key, nombre:st.nombre, ...calcularFilaTiendaPA(histMapsPorTienda[st.key], hoyStr, hace7Str, rangoIni, rangoFin) }))
+    ];
+    renderTablaTiendaPADash(filasTienda);
 
     cargarCanalesPADash(rangoIni, rangoFin, hoyStr);
 
@@ -7471,32 +7534,35 @@ function renderPADashChart(diasRango, fi, ff){
   });
 }
 
-// Detalle por Tienda del Dashboard PA — un solo local, así que es siempre
-// una fila (San Francisco). Mismas columnas que la tabla equivalente de CR
-// (Ventas/Forecast/Desv%/Crec%/Acum/Fcst Acum/Desv%/SSS%), sin la fila TODAS
-// porque no hay nada que sumar.
-function renderTablaTiendaPADash(resumen, forecastHoy, hace7Val, acumVentas, fcstAcum){
+// Detalle por Tienda del Dashboard PA — una fila por cada tienda de
+// PA_STORES más una fila TODAS con el combinado, sin importar cuál esté
+// elegida en el selector de arriba (ver cargarPADashboard). Mismas columnas
+// que la tabla equivalente de CR (Ventas/Forecast/Desv%/Crec%/Acum/Fcst
+// Acum/Desv%/SSS%); TODAS se resalta igual que la fila de total en CR.
+function renderTablaTiendaPADash(filas){
   const tbody = document.getElementById('paTablaTiendas');
   if(!tbody) return;
-  const ventaDia = resumen.hoy?.ventas || 0;
-  const df  = (forecastHoy && forecastHoy>0) ? (ventaDia-forecastHoy)/forecastHoy*100 : null;
-  const cd  = hace7Val>0 ? (ventaDia-hace7Val)/hace7Val*100 : null;
-  const dfa = fcstAcum>0 ? (acumVentas-fcstAcum)/fcstAcum*100 : null;
   const fmtPctCell = v => v===null
     ? '<span style="color:var(--muted)">—</span>'
     : `<span style="color:${v>=0?'var(--teal)':'var(--red)'}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
 
-  tbody.innerHTML = `<tr>
-    <td style="padding-left:16px">Oakberry San Francisco</td>
-    <td style="color:var(--accent)">${fmtUSD(ventaDia)}</td>
-    <td>${forecastHoy!==null?fmtUSD(forecastHoy):'—'}</td>
-    <td>${fmtPctCell(df)}</td>
-    <td>${fmtPctCell(cd)}</td>
-    <td style="border-left:1px solid var(--border);color:var(--lime)">${fmtUSD(acumVentas)}</td>
-    <td>${fcstAcum>0?fmtUSD(fcstAcum):'—'}</td>
-    <td>${fmtPctCell(dfa)}</td>
-    <td style="padding-right:16px;color:var(--muted)" title="Sin datos de año anterior — Panamá abrió en mayo 2026">—</td>
-  </tr>`;
+  tbody.innerHTML = filas.map(f => {
+    const isTotal = f.key === 'TODAS';
+    const df  = (f.forecastHoy && f.forecastHoy>0) ? (f.ventaDia-f.forecastHoy)/f.forecastHoy*100 : null;
+    const cd  = f.hace7Val>0 ? (f.ventaDia-f.hace7Val)/f.hace7Val*100 : null;
+    const dfa = f.fcstAcum>0 ? (f.acumVentas-f.fcstAcum)/f.fcstAcum*100 : null;
+    return `<tr>
+      <td style="padding-left:16px${isTotal?';color:var(--accent)':''}">${f.nombre}</td>
+      <td style="color:var(--accent)">${fmtUSD(f.ventaDia)}</td>
+      <td>${f.forecastHoy!==null?fmtUSD(f.forecastHoy):'—'}</td>
+      <td>${fmtPctCell(df)}</td>
+      <td>${fmtPctCell(cd)}</td>
+      <td style="border-left:1px solid var(--border);color:var(--lime)">${fmtUSD(f.acumVentas)}</td>
+      <td>${f.fcstAcum>0?fmtUSD(f.fcstAcum):'—'}</td>
+      <td>${fmtPctCell(dfa)}</td>
+      <td style="padding-right:16px;color:var(--muted)" title="Sin datos de año anterior — Panamá abrió en mayo 2026">—</td>
+    </tr>`;
+  }).join('');
 }
 
 // Canales de Venta del Dashboard PA — mismo patrón que renderChartCanales /
@@ -7595,7 +7661,7 @@ async function cargarCanalesPADash(rangoIni, rangoFin, hoyStr){
 
     const fetchIni = [iso(prevIniDate), rangoIni, iso(hace7)].sort()[0];
     const fetchFin = [rangoFin, hoyStr].sort()[1];
-    const data = await fetchPA('historialCanales', { tienda:'todas', fechaInicio: fetchIni, fechaFin: fetchFin });
+    const data = await fetchPA('historialCanales', { tienda: paTiendaSel(), fechaInicio: fetchIni, fechaFin: fetchFin });
     const serie = Array.isArray(data) ? data : [];
     const porFecha = {};
     serie.forEach(r=>{ porFecha[r.fecha] = r; });
@@ -7805,8 +7871,8 @@ async function cargarPAReporteComparacion() {
 
   try {
     const [data, dataHora] = await Promise.all([
-      fetchPA('historialDiario', { tienda: 'todas', fechaInicio: fi, fechaFin: ff, canal }),
-      fetchPA('ventasPorHora', { tienda: 'todas', fechaInicio: fi, fechaFin: ff })
+      fetchPA('historialDiario', { tienda: paTiendaSel(), fechaInicio: fi, fechaFin: ff, canal }),
+      fetchPA('ventasPorHora', { tienda: paTiendaSel(), fechaInicio: fi, fechaFin: ff })
     ]);
     if (data && !data.error && Array.isArray(data)) {
       datosPAReporteSSSRaw = data;
@@ -8011,6 +8077,7 @@ function aplicarGranularidadReportePA() {
 let paReporteReqId = 0;
 let paChartReporteInstance = null;
 async function cargarPAReporte(){
+  setTxt('paRepTituloTienda', paNombreTiendaSel());
   const fi = document.getElementById('paFechaInicio').value;
   const ff = document.getElementById('paFechaFin').value;
   const canal = paReporteCanalActual();
@@ -8024,8 +8091,8 @@ async function cargarPAReporte(){
   cargarPAVentasPorHora();
   try{
     const [data, dataCanales] = await Promise.all([
-      fetchPA('historialDiario', { tienda: 'todas', fechaInicio: fi, fechaFin: ff, canal }),
-      seleccionadosPA.length ? fetchPA('historialCanales', { tienda: 'todas', fechaInicio: fi, fechaFin: ff }) : Promise.resolve(null)
+      fetchPA('historialDiario', { tienda: paTiendaSel(), fechaInicio: fi, fechaFin: ff, canal }),
+      seleccionadosPA.length ? fetchPA('historialCanales', { tienda: paTiendaSel(), fechaInicio: fi, fechaFin: ff }) : Promise.resolve(null)
     ]);
     if (miReqId !== paReporteReqId) return; // ya hay una llamada más nueva en curso
     const dias = Array.isArray(data) ? data : [];
@@ -8054,7 +8121,7 @@ async function cargarPAVentasPorHora() {
   const avisoCanal = document.getElementById('paHoraCanalAviso');
   if (avisoCanal) avisoCanal.style.display = (paReporteCanalActual() !== 'todos') ? 'block' : 'none';
   try {
-    const data = await fetchPA('ventasPorHora', { tienda: 'todas', fechaInicio: fi, fechaFin: ff });
+    const data = await fetchPA('ventasPorHora', { tienda: paTiendaSel(), fechaInicio: fi, fechaFin: ff });
     const empty = document.getElementById('paHoraEmpty');
     if (!data || data.error || !Array.isArray(data.porHora)) {
       if (empty) empty.style.display = 'block';
@@ -8142,7 +8209,7 @@ async function exportarReporteDiarioPA() {
   btn.textContent = 'Generando...';
 
   try {
-    const data = await fetchPA('exportarReporteExcel', { tienda: 'todas', fechaInicio: fi, fechaFin: ff, canal });
+    const data = await fetchPA('exportarReporteExcel', { tienda: paTiendaSel(), fechaInicio: fi, fechaFin: ff, canal });
     if (!data || data.error || !data.base64) {
       alert('Error generando el Excel: ' + (data?.message || 'respuesta inválida'));
       return;
@@ -8170,6 +8237,7 @@ async function exportarReporteDiarioPA() {
 // ── PANAMÁ · CANALES ──────────────────────────────────────────
 let paChartCanales = null;
 async function cargarPACanales(){
+  setTxt('paCanTituloTienda', paNombreTiendaSel());
   const fi = document.getElementById('paFechaInicio').value;
   const ff = document.getElementById('paFechaFin').value;
   const grid = document.getElementById('paCanalesGrid');
@@ -8178,7 +8246,7 @@ async function cargarPACanales(){
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:24px">Cargando...</div>';
   setTxt('paCanTag', `${fi} → ${ff}`);
   try{
-    const data = await fetchPA('historialCanales', { tienda: 'todas', fechaInicio: fi, fechaFin: ff });
+    const data = await fetchPA('historialCanales', { tienda: paTiendaSel(), fechaInicio: fi, fechaFin: ff });
     const dias = Array.isArray(data) ? data : [];
 
     const totales = { uber: 0, peya: 0, tienda: 0 };
@@ -8242,6 +8310,7 @@ function paProdFiltrarCategoria(cat, btn){
 }
 
 async function cargarPAProductos(){
+  setTxt('paProdTituloTienda', paTiendaSel()==='todas' ? 'todas las tiendas' : paNombreTiendaSel());
   const fi = document.getElementById('paFechaInicio').value;
   const ff = document.getElementById('paFechaFin').value;
   const tbody = document.getElementById('paProdBody');
@@ -8250,7 +8319,7 @@ async function cargarPAProductos(){
   tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px">Cargando...</td></tr>';
   setTxt('paProdTag', `${fi} → ${ff}`);
   try{
-    const data = await fetchPA('productos', { tienda: 'todas', fechaInicio: fi, fechaFin: ff });
+    const data = await fetchPA('productos', { tienda: paTiendaSel(), fechaInicio: fi, fechaFin: ff });
     paProdDataCruda = Array.isArray(data) ? data : [];
     paProdCatActiva = 'TODAS';
 
@@ -8322,8 +8391,11 @@ const fmtKUSD = n => {
   return signo + '$' + Math.round(abs).toLocaleString('en-US');
 };
 
-async function fetchPADiario(fromDate, toDate){
-  const data = await fetchPA('historialDiario', { tienda:'todas', fechaInicio:fromDate, fechaFin:toDate });
+// tienda opcional: por defecto usa la del selector compartido, pero
+// renderTablaTiendaPADash necesita traer el historial de CADA tienda por
+// separado (no la que esté seleccionada), así que acepta una key explícita.
+async function fetchPADiario(fromDate, toDate, tienda){
+  const data = await fetchPA('historialDiario', { tienda: tienda || paTiendaSel(), fechaInicio:fromDate, fechaFin:toDate });
   const byDate = {};
   (Array.isArray(data) ? data : []).forEach(row=>{
     if(row.fecha) byDate[row.fecha] = { ventas: Number(row.ventasNetas)||0, trans: Number(row.transacciones)||0 };
@@ -8376,7 +8448,7 @@ async function runProjectionPA(){
 
     setStep('Cargando presupuesto...');
     try{
-      const ppto = await fetchPA('forecast', { month:tM, year:tY, tienda:'todas' });
+      const ppto = await fetchPA('forecast', { month:tM, year:tY, tienda: paTiendaSel() });
       const pptoTodas = ppto && ppto['TODAS'];
       paProyData.forecastPorDia  = pptoTodas?.porDia  || {};
       paProyData.forecastMensual = pptoTodas?.mensual || 0;
@@ -8877,8 +8949,8 @@ async function cargarPADiaSemana(){
   const fechaAnioAnt = new Date(fechaObj); fechaAnioAnt.setFullYear(fechaAnioAnt.getFullYear()-1);
   try{
     const [hist, aa] = await Promise.all([
-      fetchPA('historialDiario', { tienda:'todas', fechaInicio: fmtISO(inicio70), fechaFin: ff }),
-      fetchPA('historialDiario', { tienda:'todas', fechaInicio: fmtISO(fechaAnioAnt), fechaFin: fmtISO(fechaAnioAnt) })
+      fetchPA('historialDiario', { tienda: paTiendaSel(), fechaInicio: fmtISO(inicio70), fechaFin: ff }),
+      fetchPA('historialDiario', { tienda: paTiendaSel(), fechaInicio: fmtISO(fechaAnioAnt), fechaFin: fmtISO(fechaAnioAnt) })
     ]);
     paDiaSemanaData = {
       hist: Array.isArray(hist) ? hist : [],
@@ -8943,7 +9015,7 @@ function renderPADiaSemana(){
 
 async function cargarPAAnlCanales(fi, ff){
   try{
-    const data = await fetchPA('historialCanales', { tienda:'todas', fechaInicio:fi, fechaFin:ff });
+    const data = await fetchPA('historialCanales', { tienda: paTiendaSel(), fechaInicio:fi, fechaFin:ff });
     const dias = Array.isArray(data) ? data : [];
     const totales = { uber:0, peya:0, tienda:0 };
     dias.forEach(d=>{ totales.uber += d.uber||0; totales.peya += d.peya||0; totales.tienda += d.tienda||0; });
@@ -9003,7 +9075,7 @@ async function cargarPAAnlProductos(fi, ff){
   if(!list) return;
   list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Cargando productos...</div></div>';
   try{
-    const data = await fetchPA('productos', { tienda:'todas', fechaInicio:fi, fechaFin:ff });
+    const data = await fetchPA('productos', { tienda: paTiendaSel(), fechaInicio:fi, fechaFin:ff });
     const productos = (Array.isArray(data) ? data : []).slice(0,10);
     setTxt('paAnlProdTag', `${fi} → ${ff}`);
     if(!productos.length){
@@ -9030,10 +9102,10 @@ async function cargarCompararFechasPA(){
 
   try{
     const [hA, hB, pA, pB] = await Promise.all([
-      fetchPA('historialDiario', { tienda:'todas', fechaInicio:fA, fechaFin:fA }),
-      fetchPA('historialDiario', { tienda:'todas', fechaInicio:fB, fechaFin:fB }),
-      fetchPA('productos',       { tienda:'todas', fechaInicio:fA, fechaFin:fA }),
-      fetchPA('productos',       { tienda:'todas', fechaInicio:fB, fechaFin:fB }),
+      fetchPA('historialDiario', { tienda: paTiendaSel(), fechaInicio:fA, fechaFin:fA }),
+      fetchPA('historialDiario', { tienda: paTiendaSel(), fechaInicio:fB, fechaFin:fB }),
+      fetchPA('productos',       { tienda: paTiendaSel(), fechaInicio:fA, fechaFin:fA }),
+      fetchPA('productos',       { tienda: paTiendaSel(), fechaInicio:fB, fechaFin:fB }),
     ]);
     const diaA = (Array.isArray(hA) && hA[0]) ? hA[0] : { ventasNetas:0, transacciones:0 };
     const diaB = (Array.isArray(hB) && hB[0]) ? hB[0] : { ventasNetas:0, transacciones:0 };
@@ -9116,7 +9188,7 @@ async function cargarSeguimientoPA(){
     let pptoMensualTotal = 0;
     const pptoPorDia = {};
     try{
-      const ppto = await fetchPA('forecast', { month:tM, year:tY, tienda:'todas' });
+      const ppto = await fetchPA('forecast', { month:tM, year:tY, tienda: paTiendaSel() });
       const row = ppto && ppto['TODAS'];
       pptoMensualTotal = row?.mensual || 0;
       if(row?.porDia) Object.entries(row.porDia).forEach(([d,v])=>{ pptoPorDia[Number(d)] = v; });
@@ -9193,7 +9265,7 @@ function renderSeguimientoPA(data){
   document.getElementById('paSegStatus').textContent = `Datos hasta día ${lastDay} · Presupuesto: ${pptoStr}`;
 
   const ML = new Date(tY,tM-1).toLocaleDateString('es-PA',{month:'long',year:'numeric'});
-  document.getElementById('paSegTableTag').textContent = (ML.charAt(0).toUpperCase()+ML.slice(1)) + ' · San Francisco';
+  document.getElementById('paSegTableTag').textContent = (ML.charAt(0).toUpperCase()+ML.slice(1)) + ' · Todas las tiendas';
 
   const ticketMedio = acumTrans>0 ? acumVentas/acumTrans : 0;
   const crecPct = acumAA>0 ? ((acumVentas-acumAA)/acumAA)*100 : null;
