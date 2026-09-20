@@ -7418,24 +7418,40 @@ async function cargarPADashboard(){
     empty.querySelector('.empty-txt').textContent = 'Cargando datos de Panamá...';
     setTxt('paDashTituloTienda', paNombreTiendaSel());
 
-    const resumen = await fetchPA('resumen', { tienda: paTiendaSel() });
-    const hoyStr  = resumen.fechaHoy;
-    const hoyDate = new Date(hoyStr+'T12:00:00');
+    const resumen   = await fetchPA('resumen', { tienda: paTiendaSel() });
+    const hoyRealStr = resumen.fechaHoy; // fecha real del servidor — solo para acotar el fetch de historial, nunca para decidir qué día mostrar
     const pad = n=>String(n).padStart(2,'0');
     const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
-    // Historial de ~70 días hacia atrás — alimenta el forecast del día y
-    // sirve de base para el rango elegido si cae dentro de esa ventana.
-    const desde70 = new Date(hoyDate); desde70.setDate(desde70.getDate()-70);
-    const histMap = await fetchPADiario(iso(desde70), hoyStr);
+    // ── El "día" que muestran los KPIs de arriba es el FIN del rango elegido
+    // en el topbar — mismo criterio que Costa Rica (ahí "el día" siempre es
+    // fechaFin, no la fecha real de hoy). Antes esta función usaba
+    // resumen.fechaHoy/resumen.hoy para todo, así que el filtro de fechas no
+    // cambiaba nada de lo que se veía arriba (reportado por el usuario:
+    // poner el día 19 en el filtro no actualizaba "Ventas de Hoy").
+    let rangoIni = document.getElementById('paFechaInicio').value;
+    let rangoFin = document.getElementById('paFechaFin').value;
+    if(!rangoIni || !rangoFin){ rangoIni = hoyRealStr.slice(0,8)+'01'; rangoFin = hoyRealStr; }
+    const diaObjetivo = rangoFin > hoyRealStr ? hoyRealStr : rangoFin; // nunca "hoy" del futuro
+    const diaObjetivoDate = new Date(diaObjetivo+'T12:00:00');
+    setTxt('paFichaRangoFechas', `Rango: ${rangoIni} → ${rangoFin}`);
 
-    // Presupuesto del mes actual, por tienda — respaldo de calcularFilaTiendaPA
-    // (y del KPI de arriba) para cuando todavía no hay suficiente historia
-    // para estimarVentaEsperadaPA (tienda recién abierta, ej. Brisas del Golf).
+    // Historial: desde 70 días antes del día objetivo hasta hoy real — un
+    // solo fetch que cubre tanto el forecast del día objetivo como el rango
+    // elegido (aunque el rango se extienda más atrás que la ventana de 70 días).
+    const desde70 = new Date(diaObjetivoDate); desde70.setDate(desde70.getDate()-70);
+    const fetchDesde = rangoIni < iso(desde70) ? rangoIni : iso(desde70);
+    const fetchHasta = hoyRealStr > rangoFin ? hoyRealStr : rangoFin;
+    const histMap = await fetchPADiario(fetchDesde, fetchHasta);
+
+    // Presupuesto del mes del día objetivo, por tienda — respaldo de
+    // calcularFilaTiendaPA (y del KPI de arriba) para cuando todavía no hay
+    // suficiente historia para estimarVentaEsperadaPA (tienda recién
+    // abierta, ej. Brisas del Golf).
     const budgetPorDiaPorTienda = {};
     await Promise.all(PA_STORES.map(async st => {
       try {
-        const b = await fetchPA('forecast', { month: hoyDate.getMonth()+1, year: hoyDate.getFullYear(), tienda: st.key });
+        const b = await fetchPA('forecast', { month: diaObjetivoDate.getMonth()+1, year: diaObjetivoDate.getFullYear(), tienda: st.key });
         budgetPorDiaPorTienda[st.key] = (b && b['TODAS'] && b['TODAS'].porDia) || {};
       } catch(e) { budgetPorDiaPorTienda[st.key] = {}; }
     }));
@@ -7449,13 +7465,15 @@ async function cargarPADashboard(){
 
     empty.style.display = 'none';
 
-    // ── KPI 1: Ventas de Hoy vs Forecast ──
-    const forecastHoy = estimarVentaEsperadaPA(histMap, hoyStr) ?? ((budgetPorDiaSel[Number(hoyStr.slice(8,10))]>0) ? budgetPorDiaSel[Number(hoyStr.slice(8,10))] : null);
-    setTxt('paKHoy', fmtUSD(resumen.hoy?.ventas));
+    // ── KPI 1: Ventas del día elegido vs Forecast ──
+    const ventaObjetivo   = histMap[diaObjetivo] ? histMap[diaObjetivo].ventas : 0;
+    const pedidosObjetivo = histMap[diaObjetivo] ? histMap[diaObjetivo].trans  : 0;
+    const forecastHoy = estimarVentaEsperadaPA(histMap, diaObjetivo) ?? ((budgetPorDiaSel[Number(diaObjetivo.slice(8,10))]>0) ? budgetPorDiaSel[Number(diaObjetivo.slice(8,10))] : null);
+    setTxt('paKHoy', fmtUSD(ventaObjetivo));
     setTxt('paKForecast', forecastHoy!==null ? fmtUSD(forecastHoy) : '—');
     const elDesv = document.getElementById('paKDesvForecast');
     if(forecastHoy && forecastHoy>0){
-      const desv = (resumen.hoy.ventas - forecastHoy)/forecastHoy*100;
+      const desv = (ventaObjetivo - forecastHoy)/forecastHoy*100;
       elDesv.textContent = (desv>=0?'+':'')+desv.toFixed(1)+'% vs forecast';
       elDesv.className = 'kpi-delta ' + (desv>=0?'d-pos':'d-neg');
     } else {
@@ -7463,13 +7481,13 @@ async function cargarPADashboard(){
       elDesv.className = 'kpi-delta d-neu';
     }
 
-    // ── KPI 2: Crecimiento Semanal (hoy vs. mismo día, semana pasada) ──
-    const hace7 = new Date(hoyDate); hace7.setDate(hace7.getDate()-7);
+    // ── KPI 2: Crecimiento Semanal (día elegido vs. mismo día, semana pasada) ──
+    const hace7 = new Date(diaObjetivoDate); hace7.setDate(hace7.getDate()-7);
     const hace7Str = iso(hace7);
     const hace7Val = histMap[hace7Str] ? histMap[hace7Str].ventas : 0;
     const crecEl = document.getElementById('paKCrec');
     if(hace7Val>0){
-      const crec = (resumen.hoy.ventas - hace7Val)/hace7Val*100;
+      const crec = (ventaObjetivo - hace7Val)/hace7Val*100;
       crecEl.textContent = (crec>=0?'+':'')+crec.toFixed(1)+'%';
       crecEl.style.color = crec>=0?'var(--teal)':'var(--red)';
     } else {
@@ -7479,17 +7497,7 @@ async function cargarPADashboard(){
     setTxt('paKFechaRef', hace7Str);
 
     // ── KPI 3 y gráfico: rango elegido en el topbar (Desde/Hasta) ──
-    let rangoIni = document.getElementById('paFechaInicio').value;
-    let rangoFin = document.getElementById('paFechaFin').value;
-    if(!rangoIni || !rangoFin){ rangoIni = hoyStr.slice(0,8)+'01'; rangoFin = hoyStr; }
-    setTxt('paFichaRangoFechas', `Rango: ${rangoIni} → ${rangoFin}`);
-
-    let rangoMap = histMap;
-    if(rangoIni < iso(desde70) || rangoFin > hoyStr){
-      const extra = await fetchPADiario(rangoIni, rangoFin);
-      rangoMap = { ...histMap, ...extra };
-    }
-    const diasRango = Object.entries(rangoMap).filter(([f])=>f>=rangoIni && f<=rangoFin);
+    const diasRango = Object.entries(histMap).filter(([f])=>f>=rangoIni && f<=rangoFin);
     const acumVentas = diasRango.reduce((s,[,v])=>s+(v.ventas||0),0);
     const acumTrans  = diasRango.reduce((s,[,v])=>s+(v.trans||0),0);
 
@@ -7499,7 +7507,7 @@ async function cargarPADashboard(){
     elCrecAcum.className = 'kpi-delta d-neu';
 
     // ── KPI 4: Transacciones ──
-    setTxt('paKTrans', (resumen.hoy?.pedidos||0).toLocaleString('en-US'));
+    setTxt('paKTrans', pedidosObjetivo.toLocaleString('en-US'));
     setTxt('paKTransAcum', acumTrans.toLocaleString('en-US'));
     setTxt('paKTicket', fmtUSD(acumTrans>0 ? acumVentas/acumTrans : 0));
 
@@ -7513,12 +7521,7 @@ async function cargarPADashboard(){
     // separado (no el de la seleccionada) para poder calcular cada fila.
     const histMapsPorTienda = {};
     await Promise.all(PA_STORES.map(async st => {
-      let m = await fetchPADiario(iso(desde70), hoyStr, st.key);
-      if(rangoIni < iso(desde70) || rangoFin > hoyStr){
-        const extra = await fetchPADiario(rangoIni, rangoFin, st.key);
-        m = { ...m, ...extra };
-      }
-      histMapsPorTienda[st.key] = m;
+      histMapsPorTienda[st.key] = await fetchPADiario(fetchDesde, fetchHasta, st.key);
     }));
     const histMapTodas = {};
     PA_STORES.forEach(st => {
@@ -7529,12 +7532,12 @@ async function cargarPADashboard(){
       });
     });
     const filasTienda = [
-      { key:'TODAS', nombre:'TODAS', ...calcularFilaTiendaPA(histMapTodas, hoyStr, hace7Str, rangoIni, rangoFin, budgetPorDiaTodas) },
-      ...PA_STORES.map(st => ({ key:st.key, nombre:st.nombre, ...calcularFilaTiendaPA(histMapsPorTienda[st.key], hoyStr, hace7Str, rangoIni, rangoFin, budgetPorDiaPorTienda[st.key]) }))
+      { key:'TODAS', nombre:'TODAS', ...calcularFilaTiendaPA(histMapTodas, diaObjetivo, hace7Str, rangoIni, rangoFin, budgetPorDiaTodas) },
+      ...PA_STORES.map(st => ({ key:st.key, nombre:st.nombre, ...calcularFilaTiendaPA(histMapsPorTienda[st.key], diaObjetivo, hace7Str, rangoIni, rangoFin, budgetPorDiaPorTienda[st.key]) }))
     ];
     renderTablaTiendaPADash(filasTienda);
 
-    cargarCanalesPADash(rangoIni, rangoFin, hoyStr);
+    cargarCanalesPADash(rangoIni, rangoFin, diaObjetivo);
 
   }catch(e){
     empty.style.display = 'block';
