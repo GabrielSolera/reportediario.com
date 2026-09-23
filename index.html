@@ -7418,10 +7418,15 @@ async function cargarPADashboard(){
     empty.querySelector('.empty-txt').textContent = 'Cargando datos de Panamá...';
     setTxt('paDashTituloTienda', paNombreTiendaSel());
 
-    const resumen   = await fetchPA('resumen', { tienda: paTiendaSel() });
-    const hoyRealStr = resumen.fechaHoy; // fecha real del servidor — solo para acotar el fetch de historial, nunca para decidir qué día mostrar
     const pad = n=>String(n).padStart(2,'0');
     const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+    // Hoy real en la zona horaria de Panamá — calculado en el navegador en
+    // vez de pedírselo al servidor (era un fetch entero, action=resumen,
+    // solo para este dato). toLocaleDateString con timeZone da YYYY-MM-DD
+    // ya en horario de Panamá sin importar en qué zona horaria esté el
+    // navegador del usuario.
+    const hoyRealStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Panama' });
 
     // ── El "día" que muestran los KPIs de arriba es el FIN del rango elegido
     // en el topbar — mismo criterio que Costa Rica (ahí "el día" siempre es
@@ -7436,32 +7441,60 @@ async function cargarPADashboard(){
     const diaObjetivoDate = new Date(diaObjetivo+'T12:00:00');
     setTxt('paFichaRangoFechas', `Rango: ${rangoIni} → ${rangoFin}`);
 
-    // Historial: desde 70 días antes del día objetivo hasta hoy real — un
-    // solo fetch que cubre tanto el forecast del día objetivo como el rango
-    // elegido (aunque el rango se extienda más atrás que la ventana de 70 días).
     const desde70 = new Date(diaObjetivoDate); desde70.setDate(desde70.getDate()-70);
     const fetchDesde = rangoIni < iso(desde70) ? rangoIni : iso(desde70);
     const fetchHasta = hoyRealStr > rangoFin ? hoyRealStr : rangoFin;
-    const histMap = await fetchPADiario(fetchDesde, fetchHasta);
 
-    // Presupuesto del mes del día objetivo, por tienda — respaldo de
-    // calcularFilaTiendaPA (y del KPI de arriba) para cuando todavía no hay
-    // suficiente historia para estimarVentaEsperadaPA (tienda recién
-    // abierta, ej. Brisas del Golf).
+    // ── Tienda(s) a traer: si hay una tienda específica elegida en el
+    // selector de arriba, "Detalle por Tienda" ahora se limita a ESA tienda
+    // (antes siempre traía y mostraba las dos, sin importar el filtro —
+    // confuso, y de paso pedía datos de la tienda que el usuario ni había
+    // elegido ver). Esto además reduce a la mitad las llamadas al backend
+    // cuando hay una tienda filtrada.
+    const tiendaSel = paTiendaSel();
+    const storesADesglosar = tiendaSel === 'todas' ? PA_STORES : PA_STORES.filter(s => s.key === tiendaSel);
+
+    // Historial y presupuesto de cada tienda a desglosar, todo en una sola
+    // tanda de llamadas en paralelo — antes eran ~3 tandas secuenciales
+    // (resumen, historial general, presupuesto+historial por tienda), lo
+    // que sumaba varios segundos de espera en cada "Actualizar".
+    const [histMapsArr, budgetsArr] = await Promise.all([
+      Promise.all(storesADesglosar.map(st => fetchPADiario(fetchDesde, fetchHasta, st.key))),
+      Promise.all(storesADesglosar.map(st =>
+        fetchPA('forecast', { month: diaObjetivoDate.getMonth()+1, year: diaObjetivoDate.getFullYear(), tienda: st.key }).catch(()=>null)
+      ))
+    ]);
+
+    const histMapsPorTienda = {};
     const budgetPorDiaPorTienda = {};
-    await Promise.all(PA_STORES.map(async st => {
-      try {
-        const b = await fetchPA('forecast', { month: diaObjetivoDate.getMonth()+1, year: diaObjetivoDate.getFullYear(), tienda: st.key });
-        budgetPorDiaPorTienda[st.key] = (b && b['TODAS'] && b['TODAS'].porDia) || {};
-      } catch(e) { budgetPorDiaPorTienda[st.key] = {}; }
-    }));
+    storesADesglosar.forEach((st, i) => {
+      histMapsPorTienda[st.key] = histMapsArr[i];
+      const b = budgetsArr[i];
+      budgetPorDiaPorTienda[st.key] = (b && b['TODAS'] && b['TODAS'].porDia) || {};
+    });
+
+    const histMapTodas = {};
+    storesADesglosar.forEach(st => {
+      Object.entries(histMapsPorTienda[st.key]).forEach(([f,v])=>{
+        if(!histMapTodas[f]) histMapTodas[f] = { ventas:0, trans:0 };
+        histMapTodas[f].ventas += v.ventas||0;
+        histMapTodas[f].trans  += v.trans||0;
+      });
+    });
     const budgetPorDiaTodas = {};
-    PA_STORES.forEach(st => {
+    storesADesglosar.forEach(st => {
       Object.entries(budgetPorDiaPorTienda[st.key]).forEach(([d,v])=>{
         budgetPorDiaTodas[d] = (budgetPorDiaTodas[d]||0) + v;
       });
     });
-    const budgetPorDiaSel = paTiendaSel()==='todas' ? budgetPorDiaTodas : (budgetPorDiaPorTienda[paTiendaSel()]||{});
+
+    // histMap/budget "del contexto actual" (lo que alimenta los KPIs de
+    // arriba): si hay una tienda elegida, el de esa tienda; si es "todas",
+    // el combinado recién armado. Ya no hace falta un fetch aparte para
+    // esto — antes se pedía el mismo historial DOS veces (uno general +
+    // uno por tienda).
+    const histMap = tiendaSel === 'todas' ? histMapTodas : histMapsPorTienda[tiendaSel];
+    const budgetPorDiaSel = tiendaSel === 'todas' ? budgetPorDiaTodas : budgetPorDiaPorTienda[tiendaSel];
 
     empty.style.display = 'none';
 
@@ -7515,26 +7548,16 @@ async function cargarPADashboard(){
 
     setTxt('paFichaRangoAcum', `Acumulado: ${rangoIni} → ${rangoFin}`);
 
-    // ── Detalle por Tienda: una fila por tienda + TODAS, sin importar cuál
-    // esté elegida en el selector de arriba — mismo criterio que la tabla
-    // equivalente de Costa Rica. Trae el historial de CADA tienda por
-    // separado (no el de la seleccionada) para poder calcular cada fila.
-    const histMapsPorTienda = {};
-    await Promise.all(PA_STORES.map(async st => {
-      histMapsPorTienda[st.key] = await fetchPADiario(fetchDesde, fetchHasta, st.key);
-    }));
-    const histMapTodas = {};
-    PA_STORES.forEach(st => {
-      Object.entries(histMapsPorTienda[st.key]).forEach(([f,v])=>{
-        if(!histMapTodas[f]) histMapTodas[f] = { ventas:0, trans:0 };
-        histMapTodas[f].ventas += v.ventas||0;
-        histMapTodas[f].trans  += v.trans||0;
-      });
-    });
-    const filasTienda = [
-      { key:'TODAS', nombre:'TODAS', ...calcularFilaTiendaPA(histMapTodas, diaObjetivo, hace7Str, rangoIni, rangoFin, budgetPorDiaTodas) },
-      ...PA_STORES.map(st => ({ key:st.key, nombre:st.nombre, ...calcularFilaTiendaPA(histMapsPorTienda[st.key], diaObjetivo, hace7Str, rangoIni, rangoFin, budgetPorDiaPorTienda[st.key]) }))
-    ];
+    // ── Detalle por Tienda: con "Todas las tiendas" elegido, una fila por
+    // tienda + TODAS (igual que Costa Rica); con una tienda específica
+    // elegida, se limita a esa sola fila — ya no aparece la otra tienda
+    // "colada" cuando el usuario filtró a una en particular.
+    const filasTienda = tiendaSel === 'todas'
+      ? [
+          { key:'TODAS', nombre:'TODAS', ...calcularFilaTiendaPA(histMapTodas, diaObjetivo, hace7Str, rangoIni, rangoFin, budgetPorDiaTodas) },
+          ...PA_STORES.map(st => ({ key:st.key, nombre:st.nombre, ...calcularFilaTiendaPA(histMapsPorTienda[st.key], diaObjetivo, hace7Str, rangoIni, rangoFin, budgetPorDiaPorTienda[st.key]) }))
+        ]
+      : storesADesglosar.map(st => ({ key:st.key, nombre:st.nombre, ...calcularFilaTiendaPA(histMapsPorTienda[st.key], diaObjetivo, hace7Str, rangoIni, rangoFin, budgetPorDiaPorTienda[st.key]) }));
     renderTablaTiendaPADash(filasTienda);
 
     cargarCanalesPADash(rangoIni, rangoFin, diaObjetivo);
