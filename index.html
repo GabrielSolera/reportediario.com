@@ -1377,7 +1377,14 @@ body.modo-vista-unica .hamburger{ display:none !important; }
         <div id="reporteCompAviso" style="display:none;font-size:11px;color:var(--amber);background:rgba(224,166,42,.12);padding:8px 10px;border-radius:6px"></div>
       </div>
       <div class="card" style="margin-bottom:16px">
-        <div class="card-header"><span class="card-title">Tendencia</span></div>
+        <div class="card-header">
+          <span class="card-title">Tendencia</span>
+          <div class="tab-pills" id="reporteMetricaTabs">
+            <button class="tab-pill active" onclick="setReporteMetrica('venta',this)">Venta</button>
+            <button class="tab-pill" id="btnReporteMetricaPedidos" onclick="setReporteMetrica('transacciones',this)">Transacciones</button>
+            <button class="tab-pill" id="btnReporteMetricaTicket" onclick="setReporteMetrica('ticket',this)">Ticket medio</button>
+          </div>
+        </div>
         <div class="card-body">
           <div class="chart-wrap" style="height:220px"><canvas id="chartReporteLineal"></canvas></div>
           <div id="reporteInsights" style="margin-top:12px"></div>
@@ -2158,7 +2165,14 @@ body.modo-vista-unica .hamburger{ display:none !important; }
       </div>
 
       <div class="card" style="margin-bottom:16px">
-        <div class="card-header"><span class="card-title">Tendencia</span></div>
+        <div class="card-header">
+          <span class="card-title">Tendencia</span>
+          <div class="tab-pills" id="paReporteMetricaTabs">
+            <button class="tab-pill active" onclick="setPAReporteMetrica('venta',this)">Venta</button>
+            <button class="tab-pill" id="btnPAReporteMetricaPedidos" onclick="setPAReporteMetrica('transacciones',this)">Transacciones</button>
+            <button class="tab-pill" id="btnPAReporteMetricaTicket" onclick="setPAReporteMetrica('ticket',this)">Ticket medio</button>
+          </div>
+        </div>
         <div class="card-body">
           <div class="chart-wrap" style="height:220px"><canvas id="paChartReporteLineal"></canvas></div>
           <div id="paReporteInsights" style="margin-top:12px"></div>
@@ -3460,6 +3474,39 @@ let datosReporteSSSRaw = null;    // datos crudos del mismo rango, año anterior
 let datosHoraCompRaw = null;      // ventas por hora del período comparado (mismo rango que datosReporteSSSRaw)
 let chartReporteInstance = null;
 
+// Tendencia por venta ($), transacciones (pedidos) o ticket medio. A
+// diferencia de Panamá, en CR sí hay pedidos reales por canal (Toteat trae
+// payment_forms por orden — ver obtenerHistorialDiarioPorTiendaCanal), así
+// que el toggle solo se deshabilita con MÁS DE UN canal seleccionado a la
+// vez (ahí el gráfico dibuja una línea por canal usando historialCanales,
+// que solo trae montos, no pedidos por canal individual).
+let reporteMetrica = 'venta';
+
+function setReporteMetrica(metrica, btn) {
+  if (btn && btn.disabled) return;
+  reporteMetrica = metrica;
+  document.querySelectorAll('#reporteMetricaTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  aplicarGranularidadReporte();
+}
+
+function actualizarDisponibilidadMetricaReporte() {
+  const seleccionados = reporteCanalActual() !== 'todos' ? reporteCanalActual().split(',') : [];
+  const multiCanal = seleccionados.length > 1;
+  const aviso = 'No disponible con más de un canal filtrado a la vez — elegí un solo canal, o "Todos los canales".';
+  ['btnReporteMetricaPedidos', 'btnReporteMetricaTicket'].forEach(id => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = multiCanal;
+    b.title = multiCanal ? aviso : '';
+  });
+  if (multiCanal && reporteMetrica !== 'venta') {
+    reporteMetrica = 'venta';
+    document.querySelectorAll('#reporteMetricaTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#reporteMetricaTabs .tab-pill').classList.add('active');
+  }
+}
+
 // Canal(es) seleccionado(s) en el filtro de Reporte Diario ('todos' si no
 // existe el control, o CSV de claves ej. "uber,peya" con dos o más).
 function reporteCanalActual() {
@@ -3514,6 +3561,8 @@ function onReporteCanalChkChange() {
     btn.textContent = marcados.length + ' canales seleccionados ▾';
   }
 
+  actualizarDisponibilidadMetricaReporte();
+
   // Recarga en cada click — a diferencia del selector de tiendas, acá no
   // hace falta esperar a "Actualizar" porque cargarReporteDiario() ahora
   // descarta cualquier respuesta que no sea la de la llamada más reciente
@@ -3540,7 +3589,12 @@ async function cargarReporteDiario() {
   if(!fi||!ff) return;
   const miReqId = ++reporteDiarioReqId;
   const url = `${APPS_SCRIPT_URL}?action=reporteDiario&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`;
-  const necesitaCanales = canal !== 'todos';
+  // Con UN solo canal, "data" (reporteDiario) ya viene filtrado a ese canal
+  // y trae pedidos reales — no hace falta historialCanales (que solo trae
+  // montos). Con más de un canal sí hace falta, para pintar una línea por
+  // canal.
+  const seleccionadosPreview = canal !== 'todos' ? canal.split(',') : [];
+  const necesitaCanales = seleccionadosPreview.length > 1;
   const urlCanales = `${APPS_SCRIPT_URL}?action=historialCanales&tienda=${ts}&fechaInicio=${fi}&fechaFin=${ff}`;
   const tbody = document.getElementById('bodyReporte');
   tbody.innerHTML = `<tr><td colspan="100"><div class="empty-state"><div class="loader-ring" style="margin:0 auto"></div><div class="empty-txt">Cargando reporte...</div></div></td></tr>`;
@@ -3561,6 +3615,7 @@ async function cargarReporteDiario() {
       reporteVerSSS = false;
       const btnSSS = document.getElementById('btnVerSSSReporte');
       if(btnSSS) btnSSS.classList.remove('active');
+      actualizarDisponibilidadMetricaReporte();
       aplicarGranularidadReporte();
     } else {
       tbody.innerHTML=`<tr><td colspan="100"><div class="empty-state"><div class="empty-icon">❌</div><div class="empty-txt">${data?.message||'Error'}</div></div></td></tr>`;
@@ -3600,7 +3655,7 @@ async function cargarVentasPorHora() {
   try {
     const canal = reporteCanalActual();
     const seleccionados = canal !== 'todos' ? canal.split(',') : [];
-    const necesitaCanales = seleccionados.length > 0;
+    const necesitaCanales = seleccionados.length > 1;
     const [resp, respCanales] = await Promise.all([
       fetch(`${APPS_SCRIPT_URL}?action=ventasPorHora&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}&canal=${canal}`),
       necesitaCanales ? fetch(`${APPS_SCRIPT_URL}?action=ventasPorHoraCanales&fechaInicio=${fi}&fechaFin=${ff}&tienda=${ts}`) : Promise.resolve(null)
@@ -3896,20 +3951,39 @@ async function cargarReporteComparacion() {
   } catch(e) { console.error('Comparación reporte:', e); }
 }
 
+// Valor de un día/período según el toggle Venta / Transacciones / Ticket
+// medio. A diferencia de PA, CR SÍ trae transacciones reales por canal
+// (ver actualizarDisponibilidadMetricaReporte) — solo se restringe con
+// más de un canal filtrado a la vez.
+function valorPorMetricaReporte(d) {
+  if (!d || !d.tiendas) return null;
+  const _modo = modoVentaGlobal||modoReporte;
+  const venta = d.tiendas.reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0);
+  if (reporteMetrica === 'transacciones') return d.tiendas.reduce((s,t)=> s + (t.transacciones||0), 0);
+  if (reporteMetrica === 'ticket') {
+    const trans = d.tiendas.reduce((s,t)=> s + (t.transacciones||0), 0);
+    return trans > 0 ? venta/trans : null;
+  }
+  return venta;
+}
+
 function renderChartReporte(data, datosComp, datosCanales) {
   const canvas = document.getElementById('chartReporteLineal');
   if (!canvas || !window.Chart) return;
   const labels = data.map(d => d.etiqueta || (d.fecha||'').slice(5));
-  const _modo = modoVentaGlobal||modoReporte;
-  const totales = data.map(d => (d.tiendas||[]).reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0));
 
   const canalSel = reporteCanalActual();
   const seleccionados = canalSel !== 'todos' ? canalSel.split(',') : [];
-  let datasets, totalesComp = null, mostrarLeyenda, totalesInsight = totales;
+  const metricaEfectiva = seleccionados.length > 1 ? 'venta' : reporteMetrica;
+  const formatY = v => {
+    if (v===null || v===undefined) return '—';
+    return metricaEfectiva === 'transacciones' ? Math.round(v).toLocaleString('en-US') : crc(v);
+  };
+  let datasets, totalesComp = null, mostrarLeyenda;
 
-  if (seleccionados.length && datosCanales && datosCanales.length) {
-    // Una línea por canal seleccionado, con su color de marca — en vez del
-    // total combinado, para poder comparar cómo se comporta cada canal.
+  if (seleccionados.length > 1 && datosCanales && datosCanales.length) {
+    // Con más de un canal a la vez, historialCanales solo trae el monto por
+    // canal (sin transacciones) — este modo se queda en $, igual que PA.
     datasets = seleccionados.map(key => ({
       label: NOMBRES_CANAL_CORTO[key] || key,
       data: datosCanales.map(d => Math.round(d[key]||0)),
@@ -3922,28 +3996,25 @@ function renderChartReporte(data, datosComp, datosCanales) {
       borderWidth: 2
     }));
     mostrarLeyenda = true;
-    // Insights (día pico, promedio, etc.) sobre la suma de los canales
-    // visibles — sigue siendo útil aunque el chart ya no muestre un total.
-    totalesInsight = datosCanales.map(d => seleccionados.reduce((s,k)=> s + (d[k]||0), 0));
   } else {
+    // Con 0 o 1 canal seleccionado, "data" (reporteDiario) ya viene con
+    // transacciones reales — se puede graficar venta/transacciones/ticket y
+    // sumar la línea comparativa (que también viene ya filtrada al canal).
+    const canalUnico = seleccionados.length === 1 ? seleccionados[0] : null;
     datasets = [{
-      label: 'Período actual',
-      data: totales,
-      borderColor: '#7B4FE0',
-      backgroundColor: 'rgba(123,79,224,.15)',
-      fill: true,
+      label: canalUnico ? (NOMBRES_CANAL_CORTO[canalUnico] || canalUnico) : 'Período actual',
+      data: data.map(valorPorMetricaReporte),
+      borderColor: canalUnico ? (CANAL_COLORS_REPORTE[canalUnico] || '#7B4FE0') : '#7B4FE0',
+      backgroundColor: canalUnico ? 'transparent' : 'rgba(123,79,224,.15)',
+      fill: !canalUnico,
       tension: 0.3,
       pointRadius: 3,
-      pointBackgroundColor: '#7B4FE0'
+      pointBackgroundColor: canalUnico ? (CANAL_COLORS_REPORTE[canalUnico] || '#7B4FE0') : '#7B4FE0'
     }];
-    mostrarLeyenda = false;
+    mostrarLeyenda = !!canalUnico;
 
     if (datosComp && datosComp.length) {
-      totalesComp = data.map((_, i) => {
-        const dc = datosComp[i];
-        if (!dc || !dc.tiendas) return null;
-        return dc.tiendas.reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0);
-      });
+      totalesComp = data.map((_, i) => valorPorMetricaReporte(datosComp[i]));
       datasets.push({
         label: 'Período comparado',
         data: totalesComp,
@@ -3967,49 +4038,73 @@ function renderChartReporte(data, datosComp, datosCanales) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: mostrarLeyenda, labels:{color:'#9494C0',boxWidth:12,font:{size:10}} },
-        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label+': '+crc(ctx.parsed.y) } } },
+        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label+': '+formatY(ctx.parsed.y) } } },
       scales: {
-        y: { ticks: { callback: v => crc(v) } },
+        y: { ticks: { callback: v => formatY(v) } },
         x: { ticks: { maxRotation: 0 } }
       }
     }
   });
 
-  renderReporteInsights(labels, totalesInsight, totalesComp);
+  renderReporteInsights(labels, data, seleccionados.length > 1 ? null : datosComp, seleccionados.length > 1);
 }
 
-function renderReporteInsights(labels, totales, totalesComp) {
+function renderReporteInsights(labels, dias, diasComp, esCanalFiltrado) {
   const cont = document.getElementById('reporteInsights');
   if (!cont) return;
-  if (!totalesComp) { cont.innerHTML = ''; return; }
+  if (!diasComp) { cont.innerHTML = ''; return; }
+
+  const _modo = modoVentaGlobal||modoReporte;
+  const ventaDia = d => (d.tiendas||[]).reduce((s,t)=> s + (_modo==='bruto' ? (t.ventasBrutas||t.ventasNetas||0) : (t.ventasNetas||0)), 0);
+  const transDia = d => (d.tiendas||[]).reduce((s,t)=> s + (t.transacciones||0), 0);
 
   let peorIdx = -1, peorDelta = Infinity, mejorIdx = -1, mejorDelta = -Infinity;
-  let sumaActual = 0, sumaComp = 0;
-  for (let i=0; i<totales.length; i++) {
-    const comp = totalesComp[i];
-    if (comp===null || comp===undefined || comp<=0) continue;
-    const delta = (totales[i]-comp)/comp*100;
+  let sumaVentaActual = 0, sumaVentaComp = 0;
+  let sumaPedidosActual = 0, sumaPedidosComp = 0;
+  let huboComp = false;
+
+  for (let i=0; i<dias.length; i++) {
+    const comp = diasComp[i];
+    const ventaCompDia = comp ? ventaDia(comp) : 0;
+    if (!comp || !(ventaCompDia > 0)) continue;
+    huboComp = true;
+    const ventaActualDia = ventaDia(dias[i]);
+    const delta = (ventaActualDia - ventaCompDia) / ventaCompDia * 100;
     if (delta < peorDelta) { peorDelta = delta; peorIdx = i; }
     if (delta > mejorDelta) { mejorDelta = delta; mejorIdx = i; }
-    sumaActual += totales[i];
-    sumaComp += comp;
+    sumaVentaActual += ventaActualDia;
+    sumaVentaComp += ventaCompDia;
+    sumaPedidosActual += transDia(dias[i]);
+    sumaPedidosComp += transDia(comp);
   }
-  const deltaTotal = sumaComp > 0 ? (sumaActual-sumaComp)/sumaComp*100 : null;
 
   // Comparativo activo pero sin un solo día con venta en el período
   // comparado — la línea punteada queda invisible (todo null); avisarlo en
   // vez de dejar la caja de insights en blanco sin explicación.
-  if (sumaComp === 0) {
+  if (!huboComp) {
     cont.innerHTML = '<div style="font-size:11px;color:var(--amber);background:rgba(224,166,42,.12);padding:8px 12px;border-radius:8px">⚠️ El período comparado no tiene ventas registradas para esta tienda — por eso no se ve la línea de comparación.</div>';
     return;
   }
 
+  const deltaVenta = sumaVentaComp > 0 ? (sumaVentaActual-sumaVentaComp)/sumaVentaComp*100 : null;
+  const deltaPedidos = (!esCanalFiltrado && sumaPedidosComp > 0) ? (sumaPedidosActual-sumaPedidosComp)/sumaPedidosComp*100 : null;
+
   let html = '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px">';
-  if (deltaTotal !== null) {
-    const subiendo = deltaTotal >= 0;
+  if (deltaVenta !== null) {
+    const subiendo = deltaVenta >= 0;
+    const diffVenta = sumaVentaActual - sumaVentaComp;
     html += `<div style="background:rgba(123,79,224,.15);border-radius:8px;padding:8px 12px">
-      <span style="color:${subiendo?'var(--teal)':'var(--red)'};font-weight:700">${subiendo?'↑':'↓'} Total del período:</span> ${crc(sumaActual)} (${subiendo?'+':''}${deltaTotal.toFixed(1)}% vs período comparado, ${crc(sumaComp)})
+      <span style="color:${subiendo?'var(--teal)':'var(--red)'};font-weight:700">${subiendo?'↑':'↓'} Venta del período:</span> ${crc(sumaVentaActual)} (${subiendo?'+':''}${crc(diffVenta)}, ${subiendo?'+':''}${deltaVenta.toFixed(1)}% vs ${crc(sumaVentaComp)})
     </div>`;
+  }
+  if (deltaPedidos !== null) {
+    const subiendoP = deltaPedidos >= 0;
+    const diffPedidos = sumaPedidosActual - sumaPedidosComp;
+    html += `<div style="background:rgba(123,79,224,.15);border-radius:8px;padding:8px 12px">
+      <span style="color:${subiendoP?'var(--teal)':'var(--red)'};font-weight:700">${subiendoP?'↑':'↓'} Pedidos del período:</span> ${sumaPedidosActual.toLocaleString('en-US')} (${subiendoP?'+':''}${diffPedidos.toLocaleString('en-US')}, ${subiendoP?'+':''}${deltaPedidos.toFixed(1)}% vs ${sumaPedidosComp.toLocaleString('en-US')})
+    </div>`;
+  } else if (esCanalFiltrado) {
+    html += `<div style="background:var(--surface2);border-radius:8px;padding:8px 12px;color:var(--muted)">Pedidos no disponibles con más de un canal filtrado a la vez.</div>`;
   }
   if (peorIdx >= 0) {
     html += `<div style="background:rgba(229,66,122,.12);border-radius:8px;padding:8px 12px">
@@ -7800,6 +7895,7 @@ function onPAReporteCanalChkChange() {
     btn.textContent = marcados.length + ' canales seleccionados ▾';
   }
 
+  actualizarDisponibilidadMetricaPA();
   cargarPAReporteDesdeCero();
 }
 
@@ -7810,6 +7906,40 @@ function onPAReporteCanalChkChange() {
 let paReporteGranularidad = 'diario';
 let datosPAReporteRaw = null;        // historialDiario crudo del rango principal, sin agrupar
 let datosPACanalesReporteRaw = null; // historialCanales crudo del rango principal (solo si hay filtro de canal)
+
+// Tendencia por venta ($) o por transacciones (pedidos) — solo tiene sentido
+// "transacciones" cuando NO hay un canal filtrado: InvuPOS agrega los pagos
+// por canal por día sin order_id, así que transacciones siempre da 0 en ese
+// caso (ver handleHistorialDiarioPA). Con un canal activo, el botón queda
+// deshabilitado y se fuerza de vuelta a 'venta'.
+let paReporteMetrica = 'venta';
+
+function setPAReporteMetrica(metrica, btn) {
+  if (btn && btn.disabled) return;
+  paReporteMetrica = metrica;
+  document.querySelectorAll('#paReporteMetricaTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  aplicarGranularidadReportePA();
+}
+
+// Se llama cada vez que cambia el filtro de canal (checkboxes) o se recarga
+// desde cero — deshabilita "Transacciones" cuando hay un canal filtrado
+// (dato no disponible) y, si esa era la vista activa, vuelve a "Venta".
+function actualizarDisponibilidadMetricaPA() {
+  const hayCanalFiltrado = paReporteCanalActual() !== 'todos';
+  const aviso = 'No disponible con un canal filtrado — InvuPOS no da pedidos por canal, solo el monto.';
+  ['btnPAReporteMetricaPedidos', 'btnPAReporteMetricaTicket'].forEach(id => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = hayCanalFiltrado;
+    b.title = hayCanalFiltrado ? aviso : '';
+  });
+  if (hayCanalFiltrado && paReporteMetrica !== 'venta') {
+    paReporteMetrica = 'venta';
+    document.querySelectorAll('#paReporteMetricaTabs .tab-pill').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#paReporteMetricaTabs .tab-pill').classList.add('active');
+  }
+}
 
 function agruparDatosReportePA(data, granularidad) {
   if (!data) return [];
@@ -7961,41 +8091,62 @@ async function cargarPAReporteComparacion() {
   }
 }
 
-// Igual que renderReporteInsights() de CR, pero en USD y sobre el
-// contenedor de Panamá.
-function renderPAReporteInsights(labels, totales, totalesComp) {
+// dias/diasComp: arrays de {fecha, etiqueta?, ventasNetas, transacciones}
+// del rango actual y del comparado (ya agrupados según la granularidad
+// activa). esCanalFiltrado: true si hay un canal específico elegido —
+// InvuPOS no da pedidos por canal (solo el monto), así que esa parte del
+// resumen se reemplaza por una nota en vez de mostrar 0 pedidos.
+function renderPAReporteInsights(labels, dias, diasComp, esCanalFiltrado) {
   const cont = document.getElementById('paReporteInsights');
   if (!cont) return;
-  if (!totalesComp) { cont.innerHTML = ''; return; }
+  if (!diasComp) { cont.innerHTML = ''; return; }
 
   let peorIdx = -1, peorDelta = Infinity, mejorIdx = -1, mejorDelta = -Infinity;
-  let sumaActual = 0, sumaComp = 0;
-  for (let i=0; i<totales.length; i++) {
-    const comp = totalesComp[i];
-    if (comp===null || comp===undefined || comp<=0) continue;
-    const delta = (totales[i]-comp)/comp*100;
+  let sumaVentaActual = 0, sumaVentaComp = 0;
+  let sumaPedidosActual = 0, sumaPedidosComp = 0;
+  let huboComp = false;
+
+  for (let i=0; i<dias.length; i++) {
+    const comp = diasComp[i];
+    if (!comp || !(comp.ventasNetas > 0)) continue;
+    huboComp = true;
+    const delta = (dias[i].ventasNetas - comp.ventasNetas) / comp.ventasNetas * 100;
     if (delta < peorDelta) { peorDelta = delta; peorIdx = i; }
     if (delta > mejorDelta) { mejorDelta = delta; mejorIdx = i; }
-    sumaActual += totales[i];
-    sumaComp += comp;
+    sumaVentaActual += dias[i].ventasNetas;
+    sumaVentaComp += comp.ventasNetas;
+    sumaPedidosActual += dias[i].transacciones || 0;
+    sumaPedidosComp += comp.transacciones || 0;
   }
-  const deltaTotal = sumaComp > 0 ? (sumaActual-sumaComp)/sumaComp*100 : null;
 
   // Comparativo activo pero sin un solo día con venta en el período
   // comparado (ej. un rango anterior a la apertura de San Francisco, en
   // mayo 2026) — la línea punteada queda invisible (todo null); avisarlo
   // en vez de dejar la caja de insights en blanco sin explicación.
-  if (sumaComp === 0) {
+  if (!huboComp) {
     cont.innerHTML = '<div style="font-size:11px;color:var(--amber);background:rgba(224,166,42,.12);padding:8px 12px;border-radius:8px">⚠️ El período comparado no tiene ventas registradas — por eso no se ve la línea de comparación. San Francisco abrió el 9 de mayo de 2026: verificá que el rango comparado sea posterior a esa fecha.</div>';
     return;
   }
 
+  const deltaVenta = sumaVentaComp > 0 ? (sumaVentaActual-sumaVentaComp)/sumaVentaComp*100 : null;
+  const deltaPedidos = (!esCanalFiltrado && sumaPedidosComp > 0) ? (sumaPedidosActual-sumaPedidosComp)/sumaPedidosComp*100 : null;
+
   let html = '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px">';
-  if (deltaTotal !== null) {
-    const subiendo = deltaTotal >= 0;
+  if (deltaVenta !== null) {
+    const subiendo = deltaVenta >= 0;
+    const diffVenta = sumaVentaActual - sumaVentaComp;
     html += `<div style="background:rgba(123,79,224,.15);border-radius:8px;padding:8px 12px">
-      <span style="color:${subiendo?'var(--teal)':'var(--red)'};font-weight:700">${subiendo?'↑':'↓'} Total del período:</span> ${fmtUSD(sumaActual)} (${subiendo?'+':''}${deltaTotal.toFixed(1)}% vs período comparado, ${fmtUSD(sumaComp)})
+      <span style="color:${subiendo?'var(--teal)':'var(--red)'};font-weight:700">${subiendo?'↑':'↓'} Venta del período:</span> ${fmtUSD(sumaVentaActual)} (${subiendo?'+':''}${fmtUSD(diffVenta)}, ${subiendo?'+':''}${deltaVenta.toFixed(1)}% vs ${fmtUSD(sumaVentaComp)})
     </div>`;
+  }
+  if (deltaPedidos !== null) {
+    const subiendoP = deltaPedidos >= 0;
+    const diffPedidos = sumaPedidosActual - sumaPedidosComp;
+    html += `<div style="background:rgba(123,79,224,.15);border-radius:8px;padding:8px 12px">
+      <span style="color:${subiendoP?'var(--teal)':'var(--red)'};font-weight:700">${subiendoP?'↑':'↓'} Pedidos del período:</span> ${sumaPedidosActual.toLocaleString('en-US')} (${subiendoP?'+':''}${diffPedidos.toLocaleString('en-US')}, ${subiendoP?'+':''}${deltaPedidos.toFixed(1)}% vs ${sumaPedidosComp.toLocaleString('en-US')})
+    </div>`;
+  } else if (esCanalFiltrado) {
+    html += `<div style="background:var(--surface2);border-radius:8px;padding:8px 12px;color:var(--muted)">Pedidos por canal no disponibles — InvuPOS solo da el monto, no el detalle de pedidos por canal.</div>`;
   }
   if (peorIdx >= 0) {
     html += `<div style="background:rgba(229,66,122,.12);border-radius:8px;padding:8px 12px">
@@ -8017,6 +8168,7 @@ function cargarPAReporteDesdeCero() {
   datosPAHoraCompRaw = null;
   const btnSSS = document.getElementById('btnVerSSSReportePA');
   if (btnSSS) btnSSS.classList.remove('active');
+  actualizarDisponibilidadMetricaPA();
   cargarPAReporte();
 }
 
@@ -8067,10 +8219,26 @@ function generarTablaReportePA(dias) {
     : `<tr class="total-row"><td>TOTAL</td><td style="text-align:center">${totalPedidos}</td><td style="text-align:right;font-family:var(--mono)">${fmtUSD(totalVentas)}</td><td style="text-align:right;font-family:var(--mono)">${fmtUSD(ticketProm)}</td></tr>`;
 }
 
+// Valor de un día/período según la métrica elegida en el toggle Venta /
+// Transacciones / Ticket medio. Transacciones y Ticket medio solo tienen
+// sentido sin canal filtrado (ver actualizarDisponibilidadMetricaPA) — con
+// canal activo, el campo real siempre es ventasNetas.
+function valorPorMetricaPA(d) {
+  if (!d) return null;
+  if (paReporteMetrica === 'transacciones') return d.transacciones;
+  if (paReporteMetrica === 'ticket') return d.transacciones > 0 ? d.ventasNetas / d.transacciones : null;
+  return d.ventasNetas;
+}
+
 function renderChartReportePA(dias, diasComp, datosCanalesAgrupados) {
   const canal = paReporteCanalActual();
   const seleccionadosPA = canal !== 'todos' ? canal.split(',') : [];
   const labelsTend = dias.map(d => d.etiqueta || d.fecha.slice(5));
+  const metricaEfectiva = seleccionadosPA.length ? 'venta' : paReporteMetrica;
+  const formatY = v => {
+    if (v===null || v===undefined) return '—';
+    return metricaEfectiva === 'transacciones' ? Math.round(v).toLocaleString('en-US') : fmtUSD(v);
+  };
   let datasetsTend, mostrarLeyendaPA;
   let totalesComp = null;
 
@@ -8084,12 +8252,25 @@ function renderChartReportePA(dias, diasComp, datosCanalesAgrupados) {
       fill: false, tension: .3, pointRadius: 2
     }));
     mostrarLeyendaPA = true;
+
+    // Comparativo con UN solo canal seleccionado: datosPAReporteSSSRaw ya
+    // viene filtrado al mismo canal (cargarPAReporteComparacion manda el
+    // canal activo) — con varios canales a la vez no se agrega, se satura
+    // visualmente y ya se distingue cada canal por color.
+    if (seleccionadosPA.length === 1 && paReporteVerSSS && diasComp) {
+      totalesComp = dias.map((_, i) => diasComp[i] ? diasComp[i].ventasNetas : null);
+      datasetsTend.push({
+        label: 'Período comparado', data: totalesComp,
+        borderColor: '#E5427A', backgroundColor: 'transparent', borderDash: [5,4],
+        tension: .3, pointRadius: 2, pointBackgroundColor: '#E5427A', spanGaps: true
+      });
+    }
   } else {
-    datasetsTend = [{ label: 'Período actual', data: dias.map(d => d.ventasNetas), borderColor: '#7B4FE0', backgroundColor: 'rgba(123,79,224,.15)', fill: true, tension: .3, pointRadius: 2 }];
+    datasetsTend = [{ label: 'Período actual', data: dias.map(valorPorMetricaPA), borderColor: '#7B4FE0', backgroundColor: 'rgba(123,79,224,.15)', fill: true, tension: .3, pointRadius: 2 }];
     mostrarLeyendaPA = false;
 
     if (paReporteVerSSS && diasComp) {
-      totalesComp = dias.map((_, i) => diasComp[i] ? diasComp[i].ventasNetas : null);
+      totalesComp = dias.map((_, i) => valorPorMetricaPA(diasComp[i]));
       datasetsTend.push({
         label: 'Período comparado', data: totalesComp,
         borderColor: '#E5427A', backgroundColor: 'transparent', borderDash: [5,4],
@@ -8098,17 +8279,21 @@ function renderChartReportePA(dias, diasComp, datosCanalesAgrupados) {
       mostrarLeyendaPA = true;
     }
   }
-  renderPAReporteInsights(labelsTend, dias.map(d => d.ventasNetas), totalesComp);
+  renderPAReporteInsights(labelsTend, dias, (paReporteVerSSS ? diasComp : null), seleccionadosPA.length > 0);
   if (paChartReporteInstance) paChartReporteInstance.destroy();
   paChartReporteInstance = new Chart(document.getElementById('paChartReporteLineal'), {
     type: 'line',
     data: { labels: labelsTend, datasets: datasetsTend },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: mostrarLeyendaPA, labels:{color:'var(--muted)',boxWidth:12,font:{size:10}} }, datalabels: { display: false } },
+      plugins: {
+        legend: { display: mostrarLeyendaPA, labels:{color:'var(--muted)',boxWidth:12,font:{size:10}} },
+        datalabels: { display: false },
+        tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${formatY(item.parsed.y)}` } }
+      },
       scales: {
         x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
-        y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => fmtUSD(v) } }
+        y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => formatY(v) } }
       }
     }
   });
