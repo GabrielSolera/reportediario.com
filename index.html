@@ -3083,6 +3083,7 @@ async function cargarDatos(forzar=false) {
   if(seccion === 'section-estacionalidad'){ estacLoaded=false; await cargarEstacionalidad(); return; }
   if(seccion === 'section-analisis'){ anlLastTienda=null; await cargarAnalisis(); return; }
   if(seccion === 'section-plproyectado'){ await cargarPLProyectado(); return; }
+  if(seccion === 'section-proyeccion'){ await runProjection(); return; }
 
   const ff = new Date(fechaFinInput+'T12:00:00');
   const day=ff.getDate(), month=ff.getMonth()+1, year=ff.getFullYear();
@@ -7378,6 +7379,7 @@ async function cargarDatosPA(forzar=false) {
   if (seccion === 'section-pa-canales')   { await cargarPACanales(); return; }
   if (seccion === 'section-pa-productos') { await cargarPAProductos(); return; }
   if (seccion === 'section-pa-analisis')  { await cargarAnalisisPA(); return; }
+  if (seccion === 'section-pa-proyeccion'){ await runProjectionPA(); return; }
   await cargarPADashboard();
 }
 
@@ -8644,6 +8646,54 @@ async function fetchPADiario(fromDate, toDate, tienda){
   return byDate;
 }
 
+// Una tienda con menos días de venta que esto no tiene historia suficiente
+// para proyectar por promedios (cada día de la semana necesita ~4 muestras)
+// — se proyecta con el presupuesto cargado en vez de extrapolar las primeras
+// semanas de apertura (Brisas del Golf abrió el 19-sep-2026).
+const PA_PROY_MIN_DIAS_HISTORIAL = 28;
+
+function recortarRangoPA(byDate, desde, hasta){
+  const out = {};
+  Object.keys(byDate).forEach(f=>{ if(f>=desde && f<=hasta) out[f] = byDate[f]; });
+  return out;
+}
+
+// Reemplaza la parte "proyectada" de una proyección por el presupuesto diario
+// de la tienda; los días con venta real se respetan tal cual.
+function proyeccionDesdePresupuestoPA(proy, pptoDia){
+  const days = proy.days.map(d=>{
+    if(d.isReal) return d;
+    const projected = Math.round(Number(pptoDia[Number(d.date.slice(8,10))]) || 0);
+    const v = d.isWeekend ? .25 : .20;
+    return { ...d, projected, low: Math.round(projected*(1-v)), high: Math.round(projected*(1+v)), confidence: 55 };
+  });
+  return { ...proy, days };
+}
+
+// Suma las proyecciones de cada tienda día por día.
+function combinarProyeccionesPA(porTienda){
+  const base = porTienda[0].proy;
+  const days = base.days.map((d,i)=>{
+    const partes = porTienda.map(t=>t.proy.days[i]);
+    const projected = partes.reduce((s,p)=>s+p.projected,0);
+    const low  = partes.reduce((s,p)=>s+p.low,0);
+    const high = partes.reduce((s,p)=>s+p.high,0);
+    const isReal = partes.some(p=>p.isReal);
+    const confidence = isReal ? 100
+      : (projected>0 ? Math.round(partes.reduce((s,p)=>s+p.confidence*p.projected,0)/projected) : d.confidence);
+    return { ...d, projected, low, high, isReal, confidence };
+  });
+  return {
+    ...base, days,
+    totalMesAnteriorReal: porTienda.reduce((s,t)=>s+(t.proy.totalMesAnteriorReal||0),0),
+    baseDias: porTienda.reduce((s,t)=>s+t.proy.baseDias,0),
+    porTienda: porTienda.map(t=>({
+      key:t.key, nombre:t.nombre, fuente:t.fuente, diasHistorial:t.diasHistorial,
+      total: t.proy.days.reduce((s,d)=>s+d.projected,0)
+    }))
+  };
+}
+
 async function runProjectionPA(){
   const monthVal = document.getElementById('paProyMonth').value;
   const histFrom = document.getElementById('paProyHistFrom').value;
@@ -8657,47 +8707,74 @@ async function runProjectionPA(){
   const isCurMes = today.getFullYear()===tY && today.getMonth()+1===tM;
   const lastRealDay = isCurMes ? today.getDate() : 0;
 
+  // Se proyecta CADA tienda por separado y se suman: con el historial de
+  // "todas" combinado, una tienda recién abierta (Brisas del Golf) casi no
+  // pesa y la proyección terminaba reflejando solo a San Francisco.
+  const sel = paTiendaSel();
+  const stores = sel === 'todas' ? PA_STORES : PA_STORES.filter(s=>s.key===sel);
+
   showLoader(true,'Calculando proyección Panamá...','Historial base...');
   document.getElementById('paProyRunBtn').disabled = true;
   document.getElementById('paProyExcelBtn').style.display = 'none';
 
   try{
-    const historical = await fetchPADiario(histFrom, histTo);
-    const totalDias = Object.keys(historical).length;
-    if(totalDias === 0){
-      throw new Error('El historial llegó vacío desde el Apps Script de Panamá.\n\nVerificá el rango de fechas (PA solo tiene datos desde el 9-may-2026).');
-    }
-    if(totalDias < 7){
-      const ok = confirm(`⚠️ Pocos datos de historial (${totalDias} días).\nLa proyección puede ser poco confiable.\n¿Continuás?`);
-      if(!ok){ showLoader(false); document.getElementById('paProyRunBtn').disabled=false; return; }
-    }
+    const pad = n=>String(n).padStart(2,'0');
+    const curFrom = `${tY}-${pad(tM)}-01`;
+    const curTo   = lastRealDay >= 1 ? `${tY}-${pad(tM)}-${pad(lastRealDay)}` : null;
+    // Un solo fetch por tienda que cubre el historial base Y el mes en curso.
+    const desde = (curTo && curFrom < histFrom) ? curFrom : histFrom;
+    const hasta = (curTo && curTo > histTo) ? curTo : histTo;
 
-    let currentMonth = {};
-    if(lastRealDay >= 1){
-      const pad = n=>String(n).padStart(2,'0');
-      const curFrom = `${tY}-${pad(tM)}-01`;
-      const curTo   = `${tY}-${pad(tM)}-${pad(lastRealDay)}`;
-      setStep('Datos reales del mes en curso...');
-      try{ currentMonth = await fetchPADiario(curFrom, curTo); }
-      catch(e){ console.warn('No se pudo cargar mes actual PA:', e); currentMonth = {}; }
-    }
+    setStep('Historial y presupuesto por tienda...');
+    const [datosPorTienda, pptoPorTienda] = await Promise.all([
+      Promise.all(stores.map(s => fetchPADiario(desde, hasta, s.key))),
+      Promise.all(stores.map(s => fetchPA('forecast', { month:tM, year:tY, tienda:s.key })
+        .then(r => (r && r['TODAS']) ? r['TODAS'] : null)
+        .catch(e => { console.warn('Presupuesto PA no disponible para', s.key, e.message); return null; })))
+    ]);
 
     setStep('Calculando promedios, calibración y tendencia...');
     await new Promise(r=>setTimeout(r,60));
 
-    paProyData = buildProjectionPA(historical, currentMonth, lastRealDay, tY, tM, histFrom, histTo);
+    const porTienda = stores.map((s,i)=>{
+      const datos = datosPorTienda[i] || {};
+      const historical   = recortarRangoPA(datos, histFrom, histTo);
+      const currentMonth = curTo ? recortarRangoPA(datos, curFrom, curTo) : {};
+      const diasHistorial = Object.values(historical).filter(v=>v && v.ventas>0).length;
+      const ppto    = pptoPorTienda[i];
+      const pptoMes = Number(ppto?.mensual) || 0;
+      const pptoDia = ppto?.porDia || {};
 
-    setStep('Cargando presupuesto...');
-    try{
-      const ppto = await fetchPA('forecast', { month:tM, year:tY, tienda: paTiendaSel() });
-      const pptoTodas = ppto && ppto['TODAS'];
-      paProyData.forecastPorDia  = pptoTodas?.porDia  || {};
-      paProyData.forecastMensual = pptoTodas?.mensual || 0;
-    }catch(e){
-      console.warn('Presupuesto PA no disponible todavía:', e.message);
-      paProyData.forecastPorDia  = {};
-      paProyData.forecastMensual = 0;
+      let proy = buildProjectionPA(historical, currentMonth, lastRealDay, tY, tM, histFrom, histTo);
+      let fuente = 'historial';
+      if(diasHistorial < PA_PROY_MIN_DIAS_HISTORIAL){
+        if(pptoMes > 0){ proy = proyeccionDesdePresupuestoPA(proy, pptoDia); fuente = 'presupuesto'; }
+        else fuente = 'historial-corto';
+      }
+      return { key:s.key, nombre:s.nombre, fuente, diasHistorial, proy, pptoMes, pptoDia };
+    });
+
+    const sinNada = porTienda.every(t=>t.diasHistorial===0 && t.pptoMes===0);
+    if(sinNada){
+      throw new Error('El historial llegó vacío desde el Apps Script de Panamá.\n\nVerificá el rango de fechas (PA solo tiene datos desde el 9-may-2026).');
     }
+    const todasCortas = porTienda.every(t=>t.fuente==='historial-corto');
+    const totalDias = porTienda.reduce((s,t)=>s+t.diasHistorial,0);
+    if(todasCortas && totalDias < 7){
+      const ok = confirm(`⚠️ Pocos datos de historial (${totalDias} días) y sin presupuesto cargado.\nLa proyección puede ser poco confiable.\n¿Continuás?`);
+      if(!ok){ showLoader(false); document.getElementById('paProyRunBtn').disabled=false; return; }
+    }
+
+    paProyData = combinarProyeccionesPA(porTienda);
+
+    // Presupuesto combinado de las tiendas incluidas (columnas de la tabla)
+    const fPorDia = {}; let fMes = 0;
+    porTienda.forEach(t=>{
+      fMes += t.pptoMes;
+      Object.keys(t.pptoDia).forEach(d=>{ fPorDia[d] = (fPorDia[d]||0) + (Number(t.pptoDia[d])||0); });
+    });
+    paProyData.forecastPorDia  = fPorDia;
+    paProyData.forecastMensual = fMes;
 
     setStep('Renderizando...');
     await new Promise(r=>setTimeout(r,50));
@@ -8859,7 +8936,15 @@ function renderProyKPIsPA(data){
 
   setTxt('paPkTotal', fmtKUSD(total));
   const ml = new Date(data.tY,data.tM-1).toLocaleDateString('es-PA',{month:'long',year:'numeric'});
-  setTxt('paPkTotalSub', ml.charAt(0).toUpperCase()+ml.slice(1));
+  let subTotal = ml.charAt(0).toUpperCase()+ml.slice(1);
+  const porT = data.porTienda || [];
+  const dePpto  = porT.filter(t=>t.fuente==='presupuesto').map(t=>t.nombre);
+  const cortas  = porT.filter(t=>t.fuente==='historial-corto').map(t=>t.nombre);
+  if(dePpto.length) subTotal += ` · ${dePpto.join(', ')}: según presupuesto`;
+  if(cortas.length) subTotal += ` · ${cortas.join(', ')}: historial corto, sin presupuesto`;
+  setTxt('paPkTotalSub', subTotal);
+  const elSub = document.getElementById('paPkTotalSub');
+  if(elSub) elSub.title = porT.map(t=>`${t.nombre}: ${fmtKUSD(t.total)} (${t.fuente==='presupuesto'?'presupuesto':'historial'}, ${t.diasHistorial} días de historia)`).join('\n');
 
   const elVsAnt = document.getElementById('paPkVsAnterior');
   if(elVsAnt){
@@ -9048,6 +9133,7 @@ function exportProyExcelPA(){
     ['OAKBERRY PANAMÁ — PROYECCIÓN DE VENTAS'],
     [`Mes proyectado: ${new Date(paProyData.tY,paProyData.tM-1).toLocaleDateString('es-PA',{month:'long',year:'numeric'})}`],
     [`Historial base: ${paProyData.histFrom} → ${paProyData.histTo}`],
+    [`Tiendas: ${(paProyData.porTienda||[]).map(t=>`${t.nombre} (${t.fuente==='presupuesto'?'según presupuesto':'según historial'})`).join(' · ')}`],
     [`Generado: ${new Date().toLocaleString('es-PA')}`],
     [],
     ['Fecha','Día semana','Proyección (US$)','Rango Bajo (US$)','Rango Alto (US$)','Confianza %'],
