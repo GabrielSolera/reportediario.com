@@ -43,21 +43,21 @@
   --radius:   14px;
 }
 html[data-theme="light"] {
-  --bg:       #F7F1F5;
+  --bg:       #F5F6FB;
   --surface:  #FFFFFF;
-  --surface2: #F3EAF0;
-  --surface3: #ECE0E8;
-  --border:   #E3D3DE;
-  --border2:  #D3BCCC;
-  --accent:   #7C3AA0;
-  --accent2:  #491f54;
-  --lime:     #5B8C3A;
-  --teal:     #178A68;
-  --amber:    #B8790F;
-  --red:      #C6433F;
-  --text:     #2E1235;
-  --muted:    #7A6478;
-  --muted2:   #B39CAE;
+  --surface2: #F0F1F8;
+  --surface3: #E7E9F3;
+  --border:   #E4E6F0;
+  --border2:  #D2D6E6;
+  --accent:   #7B4FE0;
+  --accent2:  #5A35B0;
+  --lime:     #3E8E2F;
+  --teal:     #0F7F65;
+  --amber:    #9A6508;
+  --red:      #C93A52;
+  --text:     #1D1F3A;
+  --muted:    #666A88;
+  --muted2:   #A0A4BE;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
@@ -75,7 +75,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 }
 .sidebar-logo{
   padding:22px 18px 18px;
-  border-bottom:1px solid rgba(42,42,58,.6);
+  border-bottom:1px solid var(--border);
   flex-shrink:0;
 }
 .logo-mark{display:flex;align-items:center;gap:10px;margin-bottom:3px;}
@@ -134,6 +134,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .nav-item.active .nav-icon svg{ color:#c084fc; }
 .nav-item:hover .nav-icon{ background:rgba(255,255,255,.07); }
 .nav-item:hover .nav-icon svg{ color:#a0a0c0; }
+/* Modo día: los fondos translúcidos blancos del sidebar no se ven sobre blanco */
+html[data-theme="light"] .nav-item:hover{background:rgba(29,31,58,.05);}
+html[data-theme="light"] .nav-item .nav-icon{background:rgba(29,31,58,.05);}
+html[data-theme="light"] .nav-item .nav-icon svg{color:var(--muted);}
+html[data-theme="light"] .nav-item:hover .nav-icon{background:rgba(29,31,58,.09);}
+html[data-theme="light"] .nav-item.active{background:rgba(123,79,224,.10);}
+html[data-theme="light"] .nav-item.active .nav-icon{background:rgba(123,79,224,.16);}
+html[data-theme="light"] .nav-item.active .nav-icon svg{color:var(--accent);}
 /* Phosphor: mostrar fill en activo, regular en resto */
 .nav-item .ph-fill{ display:none; }
 .nav-item .ph-regular{ display:block; }
@@ -150,7 +158,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 /* Modo toggle neto/bruto en sidebar footer */
 .sidebar-footer{
   padding:12px 14px 16px;
-  border-top:1px solid rgba(42,42,58,.6);
+  border-top:1px solid var(--border);
   flex-shrink:0;
 }
 .mode-toggle{
@@ -279,6 +287,50 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 #section-dashboard .grid-2 > .card:last-child .chart-wrap{height:90px;}
 #canalesBreakdown{flex:1;min-height:0;overflow-y:auto;}
 
+/* ══ Dashboard principal · estilo limpio (2026-11-02) ══
+   Solo #section-dashboard (las demás vistas siguen como estaban). KPIs en
+   tarjetas de superficie con un punto de color en lugar de degradados
+   saturados, tarjetas y tabla con más aire y números alineados. Todo con
+   variables del tema, así funciona en claro y oscuro. --pos/--neg: verde y
+   rosa de las variaciones (los % ya no usan el cian del tema oscuro). */
+#section-dashboard{ --pos:#3ECF9A; --neg:#FF6F91; }
+html[data-theme="light"] #section-dashboard{ --pos:#14805F; --neg:#C6433F; }
+#section-dashboard .grid-2, #section-dashboard .grid-3{gap:18px;margin-bottom:18px;}
+#dashKpis.kpi-grid{gap:14px;margin-bottom:18px;}
+#dashKpis .kpi{
+  background:var(--surface);color:var(--text);
+  border:1px solid var(--border);border-radius:16px;padding:16px 18px 14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.12);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+#dashKpis .kpi:hover{transform:none;border-color:var(--border2);box-shadow:0 6px 18px rgba(0,0,0,.16);}
+#dashKpis .kpi.k-purple{--kc:var(--accent);}
+#dashKpis .kpi.k-teal{--kc:#2FA9C4;}
+#dashKpis .kpi.k-lime{--kc:#5FAF48;}
+#dashKpis .kpi.k-amber{--kc:#E0A62A;}
+#dashKpis .kpi-label{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;letter-spacing:.08em;margin-bottom:8px;}
+#dashKpis .kpi-label::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--kc,var(--accent));flex:none;}
+#dashKpis .kpi-value{font-size:26px;line-height:1.15;letter-spacing:-.02em;color:var(--text);font-variant-numeric:tabular-nums;}
+#dashKpis .kpi-sub{color:var(--muted);font-size:11px;margin-top:6px;}
+#dashKpis .kpi-sub span{color:var(--text);}
+#dashKpis .kpi .kpi-delta{margin-top:8px;padding:2px 9px;background:var(--surface2);color:var(--muted);}
+#dashKpis .kpi .kpi-delta.d-pos{background:color-mix(in srgb,var(--pos) 16%,transparent);color:var(--pos);}
+#dashKpis .kpi .kpi-delta.d-neg{background:color-mix(in srgb,var(--neg) 16%,transparent);color:var(--neg);}
+#section-dashboard .card{border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.12);}
+#section-dashboard .card-header{padding:16px 20px;}
+#section-dashboard .card-title{font-size:12px;letter-spacing:.06em;color:var(--text);}
+#section-dashboard .card-body{padding:18px 20px;}
+/* con el header y el padding más holgados, las dos tarjetas de gráficos necesitan un poco más de alto para que el desglose de canales siga entrando */
+#section-dashboard .grid-2 .card{height:415px;}
+#section-dashboard .grid-2 > .card:last-child .card-body{padding-bottom:4px;}
+#section-dashboard #canalesBreakdown{padding:0 20px 16px;}
+#section-dashboard .store-table thead th{background:var(--surface2);padding:12px;}
+#section-dashboard .store-table tbody tr{border-bottom:1px solid var(--border);}
+#section-dashboard .store-table tbody tr:last-child{border-bottom:none;}
+#section-dashboard .store-table tbody td{padding:14px 12px;font-variant-numeric:tabular-nums;}
+#section-dashboard .store-table .total-row{background:color-mix(in srgb,var(--accent) 10%,transparent);}
+#section-dashboard .store-table .total-row td{border-bottom:1px solid var(--border2);}
+
 /* ── 2-COL GRID ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
@@ -292,7 +344,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   white-space:nowrap;
 }
 .store-table thead th:first-child{text-align:left;}
-.store-table tbody tr{border-bottom:1px solid rgba(42,42,58,.5);transition:background .12s;}
+.store-table tbody tr{border-bottom:1px solid var(--border);transition:background .12s;}
 .store-table tbody tr:hover{background:var(--surface2);}
 .store-table tbody td{padding:11px 12px;font-size:13px;text-align:right;font-family:var(--mono);}
 .store-table tbody td:first-child{text-align:left;font-family:var(--font);font-weight:700;font-size:13px;}
@@ -368,7 +420,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   border-bottom:1px solid var(--border);background:var(--surface2);
   white-space:nowrap;
 }
-.proy-table tbody tr{border-bottom:1px solid rgba(42,42,58,.4);transition:background .12s;}
+.proy-table tbody tr{border-bottom:1px solid var(--border);transition:background .12s;}
 .proy-table tbody tr:hover{background:var(--surface2);}
 .proy-table tbody td{padding:9px 12px;font-size:12px;}
 .row-weekend{background:rgba(168,85,247,.03);}
@@ -458,7 +510,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .canal-delta{font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-top:2px;display:inline-block;}
 
 /* ── Métrica mini row ── */
-.metrica-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(42,42,58,.4);}
+.metrica-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
 .metrica-row:last-child{border-bottom:none;}
 .metrica-label{font-size:11px;color:var(--muted);font-weight:600;}
 .metrica-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);}
@@ -2743,8 +2795,14 @@ if (typeof ChartDataLabels !== 'undefined') {
 }
 
 // ── Chart.js global defaults — override browser black ──
-Chart.defaults.color          = '#7070a0';
-Chart.defaults.borderColor    = 'rgba(42,42,58,.5)';
+// Colores de rejilla y textos de los gráficos según el tema (claro/oscuro).
+const CH = {
+  claro(){ return document.documentElement.getAttribute('data-theme') === 'light'; },
+  grid(){ return this.claro() ? 'rgba(29,31,58,.08)' : 'rgba(255,255,255,.07)'; },
+  tick(){ return this.claro() ? '#666A88' : '#9494C0'; }
+};
+Chart.defaults.color          = CH.tick();
+Chart.defaults.borderColor    = CH.grid();
 Chart.defaults.font.family    = "'Inter', sans-serif";
 Chart.defaults.font.size      = 11;
 Chart.defaults.plugins.tooltip.backgroundColor = '#1a1a24';
@@ -2799,6 +2857,17 @@ function aplicarTema(tema){
   Object.keys(coloresPorTema).forEach(k => {
     if (STORES[k]) STORES[k].color = coloresPorTema[k];
   });
+
+  // Gráficos: nuevos defaults y repintar los que ya están en pantalla (solo
+  // rejilla y textos de ejes; los datos no se vuelven a pedir).
+  try{
+    Chart.defaults.color = CH.tick(); Chart.defaults.borderColor = CH.grid();
+    Object.values(Chart.instances || {}).forEach(ch => {
+      const sc = (ch.options && ch.options.scales) || {};
+      Object.values(sc).forEach(ax => { if(ax.grid) ax.grid.color = CH.grid(); if(ax.ticks) ax.ticks.color = CH.tick(); });
+      ch.update('none');
+    });
+  }catch(e){}
 
   // Cambiar de tema NO recarga datos solo — mismo criterio que el filtro de
   // tiendas y las fechas: solo el botón "Actualizar" dispara una recarga.
@@ -3152,6 +3221,7 @@ function renderDashboard(data) {
   setTxt('kVentasDia', crc(ventaKpi));
   setTxt('kForecast',  crc(total.forecast));
   setTxt('kCrec',      pct(total.crecimientoDia));
+  const elKC = document.getElementById('kCrec'); if(elKC) elKC.style.color = num(total.crecimientoDia)>=0 ? 'var(--pos)' : 'var(--neg)';
   setTxt('kFechaRef',  (total.fechaRefDia||'—').split('/').slice(0,2).join('/'));
   setTxt('kAcum',      crc(total.ventasAcumuladas));
   setTxt('kTrans',     num(total.transacciones));
@@ -3188,6 +3258,7 @@ function renderDashboard(data) {
 }
 
 function renderTablaTiendas(data) {
+  const colorPct = v => v>=0 ? 'var(--pos)' : 'var(--neg)'; // verde/rosa del Dashboard (no el cian del tema)
   const tbody = document.getElementById('tablaTiendas');
   tbody.innerHTML = '';
   data.forEach(row => {
@@ -3200,16 +3271,16 @@ function renderTablaTiendas(data) {
     const esComparable = row.tienda==='TODAS' || row.tieneComparacionSSS !== false;
     const sssCelda = esComparable
       ? `<td style="padding-right:16px;color:${colorPct(ca)}">${pct(ca)}</td>`
-      : `<td style="padding-right:16px;color:var(--muted2)" title="Sin datos en el período comparado (tienda nueva o sin histórico)">—</td>`;
+      : `<td style="padding-right:16px;color:var(--muted)" title="Sin datos en el período comparado (tienda nueva o sin histórico)">—</td>`;
     const ventaDia  = modoVentaGlobal === 'bruto' ? (row.ventasBrutas||row.ventasNetas) : row.ventasNetas;
     const ventaAcum = modoVentaGlobal === 'bruto' ? (row.ventasBrutasAcum||row.ventasAcumuladas) : row.ventasAcumuladas;
     tr.innerHTML = `
       <td style="padding-left:16px">${row.tienda}</td>
-      <td style="color:var(--accent)">${crc(ventaDia)}</td>
+      <td style="font-weight:700">${crc(ventaDia)}</td>
       <td>${crc(row.forecast)}</td>
       <td style="color:${colorPct(df)}">${pct(df)}</td>
       <td style="color:${colorPct(cd)}">${pct(cd)}</td>
-      <td style="border-left:1px solid var(--border);color:var(--lime)">${crc(ventaAcum)}</td>
+      <td style="border-left:1px solid var(--border);font-weight:700">${crc(ventaAcum)}</td>
       <td>${crc(row.forecastAcumulado)}</td>
       <td style="color:${colorPct(dfa)}">${pct(dfa)}</td>
       ${sssCelda}`;
@@ -3228,6 +3299,9 @@ function renderChartTiendas(data, tipo) {
   const values  = tiendas.map(r=> modoVentaGlobal === 'bruto' ? num(r.ventasBrutas||r.ventasNetas) : num(r.ventasNetas));
   const colors  = [STORES.guachipelin.color, STORES.escazu.color, STORES.citymall.color, STORES.santaana.color];
 
+  // rejilla y textos suaves según el tema (antes: colores fijos del tema oscuro)
+  const claro = document.documentElement.getAttribute('data-theme')==='light';
+  const gridC = claro ? 'rgba(46,18,53,.08)' : 'rgba(255,255,255,.07)', tickC = claro ? '#7A6478' : '#9494C0';
   if(charts.tiendas) charts.tiendas.destroy();
   const ctx = document.getElementById('chartTiendas').getContext('2d');
   charts.tiendas = new Chart(ctx, {
@@ -3240,11 +3314,11 @@ function renderChartTiendas(data, tipo) {
       plugins:{ legend:{display:false}, datalabels:{display:false},
         tooltip:{ backgroundColor:'#1a1a24', titleColor:'#e8e8f0', bodyColor:'#7070a0', callbacks:{label:ctx=>' '+fmtK(esHorizontal?ctx.parsed.x:ctx.parsed.y)} } },
       scales: esHorizontal ? {
-        x:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11},callback:v=>fmtK(v)}},
-        y:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11}}}
+        x:{grid:{color:gridC,drawBorder:false},ticks:{color:tickC,font:{size:11},callback:v=>fmtK(v)}},
+        y:{grid:{color:gridC,drawBorder:false},ticks:{color:tickC,font:{size:11}}}
       } : {
-        x:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11}}},
-        y:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11},callback:v=>fmtK(v)}}
+        x:{grid:{color:gridC,drawBorder:false},ticks:{color:tickC,font:{size:11}}},
+        y:{grid:{color:gridC,drawBorder:false},ticks:{color:tickC,font:{size:11},callback:v=>fmtK(v)}}
       }
     }
   });
@@ -3282,8 +3356,8 @@ function renderChartCanales(total, tipo) {
       plugins:{ legend:{display:false}, datalabels:{display:false},
         tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.x)}} },
       scales:{
-        x:{grid:{color:'rgba(42,42,58,.5)',drawBorder:false},ticks:{color:'#7070a0',font:{size:11},callback:v=>fmtK(v)}},
-        y:{grid:{display:false},ticks:{color:'#7070a0',font:{size:11}}}
+        x:{grid:{color:CH.grid(),drawBorder:false},ticks:{color:CH.tick(),font:{size:11},callback:v=>fmtK(v)}},
+        y:{grid:{display:false},ticks:{color:CH.tick(),font:{size:11}}}
       }
     } : {
       responsive:true,maintainAspectRatio:false,cutout:'65%',
@@ -3760,8 +3834,8 @@ async function cargarVentasPorHora() {
           tooltip: esMultiCanal ? { callbacks: { label: (ctx2) => `${ctx2.dataset.label}: ${crc(ctx2.parsed.y)}` } } : { callbacks: { afterLabel: (c) => c.datasetIndex===0 ? `${pedidos[c.dataIndex]} pedidos prom.` : '' } }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
-          y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => fmtK(v) } }
+          x: { grid: { display: false }, ticks: { color: CH.tick(), font: { size: 10 } } },
+          y: { grid: { color: CH.grid() }, ticks: { color: CH.tick(), callback: v => fmtK(v) } }
         }
       }
     });
@@ -4711,8 +4785,8 @@ function renderProyChart(data){
     responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.y)}}},
     scales:{
-      x:{grid:{color:'rgba(42,42,58,.6)'},ticks:{color:'#7070a0',font:{size:9},maxRotation:0}},
-      y:{grid:{color:'rgba(42,42,58,.6)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}
+      x:{grid:{color:CH.grid()},ticks:{color:CH.tick(),font:{size:9},maxRotation:0}},
+      y:{grid:{color:CH.grid()},ticks:{color:CH.tick(),font:{size:9},callback:v=>fmtK(v)}}
     }
   };
   if(proyChartType==='bar'){
@@ -5272,13 +5346,13 @@ function renderCompChart(tiendas, ref){
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{
-        legend:{labels:{color:'#7070a0',font:{size:11},boxWidth:12}},
+        legend:{labels:{color:CH.tick(),font:{size:11},boxWidth:12}},
         datalabels:{display:false},
         tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.y)}}
       },
       scales:{
-        x:{grid:{color:'rgba(42,42,58,.5)'},ticks:{color:'#7070a0',font:{size:10}}},
-        y:{grid:{color:'rgba(42,42,58,.5)'},ticks:{color:'#7070a0',font:{size:10},callback:v=>fmtK(v)}}
+        x:{grid:{color:CH.grid()},ticks:{color:CH.tick(),font:{size:10}}},
+        y:{grid:{color:CH.grid()},ticks:{color:CH.tick(),font:{size:10},callback:v=>fmtK(v)}}
       }
     }
   });
@@ -5419,14 +5493,14 @@ function renderCanalesTrendChart(){
       responsive:true, maintainAspectRatio:false,
       interaction:{ mode:'index', intersect:false },
       plugins:{
-        legend:{ position:'bottom', labels:{ color:'#7070a0', font:{size:11}, boxWidth:10, usePointStyle:true } },
+        legend:{ position:'bottom', labels:{ color:CH.tick(), font:{size:11}, boxWidth:10, usePointStyle:true } },
         datalabels:{ display:false },
         tooltip:{ backgroundColor:'#1a1a24', titleColor:'#e8e8f0', bodyColor:'#7070a0',
           callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${fmtK(ctx.parsed.y)}` } }
       },
       scales:{
-        x:{ grid:{ color:'rgba(42,42,58,.5)' }, ticks:{ color:'#7070a0', font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:12 } },
-        y:{ grid:{ color:'rgba(42,42,58,.5)' }, ticks:{ color:'#7070a0', font:{size:10}, callback:v=>fmtK(v) } }
+        x:{ grid:{ color:CH.grid() }, ticks:{ color:CH.tick(), font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:12 } },
+        y:{ grid:{ color:CH.grid() }, ticks:{ color:CH.tick(), font:{size:10}, callback:v=>fmtK(v) } }
       }
     }
   });
@@ -5694,7 +5768,7 @@ function renderMiniBarChart(id, labels, data, color){
     data:{labels,datasets:[{data,backgroundColor:color+'88',borderColor:color,borderWidth:1,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a1a24',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.y)}}},
-      scales:{x:{grid:{display:false},ticks:{color:'#7070a0',font:{size:9}}},y:{grid:{color:'rgba(42,42,58,.4)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtK(v)}}}}
+      scales:{x:{grid:{display:false},ticks:{color:CH.tick(),font:{size:9}}},y:{grid:{color:CH.grid()},ticks:{color:CH.tick(),font:{size:9},callback:v=>fmtK(v)}}}}
   });
 }
 
@@ -6781,7 +6855,7 @@ const PROD_CATS = {
   'AB.090':   { label:'Toppings Adicionales',emoji:'✨', color:'#5af5a0' },
   'AB.100':   { label:'Snacks',              emoji:'🍫', color:'#f5a85a' },
   'AB.110':   { label:'Signature Bowls',     emoji:'🏆', color:'#f55a9e' },
-  'OTROS':    { label:'Otros',               emoji:'📦', color:'#7070a0' },
+  'OTROS':    { label:'Otros',               emoji:'📦', color:CH.tick() },
 };
 // Excluir toppings incluidos (sin precio) y costo delivery
 const EXCLUIR_CATS = ['BA.010','BA.020','BA.030','BA.040','SIN_ID'];
@@ -6844,7 +6918,7 @@ function renderCatFilters(data) {
   let html = pill('TODAS','Todas','📦', prodCatActiva==='TODAS');
   if (hasBowls) html += pill('BOWLS', 'Bowls', '🥣', prodCatActiva==='BOWLS');
   hidsNoBowl.forEach(hid => {
-    const cat = PROD_CATS[hid] || { label: hid, emoji:'📦', color:'#7070a0' };
+    const cat = PROD_CATS[hid] || { label: hid, emoji:'📦', color:CH.tick() };
     html += pill(hid, cat.label, cat.emoji, prodCatActiva===hid);
   });
   cont.innerHTML = `<div class="tab-pills" style="flex-wrap:wrap">${html}</div>`;
@@ -7038,7 +7112,7 @@ function renderPieChart(items, tiendas, accentColor) {
       },
       scales: {
         x: {
-          grid: { color:'rgba(42,42,58,.4)' },
+          grid: { color:CH.grid() },
           ticks: { color:colorEjeX, font:{ size:10 } }
         },
         y: {
@@ -7681,8 +7755,8 @@ function renderPADashChart(diasRango, fi, ff){
       plugins:{ legend:{display:false}, datalabels:{display:false},
         tooltip:{ backgroundColor:'#1a1a24', callbacks:{ label:c=>' '+fmtUSD(c.parsed.y) } } },
       scales:{
-        x:{ grid:{color:'rgba(42,42,58,.5)'}, ticks:{color:'#7070a0', font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:15} },
-        y:{ grid:{color:'rgba(42,42,58,.5)'}, ticks:{color:'#7070a0', font:{size:10}, callback:v=>fmtKUSD(v)} }
+        x:{ grid:{color:CH.grid()}, ticks:{color:CH.tick(), font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:15} },
+        y:{ grid:{color:CH.grid()}, ticks:{color:CH.tick(), font:{size:10}, callback:v=>fmtKUSD(v)} }
       } }
   });
 }
@@ -7742,8 +7816,8 @@ function renderChartCanalesPADash(totalDia, tipo){
       plugins:{ legend:{display:false}, datalabels:{display:false},
         tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtUSD(ctx.parsed.x)}} },
       scales:{
-        x:{grid:{color:'rgba(42,42,58,.5)'},ticks:{color:'#7070a0',font:{size:11},callback:v=>fmtUSD(v)}},
-        y:{grid:{display:false},ticks:{color:'#7070a0',font:{size:11}}}
+        x:{grid:{color:CH.grid()},ticks:{color:CH.tick(),font:{size:11},callback:v=>fmtUSD(v)}},
+        y:{grid:{display:false},ticks:{color:CH.tick(),font:{size:11}}}
       }
     } : {
       responsive:true, maintainAspectRatio:false, cutout:'65%',
@@ -8294,8 +8368,8 @@ function renderChartReportePA(dias, diasComp, datosCanalesAgrupados) {
         tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${formatY(item.parsed.y)}` } }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
-        y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => formatY(v) } }
+        x: { grid: { display: false }, ticks: { color: CH.tick(), font: { size: 10 } } },
+        y: { grid: { color: CH.grid() }, ticks: { color: CH.tick(), callback: v => formatY(v) } }
       }
     }
   });
@@ -8428,8 +8502,8 @@ async function cargarPAVentasPorHora() {
           tooltip: esComparandoPA ? { callbacks: { label: (c) => `${c.dataset.label}: ${fmtUSD(c.parsed.y)}` } } : { callbacks: { afterLabel: (c) => `${pedidos[c.dataIndex]} pedidos prom.` } }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: 'var(--muted)', font: { size: 10 } } },
-          y: { grid: { color: 'rgba(255,255,255,.06)' }, ticks: { color: 'var(--muted)', callback: v => fmtUSD(v) } }
+          x: { grid: { display: false }, ticks: { color: CH.tick(), font: { size: 10 } } },
+          y: { grid: { color: CH.grid() }, ticks: { color: CH.tick(), callback: v => fmtUSD(v) } }
         }
       }
     });
@@ -8527,8 +8601,8 @@ async function cargarPACanales(){
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        scales: { x: { stacked: true, ticks:{color:'#7070a0', font:{size:10}} }, y: { stacked: true, ticks:{color:'#7070a0', callback:v=>fmtUSD(v)} } },
-        plugins: { legend: { position:'bottom', labels:{color:'#7070a0', font:{size:11}} } }
+        scales: { x: { stacked: true, ticks:{color:CH.tick(), font:{size:10}} }, y: { stacked: true, ticks:{color:CH.tick(), callback:v=>fmtUSD(v)} } },
+        plugins: { legend: { position:'bottom', labels:{color:CH.tick(), font:{size:11}} } }
       }
     });
 
@@ -8990,8 +9064,8 @@ function renderProyChartPA(data){
     responsive:true, maintainAspectRatio:false,
     plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtKUSD(ctx.parsed.y)}}},
     scales:{
-      x:{grid:{color:'rgba(42,42,58,.6)'},ticks:{color:'#7070a0',font:{size:9},maxRotation:0}},
-      y:{grid:{color:'rgba(42,42,58,.6)'},ticks:{color:'#7070a0',font:{size:9},callback:v=>fmtKUSD(v)}}
+      x:{grid:{color:CH.grid()},ticks:{color:CH.tick(),font:{size:9},maxRotation:0}},
+      y:{grid:{color:CH.grid()},ticks:{color:CH.tick(),font:{size:9},callback:v=>fmtKUSD(v)}}
     }
   };
   if(paProyChartType==='bar'){
