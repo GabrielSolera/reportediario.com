@@ -285,7 +285,6 @@ html[data-theme="light"] .nav-item.active .nav-icon svg{color:var(--accent);}
 #section-dashboard .grid-2 > .card:first-child .chart-wrap{flex:1;height:auto;}
 #section-dashboard .grid-2 > .card:last-child .card-body{flex:none;}
 #section-dashboard .grid-2 > .card:last-child .chart-wrap{height:90px;}
-#canalesBreakdown{flex:1;min-height:0;overflow-y:auto;}
 
 /* ══ Dashboard principal · estilo limpio (2026-11-02) ══
    Solo #section-dashboard (las demás vistas siguen como estaban). KPIs en
@@ -323,7 +322,6 @@ html[data-theme="light"] #section-dashboard{ --pos:#14805F; --neg:#C6433F; }
 /* con el header y el padding más holgados, las dos tarjetas de gráficos necesitan un poco más de alto para que el desglose de canales siga entrando */
 #section-dashboard .grid-2 .card{height:415px;}
 #section-dashboard .grid-2 > .card:last-child .card-body{padding-bottom:4px;}
-#section-dashboard #canalesBreakdown{padding:0 20px 16px;}
 #section-dashboard .store-table thead th{background:var(--surface2);padding:12px;}
 #section-dashboard .store-table tbody tr{border-bottom:1px solid var(--border);}
 #section-dashboard .store-table tbody tr:last-child{border-bottom:none;}
@@ -949,6 +947,46 @@ body.modo-vista-unica .hamburger{ display:none !important; }
   .menu-titulo{ font-size:21px; }
   .menu-inner{ padding:40px 16px 48px; }
 }
+
+/* ══ Dashboard · "Canales por tienda" y "Ventas por hora" (2026-11-12) ══ */
+#cardCanalesTienda, #cardHoraTienda{display:flex;flex-direction:column;}
+.ct-scroll{flex:1;min-height:0;overflow:auto;}
+.ct-vacio{padding:40px 20px;text-align:center;color:var(--muted);font-size:13px;}
+.ct-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;}
+.ct-table thead th{
+  position:sticky;top:0;z-index:1;background:var(--surface2);color:var(--muted);
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:10px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+.ct-table thead th:first-child{text-align:left;padding-left:16px;}
+.ct-table td{padding:8px 8px;font-family:var(--mono);font-size:11.5px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;}
+.ct-table td:first-child{text-align:left;padding-left:16px;font-family:var(--font);}
+.ct-tienda td{background:color-mix(in srgb,var(--accent) 7%,transparent);font-weight:700;font-size:13px;padding-top:10px;padding-bottom:10px;}
+.ct-canal td:first-child{padding-left:30px;font-weight:600;font-size:12px;}
+.ct-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;}
+.ct-dotc{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:8px;}
+.dl-pos{color:var(--pos);font-weight:700;}
+.dl-neg{color:var(--neg);font-weight:700;}
+.dl-neu{color:var(--muted);}
+.dl-new{color:var(--muted);font-style:italic;}
+.hora-pills{display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px 0;}
+.hora-pill{
+  font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;
+  padding:5px 11px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--muted);
+  transition:background .15s,color .15s,border-color .15s;
+}
+.hora-pill:hover{color:var(--text);border-color:var(--accent);}
+.hora-pill.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.hora-resumen{display:flex;gap:28px;flex-wrap:wrap;padding:14px 20px 0;}
+.hr-item{display:flex;flex-direction:column;gap:2px;}
+.hr-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.hr-val{font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:-.02em;color:var(--text);}
+.hr-item .dl-pos,.hr-item .dl-neg,.hr-item .dl-neu,.hr-item .dl-new{font-size:12px;font-family:var(--mono);}
+.hr-sub{font-size:11px;color:var(--muted);}
+.hora-chart{flex:1;min-height:230px;padding:10px 16px 14px;position:relative;}
+#cardHoraTienda{min-height:400px;}
+.ct-nota{padding:10px 16px 14px;font-size:10.5px;color:var(--muted);line-height:1.4;}
+
 </style>
 </head>
 <body>
@@ -1323,29 +1361,24 @@ body.modo-vista-unica .hamburger{ display:none !important; }
           </div>
           <div class="card-body"><div class="chart-wrap"><canvas id="chartTiendas"></canvas></div></div>
         </div>
-        <div class="card">
+        <div class="card" id="cardCanalesTienda">
           <div class="card-header">
-            <span class="card-title">Canales de Venta</span>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="card-tag" id="canalesTag">Día</span>
-              <div class="tab-pills">
-                <button class="tab-pill active" onclick="switchCanalesChart('doughnut',this)">Circular</button>
-                <button class="tab-pill" onclick="switchCanalesChart('bar',this)">Barras</button>
-              </div>
-            </div>
+            <span class="card-title">Canales por tienda</span>
+            <span class="card-tag" id="canalesTiendaTag">vs semana anterior</span>
           </div>
-          <div class="card-body"><div class="chart-wrap"><canvas id="chartCanales"></canvas></div></div>
-          <div id="canalesBreakdown" style="padding:0 18px 16px"></div>
+          <div class="ct-scroll" id="canalesTiendaBody"><div class="ct-vacio">Cargando…</div></div>
         </div>
       </div>
 
       <div class="grid-3">
-        <div class="card">
+        <div class="card" id="cardHoraTienda">
           <div class="card-header">
-            <span class="card-title">Margen de Contribución</span>
-            <span class="card-tag">Acum</span>
+            <span class="card-title">Ventas por hora</span>
+            <span class="card-tag" id="horaTag">vs semana anterior</span>
           </div>
-          <div class="card-body" id="margenContribucion" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div class="hora-pills" id="horaPills"></div>
+          <div class="hora-resumen" id="horaResumen"></div>
+          <div class="hora-chart"><canvas id="chartHora"></canvas></div>
         </div>
         <div class="card" style="grid-column:span 2">
           <div class="card-header">
@@ -3251,10 +3284,7 @@ function renderDashboard(data) {
 
   renderTablaTiendas(data);
   renderChartTiendas(data);
-  renderChartCanales(total);
-  renderCanalesBreakdown(total);
-  cargarCanalesComparativo(total);
-  renderMargenContribucion(data);
+  actualizarDetalleDia();
 }
 
 function renderTablaTiendas(data) {
@@ -3336,192 +3366,178 @@ const CANAL_CFG_DASH = [
   { key:'olo',   name:'OLO · Página Web',    short:'OLO',        group:'Pedidos en línea',   color:'#E5427A' },
 ];
 
-let canalesChartTipo = 'doughnut';
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD — detalle del día por tienda: canales y horas contra el mismo
+//  día de la semana anterior (reemplazan "Canales de Venta" y "Margen de
+//  Contribución", 2026-11-12). Fuente: acción detalleDiaTiendas del backend CR.
+//  Si el día elegido es hoy, el backend compara la semana anterior solo hasta
+//  la misma hora (`corte`); la curva por hora de la semana anterior va completa.
+// ═══════════════════════════════════════════════════════════
+let detalleDia = null;      // última respuesta de detalleDiaTiendas (+ clave y hora de carga)
+let detalleReqId = 0;
+let horaTiendaSel = 'todas';
+const DETALLE_TTL_MS = 60000;   // al repintar el dashboard se reusa 1 min; después se vuelve a pedir
 
-function renderChartCanales(total, tipo) {
-  if (tipo) canalesChartTipo = tipo;
-  const isBar = canalesChartTipo === 'bar';
-  const data   = CANAL_CFG_DASH.map(c => num(total[c.key]));
-  const colors = CANAL_CFG_DASH.map(c => c.color);
-  const labels = CANAL_CFG_DASH.map(c => c.name);
+const detalleCampo = () => modoVentaGlobal === 'bruto' ? 'bruto' : 'neto';
+const detalleClave = () => {
+  const f = document.getElementById('fechaFin').value, t = document.getElementById('tiendaSelect').value;
+  return (f && t) ? `${f}|${t}` : '';
+};
+const detalleFmtFecha = iso => new Date(iso + 'T12:00:00').toLocaleDateString('es-CR', { weekday:'short', day:'numeric', month:'short' }).replace(/\./g, '');
 
-  if(charts.canales) charts.canales.destroy();
-  const ctx = document.getElementById('chartCanales').getContext('2d');
-  charts.canales = new Chart(ctx, {
-    type: isBar ? 'bar' : 'doughnut',
-    data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, hoverOffset:6, borderRadius:isBar?6:0 }] },
-    options: isBar ? {
-      indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      animation:{ duration:700, easing:'easeOutQuart' },
-      plugins:{ legend:{display:false}, datalabels:{display:false},
-        tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#7070a0',callbacks:{label:ctx=>' '+fmtK(ctx.parsed.x)}} },
-      scales:{
-        x:{grid:{color:CH.grid(),drawBorder:false},ticks:{color:CH.tick(),font:{size:11},callback:v=>fmtK(v)}},
-        y:{grid:{display:false},ticks:{color:CH.tick(),font:{size:11}}}
+function detalleDelta(act, ref) {
+  if (!ref && !act) return '<span class="dl-neu">—</span>';
+  if (!ref) return '<span class="dl-new">nuevo</span>';
+  const p = (act - ref) / ref * 100;
+  const cls = p > 0.05 ? 'dl-pos' : (p < -0.05 ? 'dl-neg' : 'dl-neu');
+  return `<span class="${cls}">${p > 0 ? '+' : ''}${p.toFixed(1)}%</span>`;
+}
+
+function detalleEstado(msg) {
+  const a = document.getElementById('canalesTiendaBody');
+  if (a) a.innerHTML = `<div class="ct-vacio">${msg}</div>`;
+  const r = document.getElementById('horaResumen'); if (r) r.innerHTML = '';
+  const p = document.getElementById('horaPills');   if (p) p.innerHTML = '';
+  if (charts.hora) { charts.hora.destroy(); charts.hora = null; }
+}
+
+function actualizarDetalleDia() {
+  const clave = detalleClave();
+  if (!clave) return;
+  if (detalleDia && detalleDia.clave === clave && Date.now() - detalleDia.ts < DETALLE_TTL_MS) { renderDetalleDia(); return; }
+  cargarDetalleDia();
+}
+
+async function cargarDetalleDia() {
+  const clave = detalleClave();
+  if (!clave) return;
+  const [fecha, tiendaSel] = clave.split('|');
+  const reqId = ++detalleReqId;
+  detalleEstado('Cargando…');
+  try {
+    const resp = await fetch(`${APPS_SCRIPT_URL}?action=detalleDiaTiendas&fecha=${fecha}&tienda=${tiendaSel === 'todas' ? 'all' : tiendaSel}`);
+    const json = await resp.json();
+    if (reqId !== detalleReqId) return;               // llegó una respuesta más nueva
+    if (!json || json.error || !json.tiendas) { detalleEstado('No se pudo cargar el detalle del día'); return; }
+    detalleDia = Object.assign(json, { clave, ts: Date.now() });
+    renderDetalleDia();
+  } catch (e) {
+    if (reqId === detalleReqId) detalleEstado('Sin conexión con el servidor');
+  }
+}
+
+const detalleOrdenTiendas = () => Object.keys(STORES).filter(k => detalleDia.tiendas[k]);
+
+// Suma varias tiendas en la misma estructura que trae el backend
+function detalleSumar(keys) {
+  const vacio = () => ({ neto: 0, bruto: 0, pedidos: 0 });
+  const out = { total: { actual: vacio(), ref: vacio() }, canales: { actual: {}, ref: {} }, horas: { actual: {}, ref: {} } };
+  keys.forEach(k => {
+    const t = detalleDia.tiendas[k]; if (!t) return;
+    ['actual', 'ref'].forEach(l => {
+      ['neto', 'bruto', 'pedidos'].forEach(m => { out.total[l][m] += t.total[l][m] || 0; });
+      ['canales', 'horas'].forEach(grp => {
+        Object.entries(t[grp][l]).forEach(([c, v]) => {
+          const o = out[grp][l][c] || (out[grp][l][c] = vacio());
+          o.neto += v.neto || 0; o.bruto += v.bruto || 0; o.pedidos += v.pedidos || 0;
+        });
+      });
+    });
+  });
+  return out;
+}
+
+function renderDetalleDia() {
+  if (!detalleDia) return;
+  renderCanalesTienda();
+  renderHoraTienda();
+}
+
+function renderCanalesTienda() {
+  const el = document.getElementById('canalesTiendaBody'); if (!el || !detalleDia) return;
+  const f = detalleCampo(), orden = detalleOrdenTiendas();
+  const tag = document.getElementById('canalesTiendaTag');
+  if (tag) tag.textContent = `${detalleFmtFecha(detalleDia.fecha)} vs ${detalleFmtFecha(detalleDia.fechaRef)}` + (detalleDia.corte ? ` · hasta ${detalleDia.corte}` : '');
+  const bloques = [];
+  if (orden.length > 1) bloques.push({ nombre: 'Todas las tiendas', color: null, d: detalleSumar(orden) });
+  orden.forEach(k => bloques.push({ nombre: STORES[k].name, color: STORES[k].color, d: detalleDia.tiendas[k] }));
+  const cero = { neto: 0, bruto: 0, pedidos: 0 };
+  let h = '<table class="ct-table"><thead><tr><th>Canal</th><th>Venta</th><th>vs sem.</th><th>Pedidos</th><th>vs sem.</th></tr></thead><tbody>';
+  bloques.forEach(b => {
+    const t = b.d.total;
+    h += `<tr class="ct-tienda"><td>${b.color ? `<span class="ct-dot" style="background:${b.color}"></span>` : ''}${b.nombre}</td>` +
+         `<td>${crc(t.actual[f])}</td><td>${detalleDelta(t.actual[f], t.ref[f])}</td>` +
+         `<td>${t.actual.pedidos}</td><td>${detalleDelta(t.actual.pedidos, t.ref.pedidos)}</td></tr>`;
+    CANAL_CFG_DASH.forEach(c => {
+      const a = b.d.canales.actual[c.key] || cero, r = b.d.canales.ref[c.key] || cero;
+      if (!a[f] && !r[f] && !a.pedidos && !r.pedidos) return;     // canal sin movimiento en ninguno de los dos días
+      h += `<tr class="ct-canal"><td><span class="ct-dotc" style="background:${c.color}"></span>${c.short}</td>` +
+           `<td>${crc(a[f])}</td><td>${detalleDelta(a[f], r[f])}</td>` +
+           `<td>${a.pedidos}</td><td>${detalleDelta(a.pedidos, r.pedidos)}</td></tr>`;
+    });
+  });
+  el.innerHTML = h + '</tbody></table><div class="ct-nota">Canal = forma de pago de la orden; la suma de canales puede diferir un poco del total de la tienda.</div>';
+}
+
+function elegirHoraTienda(k) { horaTiendaSel = k; renderHoraTienda(); }
+
+function renderHoraTienda() {
+  const pills = document.getElementById('horaPills'), res = document.getElementById('horaResumen'), cv = document.getElementById('chartHora');
+  if (!pills || !res || !cv || !detalleDia) return;
+  const f = detalleCampo(), orden = detalleOrdenTiendas();
+  if (horaTiendaSel !== 'todas' && !orden.includes(horaTiendaSel)) horaTiendaSel = 'todas';
+  const tag = document.getElementById('horaTag');
+  if (tag) tag.textContent = `${detalleFmtFecha(detalleDia.fecha)} vs ${detalleFmtFecha(detalleDia.fechaRef)}`;
+  pills.innerHTML = orden.length > 1
+    ? [['todas', 'Todas'], ...orden.map(k => [k, STORES[k].name])]
+        .map(([k, n]) => `<button class="hora-pill${k === horaTiendaSel ? ' active' : ''}" onclick="elegirHoraTienda('${k}')">${n}</button>`).join('')
+    : '';
+  const d = horaTiendaSel === 'todas' ? detalleSumar(orden) : detalleDia.tiendas[horaTiendaSel];
+
+  // Rango de horas: de la primera a la última hora con venta en cualquiera de los dos días
+  const conVenta = new Set();
+  ['actual', 'ref'].forEach(l => Object.keys(d.horas[l]).forEach(hh => { if ((d.horas[l][hh][f] || 0) > 0) conVenta.add(Number(hh)); }));
+  let ini = conVenta.size ? Math.min(...conVenta) : 10, fin = conVenta.size ? Math.max(...conVenta) : 20;
+  if (fin - ini < 5) fin = Math.min(23, ini + 5);
+  const horas = []; for (let hh = ini; hh <= fin; hh++) horas.push(hh);
+  const act = horas.map(hh => num((d.horas.actual[hh] || {})[f])), ref = horas.map(hh => num((d.horas.ref[hh] || {})[f]));
+
+  const t = d.total, corte = detalleDia.corte;
+  res.innerHTML =
+    `<div class="hr-item"><span class="hr-lbl">Venta${corte ? ' hasta ' + corte : ''}</span><span class="hr-val">${crc(t.actual[f])}</span>` +
+    `${detalleDelta(t.actual[f], t.ref[f])}<span class="hr-sub">sem. ant. ${crc(t.ref[f])}</span></div>` +
+    `<div class="hr-item"><span class="hr-lbl">Pedidos${corte ? ' hasta ' + corte : ''}</span><span class="hr-val">${t.actual.pedidos}</span>` +
+    `${detalleDelta(t.actual.pedidos, t.ref.pedidos)}<span class="hr-sub">sem. ant. ${t.ref.pedidos}</span></div>`;
+
+  if (charts.hora) charts.hora.destroy();
+  const claro = CH.claro();
+  charts.hora = new Chart(cv.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: horas.map(hh => `${hh}h`),
+      datasets: [
+        { type: 'bar', label: detalleFmtFecha(detalleDia.fecha), data: act, backgroundColor: '#7B4FE0', borderRadius: 4, maxBarThickness: 24, order: 2 },
+        { type: 'line', label: detalleFmtFecha(detalleDia.fechaRef), data: ref, borderColor: claro ? '#9A6508' : '#E0A62A', backgroundColor: 'transparent', borderWidth: 2, borderDash: [5, 4], pointRadius: 2.5, tension: .3, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        datalabels: { display: false },
+        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, color: CH.tick(), font: { size: 10 } } },
+        tooltip: { callbacks: {
+          title: items => `${horas[items[0].dataIndex]}:00`,
+          label: c => ` ${c.dataset.label}: ${fmtK(c.parsed.y)}`,
+          afterBody: items => { const i = items[0].dataIndex, r = ref[i]; if (!r) return ''; const p = (act[i] - r) / r * 100; return `Variación: ${p > 0 ? '+' : ''}${p.toFixed(1)}%`; }
+        } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: CH.tick(), font: { size: 10 } } },
+        y: { beginAtZero: true, grid: { color: CH.grid() }, ticks: { color: CH.tick(), font: { size: 10 }, callback: v => fmtK(v) } }
       }
-    } : {
-      responsive:true,maintainAspectRatio:false,cutout:'65%',
-      animation:{ duration:700, easing:'easeOutQuart', animateRotate:true, animateScale:true },
-      plugins:{ legend:{display:false},
-        datalabels:{
-          color:'#fff', font:{weight:'700', size:10},
-          display:(ctx) => {
-            const total = ctx.dataset.data.reduce((a,b)=>a+num(b),0);
-            const v = num(ctx.dataset.data[ctx.dataIndex]);
-            return total>0 && (v/total*100) >= 3; // oculta canales en 0 y franjas demasiado finas para el texto
-          },
-          formatter:(value, ctx) => {
-            const total = ctx.dataset.data.reduce((a,b)=>a+num(b),0);
-            const pct = total>0 ? Math.round(value/total*100) : 0;
-            return pct+'%';
-          }
-        },
-        tooltip:{callbacks:{label:ctx=>' '+fmtK(ctx.raw)}} }
     }
   });
-}
-
-function switchCanalesChart(type, btn){
-  btn.parentElement.querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  if (!datosGlobales) return;
-  const total = datosGlobales.find(r=>r.tienda==='TODAS')||datosGlobales[0];
-  renderChartCanales(total, type);
-}
-
-// Tabla debajo del gráfico, mismo patrón que "Detalle por Tienda" pero por
-// canal: Día (venta, % del día, Crec% vs. mismo día 7 días atrás) y Acum
-// (venta del mes, Var% vs. el mismo tramo del mes pasado). Se pinta de
-// entrada con lo que ya tenemos (Día); Crec%/Acum/Var% llegan un toque
-// después vía cargarCanalesComparativo, que sí necesita una consulta aparte.
-function renderCanalesBreakdown(total, comparativo){
-  const el = document.getElementById('canalesBreakdown');
-  if (!el) return;
-  const totalSum = CANAL_CFG_DASH.reduce((s,c)=>s+num(total[c.key]),0);
-  let lastGroup = null;
-  const filas = CANAL_CFG_DASH.map(c=>{
-    const filaGrupo = c.group !== lastGroup
-      ? (lastGroup=c.group, `<tr class="canal-group-row"><td colspan="7">${c.group}</td></tr>`)
-      : '';
-    const val = num(total[c.key]);
-    const pctDia = totalSum>0 ? (val/totalSum*100) : 0;
-    const comp = comparativo && comparativo[c.key];
-    const crecCell = comp
-      ? `<td style="color:${colorPct(comp.crecDia)}">${pct(comp.crecDia)}</td>`
-      : `<td style="color:var(--muted2)">…</td>`;
-    const acumCell = comp
-      ? `<td style="border-left:1px solid var(--border)">${crc(comp.acum)}</td>`
-      : `<td style="border-left:1px solid var(--border);color:var(--muted2)">…</td>`;
-    const pctAcumCell = comp
-      ? `<td>${comp.pctAcum.toFixed(1)}%</td>`
-      : `<td style="color:var(--muted2)">…</td>`;
-    const varCell = comp
-      ? `<td style="color:${colorPct(comp.varAcum)}">${pct(comp.varAcum)}</td>`
-      : `<td style="color:var(--muted2)">…</td>`;
-    return filaGrupo + `<tr>
-      <td><span class="dot" style="background:${c.color}"></span>${c.name}</td>
-      <td>${crc(val)}</td>
-      <td>${pctDia.toFixed(1)}%</td>
-      ${crecCell}
-      ${acumCell}
-      ${pctAcumCell}
-      ${varCell}
-    </tr>`;
-  }).join('');
-  el.innerHTML = `<table class="store-table canal-table">
-    <thead><tr>
-      <th style="text-align:left">Canal</th><th>Día</th><th>%</th>
-      <th title="vs. mismo día, 7 días atrás">Crec%</th>
-      <th style="border-left:1px solid var(--border)">Acum</th><th>%</th>
-      <th title="vs. mismo tramo, mes pasado">Var%</th>
-    </tr></thead>
-    <tbody>${filas}</tbody>
-  </table>`;
-}
-
-// Crec%/Acum/Var% necesitan datos que NO vienen en la carga principal del
-// Dashboard (esa solo trae hoy + acumulado de HOY) — se resuelven con una
-// consulta aparte a historialCanales (el mismo endpoint que ya usa Análisis
-// → Canales → Tendencia), pidiendo desde el 1° del mes pasado hasta la
-// fecha vista. De esa serie diaria se sacan los 3 puntos que hacen falta:
-// el mismo día hace 7 días, el acumulado del mes actual, y el acumulado del
-// mismo tramo del mes pasado — sin tocar el backend de CR para nada de esto.
-async function cargarCanalesComparativo(total){
-  try{
-    const fechaFinInput = document.getElementById('fechaFin').value;
-    const tiendaSel = document.getElementById('tiendaSelect').value;
-    if(!fechaFinInput || !tiendaSel) return;
-    const storeKey = tiendaSel==='todas' ? 'all' : tiendaSel;
-
-    const pad = n=>String(n).padStart(2,'0');
-    const iso = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    const hoy = new Date(fechaFinInput+'T12:00:00');
-
-    const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    const mesPasadoIni    = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
-    const diaEquivPasado  = new Date(mesPasadoIni.getFullYear(), mesPasadoIni.getMonth(),
-      Math.min(hoy.getDate(), new Date(mesPasadoIni.getFullYear(), mesPasadoIni.getMonth()+1, 0).getDate()));
-    const hace7 = new Date(hoy); hace7.setDate(hoy.getDate()-7);
-
-    const resp = await fetch(`${APPS_SCRIPT_URL}?action=historialCanales&tienda=${storeKey}&fechaInicio=${iso(mesPasadoIni)}&fechaFin=${fechaFinInput}`);
-    const serie = await resp.json();
-    if(!Array.isArray(serie)) return;
-
-    const porFecha = {};
-    serie.forEach(r=>{ porFecha[r.fecha] = r; });
-    const filaHace7 = porFecha[iso(hace7)] || {};
-
-    const sumaRango = (desde, hasta) => {
-      const out = {uber:0, peya:0, didi:0, olo:0, otros:0};
-      Object.keys(porFecha).forEach(f=>{
-        if(f>=desde && f<=hasta){
-          const r = porFecha[f];
-          Object.keys(out).forEach(k => out[k]+=num(r[k]));
-        }
-      });
-      return out;
-    };
-    const acumActual = sumaRango(iso(inicioMesActual), fechaFinInput);
-    const acumPasado = sumaRango(iso(mesPasadoIni), iso(diaEquivPasado));
-    const totalAcum = CANAL_CFG_DASH.reduce((s,c)=>s+num(acumActual[c.key]),0);
-
-    const comparativo = {};
-    CANAL_CFG_DASH.forEach(c=>{
-      const hoyVal   = num(total[c.key]);
-      const hace7Val = num(filaHace7[c.key]);
-      const crecDia  = hace7Val>0 ? ((hoyVal-hace7Val)/hace7Val*100) : (hoyVal>0 ? 100 : 0);
-      const acumVal    = acumActual[c.key];
-      const pasadoVal  = acumPasado[c.key];
-      const varAcum  = pasadoVal>0 ? ((acumVal-pasadoVal)/pasadoVal*100) : (acumVal>0 ? 100 : 0);
-      const pctAcum  = totalAcum>0 ? (acumVal/totalAcum*100) : 0;
-      comparativo[c.key] = { crecDia, acum:acumVal, varAcum, pctAcum };
-    });
-
-    renderCanalesBreakdown(total, comparativo);
-  } catch(e){ console.warn('Canales comparativo error:', e); }
-}
-
-// Reemplaza "Métodos de Pago" (que repetía los mismos campos de Canales,
-// mal etiquetados). costoAcum/costoDia ya los calcula el backend — este
-// mismo patrón ya existe en Análisis → Rentabilidad, acá solo se reutiliza
-// en la vista principal.
-function renderMargenContribucion(data){
-  const el = document.getElementById('margenContribucion');
-  if (!el) return;
-  const tiendas = data.filter(r=>r.tienda!=='TODAS');
-  if (!tiendas.length){ el.innerHTML = '<div style="font-size:11px;color:var(--muted)">Sin datos para el rango seleccionado.</div>'; return; }
-  el.innerHTML = tiendas.map(t=>{
-    const venta  = num(t.ventasAcumuladas||t.ventasNetas||0);
-    const costo  = num(t.costoAcum||t.costoDia||0);
-    const margen = venta-costo;
-    const margenPct = venta>0 ? (margen/venta*100) : 0;
-    const costoPct  = 100-margenPct; // costo% es siempre el complemento a 100 del margen%, igual que en Toteat
-    return `<div class="margen-row">
-      <div class="top"><span class="tienda">${t.tienda.replace('Oakberry ','')}</span><span class="margen-pct">${margenPct.toFixed(1)}% margen</span></div>
-      <div class="margen-bar"><span style="width:${Math.max(0,Math.min(100,margenPct)).toFixed(1)}%"></span></div>
-      <div class="sub"><span>Costo ${crc(costo)} · ${costoPct.toFixed(1)}%</span><span>Margen ${crc(margen)} · ${margenPct.toFixed(1)}%</span></div>
-    </div>`;
-  }).join('');
 }
 
 function switchDashChart(type,btn,chartId){
