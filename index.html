@@ -1533,6 +1533,9 @@ html[data-theme="light"] #section-pa-dashboard{--pos:#14805F;--neg:#C6433F;}
           <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
             <input type="checkbox" class="tienda-chk" value="santaana" checked onchange="onTiendaChkChange()"> Santa Ana TC
           </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="tienda-chk" value="aleste" checked onchange="onTiendaChkChange()"> Oakberry Aleste
+          </label>
         </div>
         <input type="hidden" id="tiendaSelect" value="todas">
       </div>
@@ -3162,6 +3165,7 @@ const STORES = {
   escazu:      { name:'Avenida Escazú', color:'#5af5c8' },
   citymall:    { name:'City Mall',      color:'#f5c85a' },
   santaana:    { name:'Santa Ana TC',   color:'#f55a5a' },
+  aleste:      { name:'Aleste',         color:'#5aa9f5' },
 };
 
 const CR_FERIADOS = {
@@ -3190,8 +3194,8 @@ function aplicarTema(tema){
   // y otros lugares que leen STORES[x].color directo — el verde agua y el
   // amarillo pálido de fondo oscuro casi no se ven en fondo claro.
   const coloresPorTema = tema === 'light'
-    ? { guachipelin:'#7C3AA0', escazu:'#178A68', citymall:'#B8790F', santaana:'#C6433F' }
-    : { guachipelin:'#a855f7', escazu:'#5af5c8', citymall:'#f5c85a', santaana:'#f55a5a' };
+    ? { guachipelin:'#7C3AA0', escazu:'#178A68', citymall:'#B8790F', santaana:'#C6433F', aleste:'#2F6FB0' }
+    : { guachipelin:'#a855f7', escazu:'#5af5c8', citymall:'#f5c85a', santaana:'#f55a5a', aleste:'#5aa9f5' };
   Object.keys(coloresPorTema).forEach(k => {
     if (STORES[k]) STORES[k].color = coloresPorTema[k];
   });
@@ -3242,7 +3246,7 @@ function closeSidebar(){
 // ── Selector múltiple de tiendas ──────────────────────────────────
 const NOMBRES_TIENDA_CORTO = {
   guachipelin: 'Guachipelín', escazu: 'Avenida Escazú',
-  citymall: 'City Mall', santaana: 'Santa Ana TC'
+  citymall: 'City Mall', santaana: 'Santa Ana TC', aleste: 'Aleste'
 };
 
 function toggleTiendaDropdown(ev) {
@@ -3739,7 +3743,7 @@ function renderChartTiendas(data, tipo) {
   const tiendas = data.filter(r=>r.tienda!=='TODAS');
   const labels  = tiendas.map(r=>r.tienda);
   const values  = tiendas.map(r=> modoVentaGlobal === 'bruto' ? num(r.ventasBrutas||r.ventasNetas) : num(r.ventasNetas));
-  const colors  = [STORES.guachipelin.color, STORES.escazu.color, STORES.citymall.color, STORES.santaana.color];
+  const colors  = [STORES.guachipelin.color, STORES.escazu.color, STORES.citymall.color, STORES.santaana.color, STORES.aleste.color];
 
   // rejilla y textos suaves según el tema (antes: colores fijos del tema oscuro)
   const claro = document.documentElement.getAttribute('data-theme')==='light';
@@ -5486,10 +5490,12 @@ const CANAL_CFG = [
 const STORE_COLORS_DARK = {
   'Oakberry Guachipelin':'#a855f7','Oakberry Avenida Escazu':'#5af5c8',
   'Oakberry City Mall':'#f5c85a','Santa Ana Town Center':'#f55a5a',
+  'Oakberry Aleste':'#5aa9f5',
 };
 const STORE_COLORS_LIGHT = {
   'Oakberry Guachipelin':'#7C3AA0','Oakberry Avenida Escazu':'#178A68',
   'Oakberry City Mall':'#B8790F','Santa Ana Town Center':'#C6433F',
+  'Oakberry Aleste':'#2F6FB0',
 };
 function storeColor(name){
   const esClaro = document.documentElement.getAttribute('data-theme') === 'light';
@@ -5544,7 +5550,8 @@ async function cargarAnalisis(){
         guachipelin: 'Oakberry Guachipelin',
         escazu:      'Oakberry Avenida Escazu',
         citymall:    'Oakberry City Mall',
-        santaana:    'Santa Ana TC'
+        santaana:    'Santa Ana TC',
+        aleste:      'Oakberry Aleste'
       };
       const tiendaNombre = tiendaNombres[tiendaActual];
       const row = datosGlobales.find(r=>r.tienda===tiendaNombre);
@@ -5650,7 +5657,8 @@ function filtrarRefPorTienda(data, tienda){
   if(tienda === 'todas') return data;
   const tiendaNombres = {
     guachipelin:'Oakberry Guachipelin', escazu:'Oakberry Avenida Escazu',
-    citymall:'Oakberry City Mall',      santaana:'Santa Ana TC'
+    citymall:'Oakberry City Mall',      santaana:'Santa Ana TC',
+    aleste:'Oakberry Aleste'
   };
   const nombre = tiendaNombres[tienda];
   const row = data.find(r=>r.tienda===nombre);
@@ -5764,7 +5772,7 @@ function renderCompChart(tiendas, ref){
 
   if(anlCharts.comp) anlCharts.comp.destroy();
   const ctx = document.getElementById('anlChartComp').getContext('2d');
-  const coloresTiendaTema = [STORES.guachipelin.color, STORES.escazu.color, STORES.citymall.color, STORES.santaana.color];
+  const coloresTiendaTema = [STORES.guachipelin.color, STORES.escazu.color, STORES.citymall.color, STORES.santaana.color, STORES.aleste.color];
   anlCharts.comp = new Chart(ctx,{
     type:'bar',
     data:{ labels, datasets:[
@@ -6936,7 +6944,7 @@ async function cargarSeguimiento() {
   const mesVal  = document.getElementById('segMes').value;
   const store   = document.getElementById('tiendaSelect').value;
   // Show active store in status
-  const storeNames = { todas:'Todas las sucursales', guachipelin:'Guachipelín', escazu:'Avenida Escazú', citymall:'City Mall', santaana:'Santa Ana TC' };
+  const storeNames = { todas:'Todas las sucursales', guachipelin:'Guachipelín', escazu:'Avenida Escazú', citymall:'City Mall', santaana:'Santa Ana TC', aleste:'Aleste' };
   if(!mesVal){ alert('Seleccioná el mes'); return; }
 
   const [tY, tM] = mesVal.split('-').map(Number);
